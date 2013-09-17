@@ -7,7 +7,7 @@ begin
     gem.name = "algoliasearch-rails"
     gem.summary = %Q{AlgoliaSearch integration to your favorite ORM}
     gem.description = %Q{AlgoliaSearch integration to your favorite ORM}
-    gem.homepage = "http://github.com/algolia/algoliasearch-client-rails"
+    gem.homepage = "http://github.com/algolia/algoliasearch-rails"
     gem.email = "contact@algolia.com"
     gem.authors = ["Algolia"]
     gem.files.exclude 'spec/integration_spec.rb'
