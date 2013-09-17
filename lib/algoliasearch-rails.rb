@@ -98,7 +98,7 @@ module AlgoliaSearch
     end
 
     def remove_from_index!(object)
-      @index.delete_object(object.id)
+      @index.delete_object!(object.id.to_s)
     end
 
     def clear_index!
