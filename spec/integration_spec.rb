@@ -97,8 +97,8 @@ describe 'An imaginary store' do
 
   describe 'pagination' do
     it 'should display total results correctly' do
-      results = Product.search('crapoola')
-      results.total_entries.should == Product.where(name: 'crapoola').count
+      results = Product.search('crapoola', hitsPerPage: 1000)
+      results.length.should == Product.where(name: 'crapoola').count
     end
   end
 
