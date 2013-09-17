@@ -74,6 +74,7 @@ module AlgoliaSearch
   module ClassMethods
     def algoliasearch(options = {}, &block)
       @index_options = IndexOptions.new(block_given? ? Proc.new : nil)
+      attr_accessor :highlight_result
 
       unless options[:auto_index] == false
         before_save :mark_for_auto_indexing if respond_to?(:before_save)
@@ -110,7 +111,9 @@ module AlgoliaSearch
     def search(q)
       json = @index.search(q)
       results = json['hits'].map do |hit|
-        Object.const_get(@options[:type]).find(hit['id'])
+        o = Object.const_get(@options[:type]).find(hit['id'])
+        o.highlight_result = hit['_highlightResult']
+        o
       end
       AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @options)
     end
