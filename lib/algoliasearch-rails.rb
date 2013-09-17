@@ -108,8 +108,8 @@ module AlgoliaSearch
       init
     end
 
-    def search(q)
-      json = @index.search(q)
+    def search(q, settings = {})
+      json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
         o = Object.const_get(@options[:type]).find(hit['id'])
         o.highlight_result = hit['_highlightResult']
