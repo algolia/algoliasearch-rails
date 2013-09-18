@@ -92,19 +92,20 @@ module AlgoliaSearch
 
     def reindex!(batch_size = 1000, synchronous = true)
       find_in_batches(batch_size: batch_size) do |group|
+        objects = group.map { |o| o.attributes.merge 'objectID' => o.id.to_s }
         if synchronous == true
-          @index.add_objects!(group)
+          @index.save_objects!(objects)
         else
-          @index.add_objects(group)
+          @index.save_objects(objects)
         end
       end
     end
 
     def index!(object, synchronous = true)
       if synchronous
-        @index.add_object!(object)
+        @index.add_object!(object, object.id.to_s)
       else
-        @index.add_object(object)
+        @index.add_object(object, object.id.to_s)
       end
     end
 

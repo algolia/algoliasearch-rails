@@ -151,6 +151,24 @@ describe 'An imaginary store' do
       results.should have_exactly(0).product
     end
 
+    it "should not duplicate an already indexed record" do
+      Product.search('nokia').should have_exactly(1).product
+      @nokia.index!
+      Product.search('nokia').should have_exactly(1).product
+      @nokia.index!
+      @nokia.index!
+      Product.search('nokia').should have_exactly(1).product
+    end
+
+    it "should not duplicate while reindexing" do
+      n = Product.search('', hitsPerPage: 1000).length
+      Product.reindex!
+      Product.search('', hitsPerPage: 1000).should have_exactly(n).product
+      Product.reindex!
+      Product.reindex!
+      Product.search('', hitsPerPage: 1000).should have_exactly(n).product
+    end
+
   end
 
 end
