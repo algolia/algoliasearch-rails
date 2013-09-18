@@ -70,12 +70,14 @@ module AlgoliaSearch
   end
 
   # these are the class methods added when AlgoliaSearch is included
-  # They're kept to a minimum to prevent namespace pollution
   module ClassMethods
     def algoliasearch(options = {}, &block)
       @index_options = IndexOptions.new(block_given? ? Proc.new : nil)
       attr_accessor :highlight_result
 
+      unless options[:synchronous] == false
+        before_save :mark_synchronous if respond_to?(:before_save)
+      end
       unless options[:auto_index] == false
         before_save :mark_for_auto_indexing if respond_to?(:before_save)
         after_save :perform_index_tasks if respond_to?(:after_save)
@@ -88,18 +90,30 @@ module AlgoliaSearch
       init
     end
 
-    def reindex!(batch_size = 1000)
+    def reindex!(batch_size = 1000, synchronous = true)
       find_in_batches(batch_size: batch_size) do |group|
-        @index.add_objects!(group)
+        if synchronous == true
+          @index.add_objects!(group)
+        else
+          @index.add_objects(group)
+        end
       end
     end
 
-    def index!(object)
-      @index.add_object!(object)
+    def index!(object, synchronous = true)
+      if synchronous
+        @index.add_object!(object)
+      else
+        @index.add_object(object)
+      end
     end
 
-    def remove_from_index!(object)
-      @index.delete_object!(object.id.to_s)
+    def remove_from_index!(object, synchronous = true)
+      if synchronous
+        @index.delete_object!(object.id.to_s)
+      else
+        @index.delete_object(object.id.to_s)
+      end
     end
 
     def clear_index!
@@ -128,14 +142,22 @@ module AlgoliaSearch
   # these are the instance methods included
   module InstanceMethods
     def index!
-      self.class.index! self
+      self.class.index!(self, synchronous?)
     end
 
     def remove_from_index!
-      self.class.remove_from_index! self
+      self.class.remove_from_index!(self, synchronous?)
     end
 
     private
+
+    def synchronous?
+      @synchronous.nil? || @synchronous == true
+    end
+
+    def mark_synchronous
+      @synchronous = true
+    end
 
     def mark_for_auto_indexing
       @auto_indexing = true
@@ -145,6 +167,7 @@ module AlgoliaSearch
       return if !@auto_indexing
       index!
       remove_instance_variable :@auto_indexing
+      remove_instance_variable :@synchronous
     end
   end
 end
