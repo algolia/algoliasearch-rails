@@ -178,8 +178,8 @@ module AlgoliaSearch
     def perform_index_tasks
       return if !@auto_indexing
       index!
-      remove_instance_variable :@auto_indexing
-      remove_instance_variable :@synchronous
+      remove_instance_variable(:@auto_indexing) if instance_variable_defined?(:@auto_indexing)
+      remove_instance_variable(:@synchronous) if instance_variable_defined?(:@synchronous)
     end
   end
 end
