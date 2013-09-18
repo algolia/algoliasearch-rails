@@ -43,20 +43,24 @@ module AlgoliaSearch
   end
 
   class IndexOptions
+
+    # AlgoliaSearch settings
     OPTIONS = [:attributesToIndex, :minWordSizeForApprox1,
       :minWordSizeForApprox2, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType]
-
     attr_accessor *OPTIONS
+
+    # attributes to consider
+    attr_accessor :attributes
 
     def initialize(block)
       instance_exec(&block) if block
     end
 
     def attribute(*names)
-      @attributesToIndex ||= []
-      @attributesToIndex += names.map { |name| name.to_s }
+      self.attributes ||= []
+      self.attributes += names
     end
 
     def to_settings
@@ -92,7 +96,7 @@ module AlgoliaSearch
 
     def reindex!(batch_size = 1000, synchronous = true)
       find_in_batches(batch_size: batch_size) do |group|
-        objects = group.map { |o| o.attributes.merge 'objectID' => o.id.to_s }
+        objects = group.map { |o| attributes(o).merge 'objectID' => o.id.to_s }
         if synchronous == true
           @index.save_objects!(objects)
         else
@@ -103,9 +107,9 @@ module AlgoliaSearch
 
     def index!(object, synchronous = true)
       if synchronous
-        @index.add_object!(object, object.id.to_s)
+        @index.add_object!(attributes(object), object.id.to_s)
       else
-        @index.add_object(object, object.id.to_s)
+        @index.add_object(attributes(object), object.id.to_s)
       end
     end
 
@@ -126,7 +130,7 @@ module AlgoliaSearch
     def search(q, settings = {})
       json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = Object.const_get(@options[:type]).find(hit['id'])
+        o = Object.const_get(@options[:type]).find(hit['objectID'])
         o.highlight_result = hit['_highlightResult']
         o
       end
@@ -136,6 +140,13 @@ module AlgoliaSearch
     def init
       @index ||= Algolia::Index.new(model_name)
       @index.set_settings(@index_options.to_settings)
+    end
+
+    private
+
+    def attributes(object)
+      return object.attributes if @index_options.attributes.nil? or @index_options.attributes.length == 0
+      Hash[@index_options.attributes.map { |attr| [attr.to_s, object.send(attr)] }]
     end
 
   end

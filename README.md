@@ -64,6 +64,19 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+You can either specify the attributes (<code>:first_name, :last_name, :email</code>) to send or not, which will send all of them.
+
+```ruby
+class Product < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # all attributes will be sent
+  end
+end
+```
+
+
 Each time a record is saved; it will be - synchronously - indexed. In the other hand, each time a record is destroyed, it will be - synchronoulsy - removed from the index.
 
 ```ruby
