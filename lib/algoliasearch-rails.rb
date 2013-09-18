@@ -139,7 +139,8 @@ module AlgoliaSearch
 
     def init
       @index ||= Algolia::Index.new(@options[:index_name] || model_name)
-      @index.set_settings(@index_options.to_settings)
+      settings = @index_options.to_settings
+      @index.set_settings(settings) if !settings.empty?
     end
 
     private
@@ -176,7 +177,7 @@ module AlgoliaSearch
     end
 
     def perform_index_tasks
-      return if !@auto_indexing
+      return if !@auto_indexing || (respond_to?(:changed?) && !changed?)
       index!
       remove_instance_variable(:@auto_indexing) if instance_variable_defined?(:@auto_indexing)
       remove_instance_variable(:@synchronous) if instance_variable_defined?(:@synchronous)
