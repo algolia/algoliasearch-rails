@@ -64,7 +64,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-You can either specify the attributes (<code>:first_name, :last_name, :email</code>) to send or not, which will send all of them.
+You can either specify the attributes to send (here we restrict to <code>:first_name, :last_name, :email</code>) or not (in that case, all attributes are sent).
 
 ```ruby
 class Product < ActiveRecord::Base
@@ -76,15 +76,14 @@ class Product < ActiveRecord::Base
 end
 ```
 
-
-Each time a record is saved; it will be - synchronously - indexed. In the other hand, each time a record is destroyed, it will be - synchronoulsy - removed from the index.
-
 ```ruby
 p Contact.search("jon doe")
 ```
 
 Options
 ----------
+
+Each time a record is saved; it will be - synchronously - indexed. In the other hand, each time a record is destroyed, it will be - synchronoulsy - removed from the index.
 
 You can disable auto-indexing and auto-removing setting the following options:
 
@@ -127,13 +126,13 @@ c.remove_from_index!
 c.destroy
 ```
 
-To reindex all your records, use:
+To reindex all your records, use the <code>reindex!</code> class method:
 
 ```ruby
 Contact.reindex!
 ```
 
-To clear an index, use:
+To clear an index, use the <code>clear_index!</code> class method:
 
 ```ruby
 Contact.clear_index!
@@ -159,7 +158,7 @@ end
 ```
 
 ```ruby
-p Contact.search("jon doe", minWordSizeForApprox1: 2, minWordSizeForApprox2: 5, hitsPerPage: 42, page: 2)
+p Contact.search("jon doe", hitsPerPage: 5, page: 2)
 ```
 
 Note on testing
