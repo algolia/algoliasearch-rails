@@ -138,7 +138,7 @@ module AlgoliaSearch
     end
 
     def init
-      @index ||= Algolia::Index.new(model_name)
+      @index ||= Algolia::Index.new(@options[:index_name] || model_name)
       @index.set_settings(@index_options.to_settings)
     end
 

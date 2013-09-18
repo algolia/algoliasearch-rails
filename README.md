@@ -109,6 +109,18 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+You can force force the index name using the following option:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch index_name: "contacts_#{Rails.env}" do
+    attribute :first_name, :last_name, :email
+  end
+end
+```
+
 Indexing
 ---------
 

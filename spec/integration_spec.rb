@@ -30,7 +30,7 @@ class Product < ActiveRecord::Base
 
   scope :amazon, -> { where(href: "amazon") }
 
-  algoliasearch auto_index: false do
+  algoliasearch auto_index: false, index_name: "my_products_index" do
     attribute :href, :name, :tags
   end
 
