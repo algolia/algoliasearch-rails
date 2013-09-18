@@ -9,19 +9,19 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Algolia"]
-  s.date = "2013-09-17"
+  s.date = "2013-09-18"
   s.description = "AlgoliaSearch integration to your favorite ORM"
   s.email = "contact@algolia.com"
   s.extra_rdoc_files = [
     "LICENSE",
-    "README.rdoc"
+    "README.md"
   ]
   s.files = [
     ".document",
     ".rspec",
     "Gemfile",
     "LICENSE",
-    "README.rdoc",
+    "README.md",
     "Rakefile",
     "VERSION",
     "algoliasearch-rails.gemspec",
@@ -38,7 +38,7 @@ Gem::Specification.new do |s|
   ]
   s.homepage = "http://github.com/algolia/algoliasearch-rails"
   s.require_paths = ["lib"]
-  s.rubygems_version = "2.0.5"
+  s.rubygems_version = "2.0.3"
   s.summary = "AlgoliaSearch integration to your favorite ORM"
 
   if s.respond_to? :specification_version then
