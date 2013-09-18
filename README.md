@@ -43,7 +43,7 @@ Create a new file <code>config/initializers/algoliasearch.rb</code> to setup you
 AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'YourAPIKey' }
 ```
 
-We support both <code>:will_paginate</code> and <code>:kaminari</code> as pagination backend. For example to use WillPaginate, specify the <code>:pagination_backend</code> as follow:
+We support both [will_paginate](https://github.com/mislav/will_paginate) and [kaminari](https://github.com/amatsuda/kaminari) as pagination backend. For example to use <code>:will_paginate</code>, specify the <code>:pagination_backend</code> as follow:
 
 ```ruby
 AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'YourAPIKey', pagination_backend: :will_paginate }
@@ -52,7 +52,7 @@ AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'Y
 Quick Start
 -------------
 
-The following code will create a <code>contact</code> index and add search capabilities to your <code>Contact</code> class:
+The following code will create a <code>contact</code> index and add search capabilities to your <code>Contact</code> model:
 
 ```ruby
 class Contact < ActiveRecord::Base
