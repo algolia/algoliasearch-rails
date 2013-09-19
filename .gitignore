@@ -20,5 +20,4 @@ pkg
 .rvmrc
 
 ## PROJECT::SPECIFIC
-Gemfile.lock
 data.sqlite3
