@@ -122,7 +122,7 @@ module AlgoliaSearch
     end
 
     def clear_index!
-      @index.delete
+      @index.delete rescue "already deleted, not fatal"
       @index = nil
       init
     end
@@ -141,6 +141,15 @@ module AlgoliaSearch
       @index ||= Algolia::Index.new(@options[:index_name] || model_name)
       settings = @index_options.to_settings
       @index.set_settings(settings) if !settings.empty?
+    end
+
+    def must_reindex?(object)
+      return true if object.id_changed?
+      attributes(object).each do |k, v|
+        changed_method = "#{k}_changed?"
+        return true if respond_to?(changed_method) && send(changed_method)
+      end
+      return false      
     end
 
     private
@@ -177,7 +186,7 @@ module AlgoliaSearch
     end
 
     def perform_index_tasks
-      return if !@auto_indexing || (respond_to?(:changed?) && !changed?)
+      return if !@auto_indexing || !self.class.must_reindex?(self)
       index!
       remove_instance_variable(:@auto_indexing) if instance_variable_defined?(:@auto_indexing)
       remove_instance_variable(:@synchronous) if instance_variable_defined?(:@synchronous)
