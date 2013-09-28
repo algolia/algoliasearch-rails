@@ -49,7 +49,15 @@ module AlgoliaSearch
       :minWordSizeForApprox2, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType]
-    attr_accessor *OPTIONS
+    OPTIONS.each do |k|
+      define_method k do |v|
+        instance_variable_set("@#{k}", v)
+      end
+    end
+
+    def attributesToIndex(v)
+      instance_variable_set(:@attributesToIndex, v)
+    end
 
     # attributes to consider
     attr_accessor :attributes
@@ -63,10 +71,14 @@ module AlgoliaSearch
       self.attributes += names
     end
 
+    def get(setting)
+      instance_variable_get("@#{setting}")
+    end
+
     def to_settings
       settings = {}
       OPTIONS.each do |k|
-        v = send(k)
+        v = get(k)
         settings[k] = v if !v.nil?
       end
       settings
@@ -90,7 +102,7 @@ module AlgoliaSearch
         after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
       end
 
-      @options = { type: model_name, per_page: @index_options.hitsPerPage || 10, page: 1 }.merge(options)
+      @options = { type: model_name, per_page: @index_options.get(:hitsPerPage) || 10, page: 1 }.merge(options)
       init
     end
 

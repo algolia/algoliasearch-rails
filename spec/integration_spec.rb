@@ -22,6 +22,8 @@ ActiveRecord::Schema.define do
   end
   create_table :colors do |t|
     t.string :name
+    t.string :short_name
+    t.integer :hex
   end
 end
 
@@ -42,7 +44,10 @@ end
 class Color < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch
+  algoliasearch do
+    attributesToIndex ["name"]
+    customRanking ["asc(hex)"]
+  end
 end
 
 describe 'Colors' do
@@ -51,10 +56,27 @@ describe 'Colors' do
   end
 
   it "should auto index" do
-    @blue = Color.create!(name: "blue")
+    @blue = Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
     results = Color.search("blue")
     results.should have_exactly(1).product
     results.should include(@blue)
+  end
+
+  it "should not be searchable with non-indexed fields" do
+    @blue = Color.create!(name: "blue", short_name: "x", hex: 0xFF0000)
+    results = Color.search("x")
+    results.should have_exactly(0).product
+  end
+
+  it "should rank with custom hex" do
+    @blue = Color.create!(name: "red", short_name: "r3", hex: 3)
+    @blue2 = Color.create!(name: "red", short_name: "r1", hex: 1)
+    @blue3 = Color.create!(name: "red", short_name: "r2", hex: 2)
+    results = Color.search("red")
+    results.should have_exactly(3).product
+    results[0].hex.should eq(1)
+    results[1].hex.should eq(2)
+    results[2].hex.should eq(3)
   end
 end
 
