@@ -11,6 +11,7 @@ begin
     gem.email = "contact@algolia.com"
     gem.authors = ["Algolia"]
     gem.files.exclude 'spec/integration_spec.rb'
+    gem.license = "MIT"
     # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
   end
   Jeweler::RubygemsDotOrgTasks.new
