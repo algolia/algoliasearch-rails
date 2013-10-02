@@ -92,6 +92,7 @@ module AlgoliaSearch
       end
       unless options[:auto_index] == false
         before_save :mark_for_auto_indexing if respond_to?(:before_save)
+        after_validation :mark_must_reindex if respond_to?(:after_validation)
         after_save :perform_index_tasks if respond_to?(:after_save)
       end
       unless options[:auto_remove] == false
@@ -155,9 +156,9 @@ module AlgoliaSearch
       return true if object.id_changed?
       attributes(object).each do |k, v|
         changed_method = "#{k}_changed?"
-        return true if respond_to?(changed_method) && send(changed_method)
+        return true if object.respond_to?(changed_method) && object.send(changed_method)
       end
-      return false      
+      return false
     end
 
     private
@@ -193,11 +194,17 @@ module AlgoliaSearch
       @auto_indexing = true
     end
 
+    def mark_must_reindex
+      @must_reindex = self.class.must_reindex?(self)
+      true
+    end
+
     def perform_index_tasks
-      return if !@auto_indexing || !self.class.must_reindex?(self)
+      return if !@auto_indexing || @must_reindex == false
       index!
       remove_instance_variable(:@auto_indexing) if instance_variable_defined?(:@auto_indexing)
       remove_instance_variable(:@synchronous) if instance_variable_defined?(:@synchronous)
+      remove_instance_variable(:@must_reindex) if instance_variable_defined?(:@must_reindex)
     end
   end
 end

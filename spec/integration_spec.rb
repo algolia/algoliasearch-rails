@@ -78,6 +78,17 @@ describe 'Colors' do
     results[1].hex.should eq(2)
     results[2].hex.should eq(3)
   end
+
+  it "should update the index if the attribute changed" do
+    @purple = Color.create!(name: "purple", short_name: "p")
+    Color.search("purple").should have_exactly(1).product
+    Color.search("pink").should have_exactly(0).product
+    @purple.name = "pink"
+    @purple.save
+    Color.search("purple").should have_exactly(0).product
+    Color.search("pink").should have_exactly(1).product
+  end
+
 end
 
 describe 'An imaginary store' do
