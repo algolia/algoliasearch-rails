@@ -17,4 +17,5 @@ group :development do
   gem 'jeweler'
   gem 'will_paginate', '>= 2.3.15'
   gem 'kaminari'
+  gem 'travis'
 end

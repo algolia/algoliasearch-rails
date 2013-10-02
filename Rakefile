@@ -19,28 +19,6 @@ rescue LoadError
   puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
 end
 
-require "rspec/core/rake_task"
-# RSpec 2.0
-RSpec::Core::RakeTask.new(:spec) do |spec|
-  spec.pattern = 'spec/{algoliasearch,utilities}_spec.rb'
-  spec.rspec_opts = ['--backtrace']
-end
-task :default => :spec
-
-desc "Generate code coverage"
-RSpec::Core::RakeTask.new(:coverage) do |t|
-  t.pattern = "./spec/**/*_spec.rb" # don't need this, it's default.
-  t.rcov = true
-  t.rcov_opts = ['--exclude', 'spec']
-end
-
-desc "Run Integration Specs"
-RSpec::Core::RakeTask.new(:integration) do |t|
-  t.pattern = "spec/integration_spec.rb" # don't need this, it's default.
-  t.rcov = true
-  t.rcov_opts = ['--exclude', 'spec']
-end
-
 require 'rdoc/task'
 Rake::RDocTask.new do |rdoc|
   version = File.exist?('VERSION') ? File.read('VERSION') : ""
@@ -50,3 +28,8 @@ Rake::RDocTask.new do |rdoc|
   rdoc.rdoc_files.include('README*')
   rdoc.rdoc_files.include('lib/**/*.rb')
 end
+
+require "rspec/core/rake_task"
+RSpec::Core::RakeTask.new(:spec)
+
+task :default => :spec

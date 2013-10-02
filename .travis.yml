@@ -1,0 +1,12 @@
+language: ruby
+branches:
+  only:
+  - master
+rvm:
+- 2.0.0
+- 1.9.3
+- rbx-19mode
+env:
+  global:
+  - secure: lBLtTjQyeJW7+TWgGmf1mmsXgUzsTnq3/KHvCk+BvOGwoHXTBR1Y6yiczWWHEP4/wBeXXm31xUQC+VoYc/7Ev/2NNB/mqlXAgGw+D0nwQriNXjYt1WV6lQvyoiaUzQ+w+7VahWdx0LuKvSYI+khe8M8BfHQqYacu0VlpAUnjb2I=
+  - secure: mtXQd2Tre01/I2e2MtD0Nu0nocKL9bLozN3v0qZdACpwSwAE1lr8EmAGIZUJp/FbqISOXcjMTmnjvhqp+gw6SE7pdO7vzzzuoJUVi50IrasoBFV97S+lX091n4D4/BDnP906qeA+/1apcIFwk4+8SNgrsIUcZui2eMjP3YunM4g=
