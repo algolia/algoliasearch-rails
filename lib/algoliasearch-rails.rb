@@ -55,10 +55,6 @@ module AlgoliaSearch
       end
     end
 
-    def attributesToIndex(v)
-      instance_variable_set(:@attributesToIndex, v)
-    end
-
     # attributes to consider
     attr_accessor :attributes
 
