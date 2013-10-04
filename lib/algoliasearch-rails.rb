@@ -104,14 +104,12 @@ module AlgoliaSearch
     end
 
     def reindex!(batch_size = 1000, synchronous = true)
+      last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
         objects = group.map { |o| attributes(o).merge 'objectID' => o.id.to_s }
-        if synchronous == true
-          @index.save_objects!(objects)
-        else
-          @index.save_objects(objects)
-        end
+        last_task = @index.save_objects(objects)
       end
+      @index.wait_task(last_task["taskID"]) if last_task and synchronous == true
     end
 
     def index!(object, synchronous = true)
