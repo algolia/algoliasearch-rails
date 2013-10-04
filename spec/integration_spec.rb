@@ -27,12 +27,19 @@ ActiveRecord::Schema.define do
   end
 end
 
+# avoid concurrent access to the same index
+def safe_index_name(name)
+  return name if ENV['TRAVIS'].to_s != "true"
+  id = ENV['TRAVIS_JOB_NUMBER'].split('.').last
+  "#{name}_travis-#{id}"
+end
+
 class Product < ActiveRecord::Base
   include AlgoliaSearch
 
   scope :amazon, -> { where(href: "amazon") }
 
-  algoliasearch auto_index: false, index_name: "my_products_index" do
+  algoliasearch auto_index: false, index_name: safe_index_name("my_products_index") do
     attribute :href, :name, :tags
   end
 
@@ -44,7 +51,7 @@ end
 class Color < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch do
+  algoliasearch index_name: safe_index_name("Color") do
     attributesToIndex ["name"]
     customRanking ["asc(hex)"]
   end
