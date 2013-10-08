@@ -45,8 +45,8 @@ module AlgoliaSearch
   class IndexOptions
 
     # AlgoliaSearch settings
-    OPTIONS = [:attributesToIndex, :minWordSizeForApprox1,
-      :minWordSizeForApprox2, :hitsPerPage, :attributesToRetrieve,
+    OPTIONS = [:attributesToIndex, :minWordSizefor1Typo,
+      :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType]
     OPTIONS.each do |k|
