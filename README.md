@@ -16,6 +16,7 @@ Table of Content
 1. [Options](#options)
 1. [Indexing](#indexing)
 1. [Search settings](#search-settings)
+1. [Typeahead UI](#typeahead-ui)
 1. [Note on testing](#note-on-testing)
 
 Install
@@ -175,6 +176,41 @@ end
 ```ruby
 p Contact.search("jon doe", hitsPerPage: 5, page: 2)
 ```
+
+Typeahead UI
+-------------
+
+Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.js``` (a modified version of typeahead.js with custom transports, see the [pull request](https://github.com/twitter/typeahead.js/pull/473)) somewhere in your JavaScript manifest, for example in application.js if you are using Rails 3.1+:
+
+```javascript
+//= require algolia/algoliasearch.min
+//= require algolia/typeahead.min
+```
+
+We recommend the usage of [hogan](http://twitter.github.io/hogan.js/), a JavaScript templating engine from Twitter.
+
+```javascript
+//= require hogan
+```
+
+Turns any ```input[type="text"]``` element into a typeahead, for example:
+
+```javascript
+<input name="email" placeholder="test@example.org" id="user_email" />
+<script type="text/javascript">
+  $(document).ready(function() {
+    var client = new AlgoliaSearch('YourApplicationID', 'ReadOnlyApplicationKey');
+    $('input#user_email').typeahead({
+      name: 'emails',
+      remote: client.initIndex('YourIndex').getTypeaheadTransport(),
+      engine: Hogan,
+      template: '{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})',
+      valueKey: 'email'
+    });
+  });
+</script>
+```
+
 
 Note on testing
 -----------------

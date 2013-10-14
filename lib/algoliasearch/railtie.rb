@@ -6,4 +6,6 @@ module AlgoliaSearch
       load "algoliasearch/tasks/algoliasearch.rake"
     end
   end
+  class Engine < Rails::Engine
+  end
 end

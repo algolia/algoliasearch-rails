@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "algoliasearch-rails"
-  s.version = "1.1.8"
+  s.version = "1.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Algolia"]
-  s.date = "2013-10-04"
+  s.date = "2013-10-14"
   s.description = "AlgoliaSearch integration to your favorite ORM"
   s.email = "contact@algolia.com"
   s.extra_rdoc_files = [
@@ -36,7 +36,10 @@ Gem::Specification.new do |s|
     "lib/algoliasearch/tasks/algoliasearch.rake",
     "lib/algoliasearch/utilities.rb",
     "spec/spec_helper.rb",
-    "spec/utilities_spec.rb"
+    "spec/utilities_spec.rb",
+    "vendor/assets/javascripts/algolia/algoliasearch.js",
+    "vendor/assets/javascripts/algolia/algoliasearch.min.js",
+    "vendor/assets/javascripts/algolia/typeahead.min.js"
   ]
   s.homepage = "http://github.com/algolia/algoliasearch-rails"
   s.licenses = ["MIT"]
