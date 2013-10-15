@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
 gem 'json', '>= 1.5.1'
-gem 'algoliasearch', '>= 1.1.1'
+gem 'algoliasearch', '>= 1.1.3'
 
 group :test do 
   gem 'rspec', '>= 2.5.0'
