@@ -13,6 +13,7 @@ Gem::Specification.new do |s|
   s.description = "AlgoliaSearch integration to your favorite ORM"
   s.email = "contact@algolia.com"
   s.extra_rdoc_files = [
+    "ChangeLog",
     "LICENSE",
     "README.md"
   ]
@@ -20,6 +21,7 @@ Gem::Specification.new do |s|
     ".document",
     ".rspec",
     ".travis.yml",
+    "ChangeLog",
     "Gemfile",
     "Gemfile.lock",
     "LICENSE",
