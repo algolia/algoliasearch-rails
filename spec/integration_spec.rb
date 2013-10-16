@@ -57,6 +57,23 @@ class Color < ActiveRecord::Base
   end
 end
 
+describe 'Settings' do
+
+  it "should detect settings changes" do
+    Color.send(:index_settings_changed?, nil, {}).should be_true
+    Color.send(:index_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
+    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
+    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
+  end
+
+  it "should not detect settings changes" do
+    Color.send(:index_settings_changed?, {}, {}).should be_false
+    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {attributesToIndex: ["name"]}).should be_false
+    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
+  end
+
+end
+
 describe 'Colors' do
   before(:all) do
     Color.clear_index!

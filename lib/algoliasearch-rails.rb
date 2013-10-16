@@ -147,7 +147,8 @@ module AlgoliaSearch
     def init
       @index ||= Algolia::Index.new(@options[:index_name] || model_name)
       settings = @index_options.to_settings
-      @index.set_settings(settings) if !settings.empty?
+      prev_settings = @index.get_settings rescue nil # if the index doesn't exist
+      @index.set_settings(settings) if index_settings_changed?(prev_settings, settings)
     end
 
     def must_reindex?(object)
@@ -164,6 +165,14 @@ module AlgoliaSearch
     def attributes(object)
       return object.attributes if @index_options.attributes.nil? or @index_options.attributes.length == 0
       Hash[@index_options.attributes.map { |attr| [attr.to_s, object.send(attr)] }]
+    end
+
+    def index_settings_changed?(prev, current)
+      return true if prev.nil?
+      current.each do |k, v|
+        return true if prev[k.to_s] != v
+      end
+      false
     end
 
   end
