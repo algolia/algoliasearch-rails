@@ -1,0 +1,30 @@
+CHANGELOG
+
+2013-10-15  1.3.0
+
+      * synchronous flag is now false by default
+
+2013-10-15  1.2.1
+
+      * Updated deps, especially algoliasearch to 1.1.3 to solve thread-safety issues
+
+2013-10-14  1.2.0
+
+      * embeds a typeahead.js based UI
+
+2013-10-04  1.1.8
+
+      * Avoid concurrent access to the same index while running tests with TravisCI
+      * to check if the full-reindexing has been done, checking the last task is enough
+
+2013-10-02  1.1.7
+
+      * Updated environment variables
+      * Plug travis and various badges
+      * Fixed attribute changes detection
+      * Upgrade to algoliasearch-client-ruby 1.1.1
+
+2013-10-01  1.1.6
+
+      * Initial import
+

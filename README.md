@@ -87,7 +87,7 @@ p Contact.search("jon doe")
 Options
 ----------
 
-Each time a record is saved; it will be - synchronously - indexed. In the other hand, each time a record is destroyed, it will be - synchronoulsy - removed from the index.
+Each time a record is saved; it will be - asynchronously - indexed. In the other hand, each time a record is destroyed, it will be - asynchronoulsy - removed from the index.
 
 You can disable auto-indexing and auto-removing setting the following options:
 
@@ -101,13 +101,13 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-You can force indexing and removing to be asynchronous by setting the following option:
+You can force indexing and removing to be synchronous by setting the following option:
 
 ```ruby
 class Contact < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: false do
+  algoliasearch synchronous: true do
     attribute :first_name, :last_name, :email
   end
 end

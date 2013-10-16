@@ -87,7 +87,7 @@ module AlgoliaSearch
       @index_options = IndexOptions.new(block_given? ? Proc.new : nil)
       attr_accessor :highlight_result
 
-      unless options[:synchronous] == false
+      if options[:synchronous] == true
         before_save :mark_synchronous if respond_to?(:before_save)
       end
       unless options[:auto_index] == false
@@ -103,7 +103,7 @@ module AlgoliaSearch
       init
     end
 
-    def reindex!(batch_size = 1000, synchronous = true)
+    def reindex!(batch_size = 1000, synchronous = false)
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
         objects = group.map { |o| attributes(o).merge 'objectID' => o.id.to_s }
@@ -112,7 +112,7 @@ module AlgoliaSearch
       @index.wait_task(last_task["taskID"]) if last_task and synchronous == true
     end
 
-    def index!(object, synchronous = true)
+    def index!(object, synchronous = false)
       if synchronous
         @index.add_object!(attributes(object), object.id.to_s)
       else
@@ -120,7 +120,7 @@ module AlgoliaSearch
       end
     end
 
-    def remove_from_index!(object, synchronous = true)
+    def remove_from_index!(object, synchronous = false)
       if synchronous
         @index.delete_object!(object.id.to_s)
       else
@@ -181,7 +181,7 @@ module AlgoliaSearch
     private
 
     def synchronous?
-      @synchronous.nil? || @synchronous == true
+      @synchronous == true
     end
 
     def mark_synchronous

@@ -51,7 +51,7 @@ end
 class Color < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch index_name: safe_index_name("Color") do
+  algoliasearch synchronous: true, index_name: safe_index_name("Color") do
     attributesToIndex ["name"]
     customRanking ["asc(hex)"]
   end
