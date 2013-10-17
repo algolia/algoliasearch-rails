@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-10-17  1.3.2
+
+      * while detecting settings changes, fixed array comparison
+
 2013-10-17  1.3.1
 
       * upgraded to algoliasearch 1.1.4 (too aggressive wait_task calls)
