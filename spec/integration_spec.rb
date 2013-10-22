@@ -6,6 +6,7 @@ require 'logger'
 
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
+ActiveRecord::Base.logger.level = Logger::WARN
 ActiveRecord::Base.establish_connection(
     'adapter' => 'sqlite3',
     'database' => 'data.sqlite3',
@@ -79,6 +80,12 @@ describe 'Colors' do
     Color.clear_index!
   end
 
+  it "should be synchronous" do
+    c = Color.new
+    c.valid?
+    c.send(:synchronous?).should be_true
+  end
+
   it "should auto index" do
     @blue = Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
     results = Color.search("blue")
@@ -150,6 +157,12 @@ describe 'An imaginary store' do
     @products_in_database = Product.all
 
     Product.reindex!
+  end
+
+  it "should not be synchronous" do
+    p = Product.new
+    p.valid?
+    p.send(:synchronous?).should be_false
   end
 
   describe 'pagination' do

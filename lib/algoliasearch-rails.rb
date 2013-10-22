@@ -89,11 +89,11 @@ module AlgoliaSearch
       attr_accessor :highlight_result
 
       if options[:synchronous] == true
-        before_save :mark_synchronous if respond_to?(:before_save)
+        after_validation :mark_synchronous if respond_to?(:before_validation)
       end
       unless options[:auto_index] == false
-        before_save :mark_for_auto_indexing if respond_to?(:before_save)
         after_validation :mark_must_reindex if respond_to?(:after_validation)
+        before_save :mark_for_auto_indexing if respond_to?(:before_save)
         after_save :perform_index_tasks if respond_to?(:after_save)
       end
       unless options[:auto_remove] == false
