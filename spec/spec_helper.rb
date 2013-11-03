@@ -1,4 +1,6 @@
 require 'rubygems'
+require 'bundler'
+
 Bundler.setup :test
 
 $LOAD_PATH.unshift(File.dirname(__FILE__))
