@@ -120,6 +120,15 @@ describe 'Colors' do
     Color.search("pink").should have_exactly(1).product
   end
 
+  it "should use the specified scope" do
+    Color.clear_index!
+    Color.where(name: 'red').reindex!
+    Color.search("").should have_exactly(3).product
+    Color.clear_index!
+    Color.where(id: Color.first.id).reindex!
+    Color.search("").should have_exactly(1).product
+  end
+
 end
 
 describe 'An imaginary store' do
