@@ -180,7 +180,7 @@ p Contact.search("jon doe", hitsPerPage: 5, page: 2)
 Typeahead UI
 -------------
 
-Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.js``` (a modified version of typeahead.js with custom transports, see the [pull request](https://github.com/twitter/typeahead.js/pull/473)) somewhere in your JavaScript manifest, for example in application.js if you are using Rails 3.1+:
+Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.js``` (a modified version of typeahead.js with custom transports, see the [pull request](https://github.com/twitter/typeahead.js/pull/473)) somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
 ```javascript
 //= require algolia/algoliasearch.min
