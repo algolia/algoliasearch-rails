@@ -146,7 +146,7 @@ module AlgoliaSearch
     end
 
     def init
-      @index ||= Algolia::Index.new(@options[:index_name] || model_name)
+      @index ||= Algolia::Index.new(index_name)
       settings = @index_options.to_settings
       prev_settings = @index.get_settings rescue nil # if the index doesn't exist
       @index.set_settings(settings) if index_settings_changed?(prev_settings, settings)
@@ -159,6 +159,12 @@ module AlgoliaSearch
         return true if object.respond_to?(changed_method) && object.send(changed_method)
       end
       return false
+    end
+
+    def index_name
+      name = @options[:index_name] || model_name
+      name << "_#{Rails.env.to_s}" if @options[:per_environment]
+      name
     end
 
     private

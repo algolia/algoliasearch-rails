@@ -56,7 +56,7 @@ AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'Y
 Quick Start
 -------------
 
-The following code will create a <code>contact</code> index and add search capabilities to your <code>Contact</code> model:
+The following code will create a <code>Contact</code> index and add search capabilities to your <code>Contact</code> model:
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -113,13 +113,25 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-You can force force the index name using the following option:
+You can force the index name using the following option:
 
 ```ruby
 class Contact < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch index_name: "contacts_#{Rails.env}" do
+  algoliasearch index_name: "MyCustomName" do
+    attribute :first_name, :last_name, :email
+  end
+end
+```
+
+You can suffix the index name with the current Rails environment using the following option:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch per_environment: true do # index name will be "Contact_#{Rails.env}"
     attribute :first_name, :last_name, :email
   end
 end
