@@ -214,7 +214,7 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
     var client = new AlgoliaSearch('YourApplicationID', 'SearchOnlyApplicationKey');
     $('input#user_email').typeahead({
       name: 'emails',
-      remote: client.initIndex('#{Contact.index_name}').getTypeaheadTransport(),
+      remote: client.initIndex('<%= Contact.index_name %>').getTypeaheadTransport(),
       engine: Hogan,
       template: '{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})',
       valueKey: 'email'
