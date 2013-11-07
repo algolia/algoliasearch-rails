@@ -211,7 +211,7 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
 <input name="email" placeholder="test@example.org" id="user_email" />
 <script type="text/javascript">
   $(document).ready(function() {
-    var client = new AlgoliaSearch('YourApplicationID', 'ReadOnlyApplicationKey');
+    var client = new AlgoliaSearch('YourApplicationID', 'SearchOnlyApplicationKey');
     $('input#user_email').typeahead({
       name: 'emails',
       remote: client.initIndex('#{Contact.index_name}').getTypeaheadTransport(),

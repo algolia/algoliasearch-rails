@@ -48,7 +48,7 @@ module AlgoliaSearch
     OPTIONS = [:attributesToIndex, :minWordSizefor1Typo,
       :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
-      :ranking, :customRanking, :queryType]
+      :ranking, :customRanking, :queryType, :attributesForFaceting]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
