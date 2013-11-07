@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-11-07  1.3.5
+
+      * add without_auto_index_scope method disabling all indexing operations inside associated block
+
 2013-11-07  1.3.4
 
       * updated algoliasearch to 1.1.6 (clear_index! is now a real clear, not a delete/create) and algoliasearch-client-js to 2.3.0
