@@ -1,10 +1,10 @@
 /*!
- * algoliasearch 2.0.1
+ * algoliasearch 2.3.0
  * https://github.com/algolia/algoliasearch-client-js
  * Copyright 2013 Algolia SAS; Licensed MIT
  */
 
-var VERSION = "2.0.1";
+var VERSION = "2.3.0";
 
 var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArray) {
     this.applicationID = applicationID;
@@ -17,7 +17,9 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
         if (Math.random() > .5) {
             this.hosts.reverse();
         }
-        if (!this._isUndefined(method) && (method === "https" || method === "HTTPS")) {
+        if (this._isUndefined(method) || method == null) {
+            this.hosts.push(("https:" == document.location.protocol ? "https" : "http") + "://" + hostsArray[i]);
+        } else if (method === "https" || method === "HTTPS") {
             this.hosts.push("https://" + hostsArray[i]);
         } else {
             this.hosts.push("http://" + hostsArray[i]);
@@ -120,10 +122,13 @@ AlgoliaSearch.prototype = {
             callback: callback
         });
     },
-    addUserKeyWithValidity: function(acls, validity, callback) {
+    addUserKeyWithValidity: function(acls, validity, maxQueriesPerIPPerHour, maxHitsPerQuery, callback) {
         var indexObj = this;
         var aclsObject = {};
         aclsObject.acl = acls;
+        aclsObject.validity = validity;
+        aclsObject.maxQueriesPerIPPerHour = maxQueriesPerIPPerHour;
+        aclsObject.maxHitsPerQuery = maxHitsPerQuery;
         this._jsonRequest({
             method: "POST",
             url: "/1/indexes/" + indexObj.indexName + "/keys",
@@ -171,6 +176,7 @@ AlgoliaSearch.prototype = {
         this.indexName = indexName;
         this.as = algoliasearch;
         this.typeAheadArgs = null;
+        this.typeAheadPropertyName = null;
     },
     _sendQueriesBatch: function(params, callback) {
         this._jsonRequest({
@@ -417,8 +423,11 @@ AlgoliaSearch.prototype.Index.prototype = {
             this._search(params, callback);
         }
     },
-    getTypeaheadTransport: function(args) {
+    getTypeaheadTransport: function(args, propertyName) {
         this.typeAheadArgs = args;
+        if (typeof propertyName !== "undefined") {
+            this.typeAheadPropertyName = propertyName;
+        }
         return this;
     },
     get: function(query, processRemoteData, that, cb, suggestions) {
@@ -427,12 +436,16 @@ AlgoliaSearch.prototype.Index.prototype = {
             if (success) {
                 for (var i = 0; i < content.hits.length; ++i) {
                     var obj = content.hits[i];
-                    var found = false;
                     if (typeof obj.value === "undefined") {
-                        for (var propertyName in obj) {
-                            if (!found && obj.hasOwnProperty(propertyName) && typeof obj[propertyName] === "string") {
-                                obj.value = obj[propertyName];
-                                found = true;
+                        if (self.typeAheadPropertyName != null && typeof obj[self.typeAheadPropertyName] !== "undefined") {
+                            obj.value = obj[self.typeAheadPropertyName];
+                        } else {
+                            var found = false;
+                            for (var propertyName in obj) {
+                                if (!found && obj.hasOwnProperty(propertyName) && typeof obj[propertyName] === "string") {
+                                    obj.value = obj[propertyName];
+                                    found = true;
+                                }
                             }
                         }
                     }
@@ -457,6 +470,14 @@ AlgoliaSearch.prototype.Index.prototype = {
                     callback(false, body);
                 }
             }
+        });
+    },
+    clearIndex: function(callback) {
+        var indexObj = this;
+        this.as._jsonRequest({
+            method: "POST",
+            url: "/1/indexes/" + encodeURIComponent(indexObj.indexName) + "/clear",
+            callback: callback
         });
     },
     getSettings: function(callback) {
@@ -511,11 +532,13 @@ AlgoliaSearch.prototype.Index.prototype = {
             callback: callback
         });
     },
-    addUserKeyWithValidity: function(acls, validity, callback) {
+    addUserKeyWithValidity: function(acls, validity, maxQueriesPerIPPerHour, maxHitsPerQuery, callback) {
         var indexObj = this;
         var aclsObject = {};
         aclsObject.acl = acls;
         aclsObject.validity = validity;
+        aclsObject.maxQueriesPerIPPerHour = maxQueriesPerIPPerHour;
+        aclsObject.maxHitsPerQuery = maxHitsPerQuery;
         this.as._jsonRequest({
             method: "POST",
             url: "/1/indexes/" + encodeURIComponent(indexObj.indexName) + "/keys",
@@ -540,5 +563,6 @@ AlgoliaSearch.prototype.Index.prototype = {
     indexName: null,
     cache: {},
     typeAheadArgs: null,
+    typeAheadPropertyName: null,
     emptyConstructor: function() {}
 };

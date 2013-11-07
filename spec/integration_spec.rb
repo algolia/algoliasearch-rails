@@ -83,7 +83,7 @@ end
 
 describe 'Colors' do
   before(:all) do
-    Color.clear_index!
+    Color.clear_index!(true)
   end
 
   it "should be synchronous" do
@@ -127,10 +127,10 @@ describe 'Colors' do
   end
 
   it "should use the specified scope" do
-    Color.clear_index!
+    Color.clear_index!(true)
     Color.where(name: 'red').reindex!
     Color.search("").should have_exactly(3).product
-    Color.clear_index!
+    Color.clear_index!(true)
     Color.where(id: Color.first.id).reindex!
     Color.search("").should have_exactly(1).product
   end
@@ -144,7 +144,7 @@ end
 describe 'An imaginary store' do
 
   before(:all) do
-    Product.clear_index!
+    Product.clear_index!(true)
 
     # Google products
     @blackberry = Product.create!(:name => 'blackberry', :href => "google", :tags => ['decent', 'businessmen love it'])

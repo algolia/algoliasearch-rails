@@ -131,9 +131,9 @@ module AlgoliaSearch
       end
     end
 
-    def clear_index!
+    def clear_index!(synchronous = false)
       ensure_init
-      @index.delete
+      synchronous ? @index.clear! : @index.clear
       @index = nil
     end
 

@@ -24,7 +24,7 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     addressable (2.3.5)
-    algoliasearch (1.1.5)
+    algoliasearch (1.1.6)
       curb
     arel (4.0.1)
     atomic (1.1.14)
@@ -150,7 +150,7 @@ PLATFORMS
 
 DEPENDENCIES
   activerecord (>= 3.0.7)
-  algoliasearch (>= 1.1.4)
+  algoliasearch (>= 1.1.6)
   autotest
   autotest-fsevent
   autotest-growl
