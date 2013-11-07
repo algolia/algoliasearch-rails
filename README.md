@@ -103,6 +103,16 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+You can temporary disable auto-indexing using the <code>without_auto_index</code> scope. This is often used for performance reason.
+
+```ruby
+Contact.delete_all
+Contact.without_auto_index do
+  1.upto(10000) { Contact.create! attributes } # inside the block, auto indexing task will noop
+end
+Contact.reindex! # will use batch operations
+```
+
 You can force indexing and removing to be synchronous by setting the following option:
 
 ```ruby

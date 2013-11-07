@@ -99,6 +99,15 @@ describe 'Colors' do
     results.should include(@blue)
   end
 
+  it "should not auto index if scoped" do
+    Color.without_auto_index do
+      Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
+    end
+    Color.search("blue").should have_exactly(1).product
+    Color.reindex!
+    Color.search("blue").should have_exactly(2).product
+  end
+
   it "should not be searchable with non-indexed fields" do
     @blue = Color.create!(name: "blue", short_name: "x", hex: 0xFF0000)
     results = Color.search("x")

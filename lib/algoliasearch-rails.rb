@@ -103,7 +103,17 @@ module AlgoliaSearch
       @options = { type: model_name, per_page: @index_options.get(:hitsPerPage) || 10, page: 1 }.merge(options)
     end
 
+    def without_auto_index(&block)
+      @without_auto_index_scope = true
+      begin
+        yield
+      ensure
+        @without_auto_index_scope = false
+      end
+    end
+
     def reindex!(batch_size = 1000, synchronous = false)
+      return if @without_auto_index_scope
       ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
@@ -114,6 +124,7 @@ module AlgoliaSearch
     end
 
     def index!(object, synchronous = false)
+      return if @without_auto_index_scope
       ensure_init
       if synchronous
         @index.add_object!(attributes(object), object.id.to_s)
@@ -123,6 +134,7 @@ module AlgoliaSearch
     end
 
     def remove_from_index!(object, synchronous = false)
+      return if @without_auto_index_scope
       ensure_init
       if synchronous
         @index.delete_object!(object.id.to_s)
