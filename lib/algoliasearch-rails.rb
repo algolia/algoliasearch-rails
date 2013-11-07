@@ -101,10 +101,10 @@ module AlgoliaSearch
       end
 
       @options = { type: model_name, per_page: @index_options.get(:hitsPerPage) || 10, page: 1 }.merge(options)
-      init
     end
 
     def reindex!(batch_size = 1000, synchronous = false)
+      ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
         objects = group.map { |o| attributes(o).merge 'objectID' => o.id.to_s }
@@ -114,6 +114,7 @@ module AlgoliaSearch
     end
 
     def index!(object, synchronous = false)
+      ensure_init
       if synchronous
         @index.add_object!(attributes(object), object.id.to_s)
       else
@@ -122,6 +123,7 @@ module AlgoliaSearch
     end
 
     def remove_from_index!(object, synchronous = false)
+      ensure_init
       if synchronous
         @index.delete_object!(object.id.to_s)
       else
@@ -130,9 +132,9 @@ module AlgoliaSearch
     end
 
     def clear_index!
-      @index.delete rescue "already deleted, not fatal"
+      ensure_init
+      @index.delete
       @index = nil
-      init
     end
 
     def search(q, settings = {})
@@ -145,11 +147,13 @@ module AlgoliaSearch
       AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @options)
     end
 
-    def init
-      @index ||= Algolia::Index.new(index_name)
-      settings = @index_options.to_settings
-      prev_settings = @index.get_settings rescue nil # if the index doesn't exist
-      @index.set_settings(settings) if index_settings_changed?(prev_settings, settings)
+    def ensure_init
+      new_settings = @index_options.to_settings
+      return if @index and !index_settings_changed?(@settings, new_settings)
+      @index = Algolia::Index.new(index_name)
+      current_settings = @index.get_settings rescue nil # if the index doesn't exist
+      @index.set_settings(new_settings) if index_settings_changed?(current_settings, new_settings)
+      @settings = new_settings
     end
 
     def must_reindex?(object)
@@ -163,7 +167,7 @@ module AlgoliaSearch
 
     def index_name
       name = @options[:index_name] || model_name
-      name << "_#{Rails.env.to_s}" if @options[:per_environment]
+      name = "#{name}_#{Rails.env.to_s}" if @options[:per_environment]
       name
     end
 

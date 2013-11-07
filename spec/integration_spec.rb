@@ -4,6 +4,12 @@ require 'active_record'
 require 'sqlite3'
 require 'logger'
 
+class Rails
+  def self.env
+    "fake"
+  end
+end
+
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 ActiveRecord::Base.logger.level = Logger::WARN
@@ -52,7 +58,7 @@ end
 class Color < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("Color") do
+  algoliasearch synchronous: true, index_name: safe_index_name("Color"), per_environment: true do
     attributesToIndex [:name]
     customRanking ["asc(hex)"]
   end
@@ -127,6 +133,10 @@ describe 'Colors' do
     Color.clear_index!
     Color.where(id: Color.first.id).reindex!
     Color.search("").should have_exactly(1).product
+  end
+
+  it "should have a Rails env-based index name" do
+    Color.index_name.should == safe_index_name("Color") + "_#{Rails.env}"
   end
 
 end

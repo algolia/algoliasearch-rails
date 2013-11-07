@@ -176,7 +176,7 @@ All [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settin
 class Contact < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch auto_index: false, auto_remove: false do
+  algoliasearch do
     attribute :first_name, :last_name, :email
     minWordSizeForApprox1 2
     minWordSizeForApprox2 5
@@ -214,7 +214,7 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
     var client = new AlgoliaSearch('YourApplicationID', 'ReadOnlyApplicationKey');
     $('input#user_email').typeahead({
       name: 'emails',
-      remote: client.initIndex('YourIndex').getTypeaheadTransport(),
+      remote: client.initIndex('#{Contact.index_name}').getTypeaheadTransport(),
       engine: Hogan,
       template: '{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})',
       valueKey: 'email'
