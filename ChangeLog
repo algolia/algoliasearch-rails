@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-11-08  1.3.6
+
+      * upgraded to algoliasearch 1.1.6 (array-based search parameters were not encoded)
+
 2013-11-07  1.3.5
 
       * add without_auto_index_scope method disabling all indexing operations inside associated block
