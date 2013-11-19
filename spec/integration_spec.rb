@@ -32,6 +32,9 @@ ActiveRecord::Schema.define do
     t.string :short_name
     t.integer :hex
   end
+  create_table :namespaced_models do |t|
+    t.string :name
+  end
 end
 
 # avoid concurrent access to the same index
@@ -64,6 +67,18 @@ class Color < ActiveRecord::Base
   end
 end
 
+module Namespaced
+  def self.table_name_prefix
+    'namespaced_'
+  end
+end
+class Namespaced::Model < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+  end
+end
+
 describe 'Settings' do
 
   it "should detect settings changes" do
@@ -79,6 +94,12 @@ describe 'Settings' do
     Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
   end
 
+end
+
+describe 'Namespaced::Model' do
+  it "should have an index name without :: hierarchy" do
+    Namespaced::Model.index_name.should == "Namespaced_Model"
+  end
 end
 
 describe 'Colors' do

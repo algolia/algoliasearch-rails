@@ -179,7 +179,7 @@ module AlgoliaSearch
     end
 
     def index_name
-      name = @options[:index_name] || model_name
+      name = @options[:index_name] || model_name.to_s.gsub('::', '_')
       name = "#{name}_#{Rails.env.to_s}" if @options[:per_environment]
       name
     end
