@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-11-21  1.3.9
+
+      * updated custom typeahead.js (merged https://github.com/twitter/typeahead.js/pull/390)
+
 2013-11-21  1.3.8
 
       * expose new index settings: separatorsToIndex and optionalWords

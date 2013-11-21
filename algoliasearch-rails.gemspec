@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "algoliasearch-rails"
-  s.version = "1.3.8"
+  s.version = "1.3.9"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Algolia"]
@@ -41,6 +41,7 @@ Gem::Specification.new do |s|
     "spec/utilities_spec.rb",
     "vendor/assets/javascripts/algolia/algoliasearch.js",
     "vendor/assets/javascripts/algolia/algoliasearch.min.js",
+    "vendor/assets/javascripts/algolia/typeahead.js",
     "vendor/assets/javascripts/algolia/typeahead.min.js"
   ]
   s.homepage = "http://github.com/algolia/algoliasearch-rails"
