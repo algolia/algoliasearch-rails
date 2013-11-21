@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = "algoliasearch-rails"
-  s.version = "1.3.7"
+  s.version = "1.3.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Algolia"]
-  s.date = "2013-11-19"
+  s.date = "2013-11-21"
   s.description = "AlgoliaSearch integration to your favorite ORM"
   s.email = "contact@algolia.com"
   s.extra_rdoc_files = [
