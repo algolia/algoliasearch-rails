@@ -1,10 +1,10 @@
 /*!
- * algoliasearch 2.3.0
+ * algoliasearch 2.3.2
  * https://github.com/algolia/algoliasearch-client-js
  * Copyright 2013 Algolia SAS; Licensed MIT
  */
 
-var VERSION = "2.3.0";
+var VERSION = "2.3.2";
 
 var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArray) {
     this.applicationID = applicationID;
@@ -51,7 +51,7 @@ AlgoliaSearch.prototype = {
         };
         this._jsonRequest({
             method: "POST",
-            url: "/1/indexes/" + encodeURIComponent(indexName) + "/operation",
+            url: "/1/indexes/" + encodeURIComponent(srcIndexName) + "/operation",
             body: postObj,
             callback: callback
         });
@@ -63,7 +63,7 @@ AlgoliaSearch.prototype = {
         };
         this._jsonRequest({
             method: "POST",
-            url: "/1/indexes/" + encodeURIComponent(indexName) + "/operation",
+            url: "/1/indexes/" + encodeURIComponent(srcIndexName) + "/operation",
             body: postObj,
             callback: callback
         });
@@ -282,7 +282,7 @@ AlgoliaSearch.prototype = {
         for (var key in args) {
             if (key != null && args.hasOwnProperty(key)) {
                 params += params.length === 0 ? "?" : "&";
-                params += key + "=" + encodeURIComponent(args[key]);
+                params += key + "=" + encodeURIComponent(Object.prototype.toString.call(args[key]) === "[object Array]" ? JSON.stringify(args[key]) : args[key]);
             }
         }
         return params;
