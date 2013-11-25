@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-11-25  1.4.1
+
+      * ability to specify a block associated to an attribute as value
+
 2013-11-22  1.3.10
 
       * updated algoliasearch.js (2.3.2)

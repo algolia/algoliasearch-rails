@@ -149,6 +149,21 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+You can use a block to specify a complex attribute value
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    attribute :email
+    attribute :full_name do
+      "#{first_name} #{last_name}"
+    end
+  end
+end
+```
+
 Indexing
 ---------
 
