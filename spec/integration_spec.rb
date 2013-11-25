@@ -75,7 +75,18 @@ end
 class Namespaced::Model < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch do
+  algoliasearch synchronous: true do
+    attribute :customAttr do
+      40 + another_private_value
+    end
+    attribute :myid do
+      id
+    end
+  end
+
+  private
+  def another_private_value
+    2
   end
 end
 
@@ -97,8 +108,20 @@ describe 'Settings' do
 end
 
 describe 'Namespaced::Model' do
+  before(:all) do
+    Namespaced::Model.clear_index!(true)
+  end
+
   it "should have an index name without :: hierarchy" do
     Namespaced::Model.index_name.should == "Namespaced_Model"
+  end
+
+  it "should use the block to determine attribute's value" do
+    m = Namespaced::Model.create!
+    attributes = Namespaced::Model.instance_variable_get(:@index_settings).get_attributes(m)
+    attributes['customAttr'].should == 42
+    attributes['myid'].should == m.id
+    Namespaced::Model.search('').length.should == 1
   end
 end
 

@@ -42,7 +42,7 @@ module AlgoliaSearch
 
   end
 
-  class IndexOptions
+  class IndexSettings
 
     # AlgoliaSearch settings
     OPTIONS = [:attributesToIndex, :minWordSizefor1Typo,
@@ -56,26 +56,31 @@ module AlgoliaSearch
       end
     end
 
-    # attributes to consider
-    attr_accessor :attributes
-
     def initialize(block)
       instance_exec(&block) if block
     end
 
-    def attribute(*names)
-      self.attributes ||= []
-      self.attributes += names
+    def attribute(*names, &block)
+      raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
+      @attributes ||= {}
+      names.each do |name|
+        @attributes[name] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
+      end
     end
 
-    def get(setting)
-      instance_variable_get("@#{setting}")
+    def get_attributes(object)
+      return object.attributes if @attributes.nil? or @attributes.length == 0
+      Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+    end
+
+    def get_setting(name)
+      instance_variable_get("@#{name}")
     end
 
     def to_settings
       settings = {}
       OPTIONS.each do |k|
-        v = get(k)
+        v = get_setting(k)
         settings[k] = v if !v.nil?
       end
       settings
@@ -86,7 +91,10 @@ module AlgoliaSearch
   module ClassMethods
 
     def algoliasearch(options = {}, &block)
-      @index_options = IndexOptions.new(block_given? ? Proc.new : nil)
+      @index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
+      @settings = @index_settings.to_settings
+      @options = { type: model_name, per_page: @index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+
       attr_accessor :highlight_result
 
       if options[:synchronous] == true
@@ -100,8 +108,6 @@ module AlgoliaSearch
       unless options[:auto_remove] == false
         after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
       end
-
-      @options = { type: model_name, per_page: @index_options.get(:hitsPerPage) || 10, page: 1 }.merge(options)
     end
 
     def without_auto_index(&block)
@@ -118,7 +124,7 @@ module AlgoliaSearch
       ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
-        objects = group.map { |o| attributes(o).merge 'objectID' => o.id.to_s }
+        objects = group.map { |o| @index_settings.get_attributes(o).merge 'objectID' => o.id.to_s }
         last_task = @index.save_objects(objects)
       end
       @index.wait_task(last_task["taskID"]) if last_task and synchronous == true
@@ -128,9 +134,9 @@ module AlgoliaSearch
       return if @without_auto_index_scope
       ensure_init
       if synchronous
-        @index.add_object!(attributes(object), object.id.to_s)
+        @index.add_object!(@index_settings.get_attributes(object), object.id.to_s)
       else
-        @index.add_object(attributes(object), object.id.to_s)
+        @index.add_object(@index_settings.get_attributes(object), object.id.to_s)
       end
     end
 
@@ -162,17 +168,15 @@ module AlgoliaSearch
     end
 
     def ensure_init
-      new_settings = @index_options.to_settings
-      return if @index and !index_settings_changed?(@settings, new_settings)
+      return if @index
       @index = Algolia::Index.new(index_name)
       current_settings = @index.get_settings rescue nil # if the index doesn't exist
-      @index.set_settings(new_settings) if index_settings_changed?(current_settings, new_settings)
-      @settings = new_settings
+      @index.set_settings(@settings) if index_settings_changed?(current_settings, @settings)
     end
 
     def must_reindex?(object)
       return true if object.id_changed?
-      attributes(object).each do |k, v|
+      @index_settings.get_attributes(object).each do |k, v|
         changed_method = "#{k}_changed?"
         return true if object.respond_to?(changed_method) && object.send(changed_method)
       end
@@ -186,11 +190,6 @@ module AlgoliaSearch
     end
 
     private
-
-    def attributes(object)
-      return object.attributes if @index_options.attributes.nil? or @index_options.attributes.length == 0
-      Hash[@index_options.attributes.map { |attr| [attr.to_s, object.send(attr)] }]
-    end
 
     def index_settings_changed?(prev, current)
       return true if prev.nil?
@@ -233,7 +232,7 @@ module AlgoliaSearch
     end
 
     def mark_must_reindex
-      @must_reindex = self.class.must_reindex?(self)
+      @must_reindex = new_record? || self.class.must_reindex?(self)
       true
     end
 
