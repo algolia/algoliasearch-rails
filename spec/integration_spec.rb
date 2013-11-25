@@ -148,7 +148,7 @@ describe 'Colors' do
       Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
     end
     Color.search("blue").should have_exactly(1).product
-    Color.reindex!
+    Color.reindex!(1000, true)
     Color.search("blue").should have_exactly(2).product
   end
 
@@ -181,10 +181,10 @@ describe 'Colors' do
 
   it "should use the specified scope" do
     Color.clear_index!(true)
-    Color.where(name: 'red').reindex!
+    Color.where(name: 'red').reindex!(1000, true)
     Color.search("").should have_exactly(3).product
     Color.clear_index!(true)
-    Color.where(id: Color.first.id).reindex!
+    Color.where(id: Color.first.id).reindex!(1000, true)
     Color.search("").should have_exactly(1).product
   end
 
@@ -304,10 +304,10 @@ describe 'An imaginary store' do
 
     it "should not duplicate while reindexing" do
       n = Product.search('', hitsPerPage: 1000).length
-      Product.reindex!
+      Product.reindex!(1000, true)
       Product.search('', hitsPerPage: 1000).should have_exactly(n).product
-      Product.reindex!
-      Product.reindex!
+      Product.reindex!(1000, true)
+      Product.reindex!(1000, true)
       Product.search('', hitsPerPage: 1000).should have_exactly(n).product
     end
 
