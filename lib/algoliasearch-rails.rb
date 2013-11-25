@@ -160,7 +160,7 @@ module AlgoliaSearch
       ensure_init
       json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = Object.const_get(@options[:type]).find(hit['objectID'])
+        o = Object.const_get("::#{@options[:type]}").find(hit['objectID'])
         o.highlight_result = hit['_highlightResult']
         o
       end
