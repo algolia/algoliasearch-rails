@@ -160,7 +160,7 @@ module AlgoliaSearch
       ensure_init
       json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = Object.const_get("::#{@options[:type]}").find(hit['objectID'])
+        o = full_const_get(@options[:type].to_s).find(hit['objectID'])
         o.highlight_result = hit['_highlightResult']
         o
       end
@@ -203,6 +203,18 @@ module AlgoliaSearch
         end
       end
       false
+    end
+
+    def full_const_get(name)
+      list = name.split('::')
+      list.shift if list.first.blank?
+      obj = self
+      list.each do |x|
+        # This is required because const_get tries to look for constants in the
+        # ancestor chain, but we only want constants that are HERE
+        obj = obj.const_defined?(x) ? obj.const_get(x) : obj.const_missing(x)
+      end
+      obj
     end
 
   end

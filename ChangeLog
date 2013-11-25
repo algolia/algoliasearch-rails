@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-11-25  1.4.2
+
+      * fixed const_get calls with ruby 1.9.3
+
 2013-11-25  1.4.1
 
       * ability to specify a block associated to an attribute as value
