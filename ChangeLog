@@ -1,5 +1,10 @@
 CHANGELOG
 
+2013-11-29  1.4.3
+
+      * updated algoliasearch-client-js to 2.3.2
+      * updated algoliasearch to 1.10
+
 2013-11-25  1.4.2
 
       * fixed const_get calls with ruby 1.9.3
