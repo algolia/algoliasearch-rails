@@ -89,7 +89,7 @@ p Contact.search("jon doe")
 Options
 ----------
 
-Each time a record is saved; it will be - asynchronously - indexed. In the other hand, each time a record is destroyed, it will be - asynchronoulsy - removed from the index.
+Each time a record is saved; it will be - asynchronously - indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index.
 
 You can disable auto-indexing and auto-removing setting the following options:
 
