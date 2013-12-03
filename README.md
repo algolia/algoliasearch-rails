@@ -164,6 +164,17 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+By default, the `objectID` is based on your record's `id`. You can change this behavior specifying the `:id` option (be sure to use a uniq field).
+
+```ruby
+class UniqUser < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch id: :uniq_name do
+  end
+end
+```
+
 Indexing
 ---------
 

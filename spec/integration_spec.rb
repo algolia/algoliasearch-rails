@@ -35,6 +35,9 @@ ActiveRecord::Schema.define do
   create_table :namespaced_models do |t|
     t.string :name
   end
+  create_table :uniq_users, id: false do |t|
+    t.string :name
+  end
 end
 
 # avoid concurrent access to the same index
@@ -90,6 +93,13 @@ class Namespaced::Model < ActiveRecord::Base
   end
 end
 
+class UniqUser < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch synchronous: true, index_name: safe_index_name("UniqUser"), per_environment: true, id: :name do
+  end
+end
+
 describe 'Settings' do
 
   it "should detect settings changes" do
@@ -122,6 +132,18 @@ describe 'Namespaced::Model' do
     attributes['customAttr'].should == 42
     attributes['myid'].should == m.id
     Namespaced::Model.search('').length.should == 1
+  end
+end
+
+describe 'UniqUsers' do
+  before(:all) do
+    UniqUser.clear_index!(true)
+  end
+
+  it "should not use the id field" do
+    u = UniqUser.create name: 'fooBar'
+    results = UniqUser.search('foo')
+    results.should have_exactly(1).uniq_users
   end
 end
 

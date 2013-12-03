@@ -124,7 +124,7 @@ module AlgoliaSearch
       ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
-        objects = group.map { |o| @index_settings.get_attributes(o).merge 'objectID' => o.id.to_s }
+        objects = group.map { |o| @index_settings.get_attributes(o).merge 'objectID' => object_id_of(o) }
         last_task = @index.save_objects(objects)
       end
       @index.wait_task(last_task["taskID"]) if last_task and synchronous == true
@@ -134,9 +134,9 @@ module AlgoliaSearch
       return if @without_auto_index_scope
       ensure_init
       if synchronous
-        @index.add_object!(@index_settings.get_attributes(object), object.id.to_s)
+        @index.add_object!(@index_settings.get_attributes(object), object_id_of(object))
       else
-        @index.add_object(@index_settings.get_attributes(object), object.id.to_s)
+        @index.add_object(@index_settings.get_attributes(object), object_id_of(object))
       end
     end
 
@@ -144,9 +144,9 @@ module AlgoliaSearch
       return if @without_auto_index_scope
       ensure_init
       if synchronous
-        @index.delete_object!(object.id.to_s)
+        @index.delete_object!(object_id_of(object))
       else
-        @index.delete_object(object.id.to_s)
+        @index.delete_object(object_id_of(object))
       end
     end
 
@@ -160,7 +160,7 @@ module AlgoliaSearch
       ensure_init
       json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = full_const_get(@options[:type].to_s).find(hit['objectID'])
+        o = full_const_get(@options[:type].to_s).where(object_id_method => hit['objectID']).first
         o.highlight_result = hit['_highlightResult']
         o
       end
@@ -175,7 +175,7 @@ module AlgoliaSearch
     end
 
     def must_reindex?(object)
-      return true if object.id_changed?
+      return true if object_id_changed?(object)
       @index_settings.get_attributes(object).each do |k, v|
         changed_method = "#{k}_changed?"
         return true if object.respond_to?(changed_method) && object.send(changed_method)
@@ -190,6 +190,19 @@ module AlgoliaSearch
     end
 
     private
+
+    def object_id_method
+      @options[:id] || @options[:object_id] || :id
+    end
+
+    def object_id_of(o)
+      o.send(object_id_method).to_s
+    end
+
+    def object_id_changed?(o)
+      m = "#{object_id_method}_changed?"
+      o.respond_to?(m) ? o.send(m) : false
+    end
 
     def index_settings_changed?(prev, current)
       return true if prev.nil?
