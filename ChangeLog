@@ -1,5 +1,10 @@
 CHANGELOG
 
+2013-12-05  1.5.2
+
+      * object's attributes must be fetched unscoped to ensure associations will not be impacted by the conditions
+      * you can now use `Model.index` to access the underlying index object
+
 2013-12-03  1.5.1
 
       * ability to specify which attribute is used as objectID
