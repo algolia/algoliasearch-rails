@@ -10,7 +10,7 @@ describe AlgoliaSearch::Utilities do
       include AlgoliaSearch
 
       def self.model_name
-        "dummy"
+        "Dummy"
       end
 
       algoliasearch

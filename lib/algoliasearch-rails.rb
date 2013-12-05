@@ -93,7 +93,7 @@ module AlgoliaSearch
     def algoliasearch(options = {}, &block)
       @index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
       @settings = @index_settings.to_settings
-      @options = { type: model_name, per_page: @index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      @options = { type: full_const_get(model_name.to_s), per_page: @index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
 
       attr_accessor :highlight_result
 
@@ -160,7 +160,7 @@ module AlgoliaSearch
       ensure_init
       json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = full_const_get(@options[:type].to_s).where(object_id_method => hit['objectID']).first
+        o = @options[:type].where(object_id_method => hit['objectID']).first
         o.highlight_result = hit['_highlightResult']
         o
       end
