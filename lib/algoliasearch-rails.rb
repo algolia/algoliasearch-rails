@@ -174,6 +174,11 @@ module AlgoliaSearch
       @index.set_settings(@settings) if index_settings_changed?(current_settings, @settings)
     end
 
+    def index
+      ensure_init
+      @index
+    end
+
     def must_reindex?(object)
       return true if object_id_changed?(object)
       @index_settings.get_attributes(object).each do |k, v|
