@@ -38,6 +38,9 @@ ActiveRecord::Schema.define do
   create_table :uniq_users, id: false do |t|
     t.string :name
   end
+  create_table :nested_items do |t|
+    t.integer :parent_id
+  end
 end
 
 # avoid concurrent access to the same index
@@ -100,6 +103,20 @@ class UniqUser < ActiveRecord::Base
   end
 end
 
+class NestedItem < ActiveRecord::Base
+  has_many :children, class_name: "NestedItem", foreign_key: "parent_id"
+
+  include AlgoliaSearch
+
+  algoliasearch synchronous: true, index_name: safe_index_name("UniqUser"), per_environment: true do
+    attribute :nb_children
+  end
+
+  def nb_children
+    children.count
+  end
+end
+
 describe 'Settings' do
 
   it "should detect settings changes" do
@@ -144,6 +161,23 @@ describe 'UniqUsers' do
     u = UniqUser.create name: 'fooBar'
     results = UniqUser.search('foo')
     results.should have_exactly(1).uniq_users
+  end
+end
+
+describe 'NestedItem' do
+  before(:all) do
+    NestedItem.clear_index!(true)
+  end
+
+  it "should fetch attributes unscoped" do
+    @i1 = NestedItem.create
+    @i2 = NestedItem.create
+
+    @i1.children << NestedItem.create << NestedItem.create
+    NestedItem.where(id: [@i1.id, @i2.id]).reindex!(1000, true)
+
+    result = NestedItem.index.get_object(@i1.id)
+    result['nb_children'].should == 2
   end
 end
 

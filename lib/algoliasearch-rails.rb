@@ -69,8 +69,10 @@ module AlgoliaSearch
     end
 
     def get_attributes(object)
-      return object.attributes if @attributes.nil? or @attributes.length == 0
-      Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+      object.class.unscoped do
+        return object.attributes if @attributes.nil? or @attributes.length == 0
+        Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+      end
     end
 
     def get_setting(name)
