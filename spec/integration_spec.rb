@@ -41,6 +41,11 @@ ActiveRecord::Schema.define do
   create_table :nested_items do |t|
     t.integer :parent_id
   end
+  create_table :cities do |t|
+    t.string :name
+    t.float :lat
+    t.float :lng
+  end
 end
 
 # avoid concurrent access to the same index
@@ -57,6 +62,9 @@ class Product < ActiveRecord::Base
 
   algoliasearch auto_index: false, index_name: safe_index_name("my_products_index") do
     attribute :href, :name, :tags
+    tags do
+      [name, name] # multiple tags
+    end
   end
 
   def tags=(names)
@@ -70,6 +78,9 @@ class Color < ActiveRecord::Base
   algoliasearch synchronous: true, index_name: safe_index_name("Color"), per_environment: true do
     attributesToIndex [:name]
     customRanking ["asc(hex)"]
+    tags do
+      name # single tag
+    end
   end
 end
 
@@ -88,6 +99,7 @@ class Namespaced::Model < ActiveRecord::Base
     attribute :myid do
       id
     end
+    tags ['static_tag1', 'static_tag2']
   end
 
   private
@@ -114,6 +126,14 @@ class NestedItem < ActiveRecord::Base
 
   def nb_children
     children.count
+  end
+end
+
+class City < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch synchronous: true, index_name: safe_index_name("City"), per_environment: true do
+    geoloc :lat, :lng
   end
 end
 
@@ -248,6 +268,13 @@ describe 'Colors' do
     Color.index_name.should == safe_index_name("Color") + "_#{Rails.env}"
   end
 
+  it "should add tags" do
+    @blue = Color.create!(name: "green", short_name: "b", hex: 0xFF0000)
+    results = Color.search("green", { tagFilters: 'green' })
+    results.should have_exactly(1).product
+    results.should include(@blue)
+  end
+
 end
 
 describe 'An imaginary store' do
@@ -369,4 +396,23 @@ describe 'An imaginary store' do
 
   end
 
+end
+
+describe 'Cities' do
+  before(:all) do
+    City.clear_index!(true)
+  end
+
+  it "should index geo" do
+    sf = City.create name: 'San Francisco', lat: 37.75, lng: -122.68
+    mv = City.create name: 'Mountain View', lat: 37.38, lng: -122.08
+    results = City.search('', { aroundLatLng: "37.33, -121.89", aroundRadius: 50000 })
+    results.should have_exactly(1).city
+    results.should include(mv)
+
+    results = City.search('', { aroundLatLng: "37.33, -121.89", aroundRadius: 500000 })
+    results.should have_exactly(2).cities
+    results.should include(mv)
+    results.should include(sf)
+  end
 end

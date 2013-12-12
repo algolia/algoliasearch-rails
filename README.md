@@ -17,6 +17,8 @@ Table of Content
 1. [Quick Start](#quick-start)
 1. [Options](#options)
 1. [Indexing](#indexing)
+1. [Tags](#tags)
+1. [Geo-search](#geo-search)
 1. [Search settings](#search-settings)
 1. [Typeahead UI](#typeahead-ui)
 1. [Note on testing](#note-on-testing)
@@ -70,7 +72,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-You can either specify the attributes to send (here we restrict to <code>:first_name, :last_name, :email</code>) or not (in that case, all attributes are sent).
+You can either specify the attributes to send (here we restricted to <code>:first_name, :last_name, :email</code>) or not (in that case, all attributes are sent).
 
 ```ruby
 class Product < ActiveRecord::Base
@@ -78,6 +80,23 @@ class Product < ActiveRecord::Base
 
   algoliasearch do
     # all attributes will be sent
+  end
+end
+```
+
+You can also use the <code>add_attribute</code> method, to send all model attributes + extra ones:
+
+```ruby
+class Product < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # all attributes + extra_attr will be sent
+    add_attribute :extra_attr
+  end
+
+  def extra_attr
+    "extra_val"
   end
 end
 ```
@@ -204,6 +223,53 @@ To clear an index, use the <code>clear_index!</code> class method:
 Contact.clear_index!
 ```
 
+Tags
+-----
+
+Use the <code>tags</code> method to add tags to your record:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    tags ['trusted']
+  end
+end
+```
+
+or using dynamical values:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    tags do
+      [first_name.blank? || last_name.blank? ? 'partial' : 'full', has_valid_email? ? 'valid_email' : 'invalid_email']
+    end
+  end
+end
+```
+
+At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
+
+Geo-Search
+-----------
+
+Use the <code>geoloc</code> method to localize your record:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    tags ['trusted']
+  end
+end
+```
+
+At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
 
 Search settings
 ----------

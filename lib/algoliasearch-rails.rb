@@ -64,14 +64,39 @@ module AlgoliaSearch
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       @attributes ||= {}
       names.each do |name|
-        @attributes[name] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
+        @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
       end
     end
+    alias :attributes :attribute
+
+    def add_attribute(*names, &block)
+      raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
+      @additional_attributes ||= {}
+      names.each do |name|
+        @additional_attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
+      end
+    end
+    alias :add_attributes :add_attribute
 
     def get_attributes(object)
       object.class.unscoped do
-        return object.attributes if @attributes.nil? or @attributes.length == 0
-        Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+        res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+          Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+        @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
+        res
+      end
+    end
+
+    def geoloc(lat_attr, lng_attr)
+      add_attribute :_geoloc do |o|
+        { lat: o.send(lat_attr).to_f, lng: o.send(lng_attr).to_f }
+      end
+    end
+
+    def tags(*args, &block)
+      add_attribute :_tags do |o|
+        v = block_given? ? o.instance_eval(&block) : args
+        v.is_a?(Array) ? v : [v]
       end
     end
 

@@ -1,5 +1,10 @@
 CHANGELOG
 
+2013-12-05  1.6.1
+
+      * ```add_attribute``` can now be used to add extra attributes in addition to the existing ones
+      * Use the ```geoloc``` and ```tags``` methods to generate the associated ```_tags``` and ```_geoloc``` attributes
+
 2013-12-05  1.5.2
 
       * object's attributes must be fetched unscoped to ensure associations will not be impacted by the conditions
