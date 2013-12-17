@@ -1,10 +1,10 @@
 /*!
- * algoliasearch 2.3.3
+ * algoliasearch 2.3.6
  * https://github.com/algolia/algoliasearch-client-js
  * Copyright 2013 Algolia SAS; Licensed MIT
  */
 
-var VERSION = "2.3.3";
+var VERSION = "2.3.6";
 
 var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArray) {
     this.applicationID = applicationID;
@@ -141,7 +141,7 @@ AlgoliaSearch.prototype = {
         this.batch = [];
     },
     addQueryInBatch: function(indexName, query, args) {
-        var params = "query=" + query;
+        var params = "query=" + encodeURIComponent(query);
         if (!this._isUndefined(args) && args != null) {
             params = this._getSearchParams(args, params);
         }
@@ -271,7 +271,7 @@ AlgoliaSearch.prototype = {
         }
         xmlHttp.send(body);
         xmlHttp.onload = function(event) {
-            if (!self._isUndefined(event)) {
+            if (!self._isUndefined(event) && event.target != null) {
                 var retry = event.target.status === 0 || event.target.status === 503;
                 var success = event.target.status === 200 || event.target.status === 201;
                 opts.callback(retry, success, event.target, event.target.response != null ? JSON.parse(event.target.response) : null);
@@ -375,6 +375,26 @@ AlgoliaSearch.prototype.Index.prototype = {
             callback: callback
         });
     },
+    partialUpdateObjects: function(objects, callback) {
+        var indexObj = this;
+        var postObj = {
+            requests: []
+        };
+        for (var i = 0; i < objects.length; ++i) {
+            var request = {
+                action: "partialUpdateObject",
+                objectID: encodeURIComponent(objects[i].objectID),
+                body: objects[i]
+            };
+            postObj.requests.push(request);
+        }
+        this.as._jsonRequest({
+            method: "POST",
+            url: "/1/indexes/" + encodeURIComponent(indexObj.indexName) + "/batch",
+            body: postObj,
+            callback: callback
+        });
+    },
     saveObject: function(object, callback) {
         var indexObj = this;
         this.as._jsonRequest({
@@ -433,6 +453,18 @@ AlgoliaSearch.prototype.Index.prototype = {
         } else {
             this._search(params, callback);
         }
+    },
+    browse: function(page, callback, hitsPerPage) {
+        var indexObj = this;
+        var params = "?page=" + page;
+        if (!_.isUndefined(hitsPerPage)) {
+            params += "&hitsPerPage=" + hitsPerPage;
+        }
+        this.as._jsonRequest({
+            method: "GET",
+            url: "/1/indexes/" + encodeURIComponent(indexObj.indexName) + "/browse" + params,
+            callback: callback
+        });
     },
     getTypeaheadTransport: function(args, valueOption) {
         this.typeAheadArgs = args;

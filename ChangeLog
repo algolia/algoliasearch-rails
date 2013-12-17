@@ -1,5 +1,9 @@
 CHANGELOG
 
+2013-12-17  1.6.2
+
+      * Updated deps (included algoliasearch 1.1.15 and algoliasearch-client-js 2.3.6)
+
 2013-12-05  1.6.1
 
       * ```add_attribute``` can now be used to add extra attributes in addition to the existing ones
