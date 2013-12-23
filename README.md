@@ -264,7 +264,7 @@ class Contact < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch do
-    tags ['trusted']
+    geoloc :lat_attr, :lng_attr
   end
 end
 ```
