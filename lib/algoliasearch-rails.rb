@@ -49,7 +49,7 @@ module AlgoliaSearch
       :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
-      :separatorsToIndex, :optionalWords]
+      :separatorsToIndex, :optionalWords, :attributeForDistinct]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
