@@ -7,13 +7,10 @@ gem 'rubysl', '~> 2.0', platform: :rbx
 group :test do 
   gem 'rspec', '>= 2.5.0'
   gem 'activerecord', '>= 3.0.7'
-  if defined?(JRUBY_VERSION)
-    gem 'jdbc-sqlite3'
-    gem 'activerecord-jdbc-adapter'
-    gem 'activerecord-jdbcsqlite3-adapter'
-  else
-    gem 'sqlite3'
-  end
+  gem 'sqlite3', platform: [:rbx, :ruby]
+  gem 'jdbc-sqlite3', platform: :jruby
+  gem 'activerecord-jdbc-adapter', platform: :jruby
+  gem 'activerecord-jdbcsqlite3-adapter', platform: :jruby
   gem 'autotest'
   gem 'autotest-fsevent'
   gem 'redgreen'
