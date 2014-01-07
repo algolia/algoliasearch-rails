@@ -1,7 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
 require 'active_record'
-require 'sqlite3'
+require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 
 class Rails
@@ -14,7 +14,7 @@ FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 ActiveRecord::Base.logger.level = Logger::WARN
 ActiveRecord::Base.establish_connection(
-    'adapter' => 'sqlite3',
+    'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite3',
     'database' => 'data.sqlite3',
     'pool' => 5,
     'timeout' => 5000
