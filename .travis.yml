@@ -3,8 +3,11 @@ branches:
   only:
   - master
 rvm:
+- 2.1.0
 - 2.0.0
 - 1.9.3
+- jruby
+- rbx
 env:
   global:
   - secure: wRDLGbg+GS7Eo6KhjyAA6YNm6rFVo8j53b0oEZLBkJ2VzvLsKMnpEfopzc0W2wttgVwgkX8C/9adbd/BPsEYbpO+uJFt5DX3A2HVVXCZ2jP0TgLj2m4dOA4ohroYDcdeB0fuZM7a7hvFNswd9vSRLmes6vLQ0GcFTSz1rWQLf6U=

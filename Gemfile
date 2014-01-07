@@ -1,7 +1,8 @@
 source "http://rubygems.org"
 
 gem 'json', '>= 1.5.1'
-gem 'algoliasearch', '>= 1.1.7'
+gem 'algoliasearch', '~> 1.2'
+gem 'rubysl', '~> 2.0', platform: :rbx
 
 group :test do 
   gem 'rspec', '>= 2.5.0'
@@ -14,8 +15,9 @@ group :test do
 end
 
 group :development do
-  gem 'jeweler'
   gem 'will_paginate', '>= 2.3.15'
   gem 'kaminari'
   gem 'travis'
+  gem 'rake'
+  gem 'rdoc'
 end

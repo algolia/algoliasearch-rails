@@ -1,5 +1,10 @@
 CHANGELOG
 
+2014-01-07  1.7.0
+
+      * Updated algoliasearch to 1.2 (httpclient instead of curb as underlying HTTP layer)
+      * jruby, rbx and ruby 2.1 compatibility
+
 2014-01-02  1.6.3
 
       * Expose new ```attributeForDistinct``` setting
