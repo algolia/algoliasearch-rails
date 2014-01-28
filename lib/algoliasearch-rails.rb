@@ -36,8 +36,10 @@ module AlgoliaSearch
       @included_in << klass
       @included_in.uniq!
 
-      klass.send :include, InstanceMethods
-      klass.extend ClassMethods
+      klass.class_eval do
+        extend ClassMethods
+        include InstanceMethods
+      end
     end
 
   end
@@ -117,10 +119,24 @@ module AlgoliaSearch
   # these are the class methods added when AlgoliaSearch is included
   module ClassMethods
 
+    def self.extended(base)
+      class <<base
+        alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
+        alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
+        alias_method :index!, :algolia_index! unless method_defined? :index!
+        alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
+        alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
+        alias_method :search, :algolia_search unless method_defined? :search
+        alias_method :index, :algolia_index unless method_defined? :index
+        alias_method :index_name, :algolia_index_name unless method_defined? :index_name
+        alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
+      end
+    end
+
     def algoliasearch(options = {}, &block)
       @algolia_index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
       @algolia_settings = @algolia_index_settings.to_settings
-      @algolia_options = { type: full_const_get(model_name.to_s), per_page: @algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      @algolia_options = { type: algolia_full_const_get(model_name.to_s), per_page: @algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
 
       attr_accessor :highlight_result
 
@@ -145,7 +161,6 @@ module AlgoliaSearch
         @algolia_without_auto_index_scope = false
       end
     end
-    alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
 
     def algolia_reindex!(batch_size = 1000, synchronous = false)
       return if @algolia_without_auto_index_scope
@@ -157,7 +172,6 @@ module AlgoliaSearch
       end
       @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
     end
-    alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
 
     def algolia_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
@@ -168,7 +182,6 @@ module AlgoliaSearch
         @algolia_index.add_object(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       end
     end
-    alias_method :index!, :algolia_index! unless method_defined? :index!
 
     def algolia_remove_from_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
@@ -179,14 +192,12 @@ module AlgoliaSearch
         @algolia_index.delete_object(algolia_object_id_of(object))
       end
     end
-    alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
 
     def algolia_clear_index!(synchronous = false)
       algolia_ensure_init
       synchronous ? @algolia_index.clear! : @algolia_index.clear
       @algolia_index = nil
     end
-    alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
 
     def algolia_search(q, settings = {})
       algolia_ensure_init
@@ -198,20 +209,17 @@ module AlgoliaSearch
       end
       AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @algolia_options)
     end
-    alias_method :search, :algolia_search unless method_defined? :search
 
     def algolia_index
       algolia_ensure_init
       @algolia_index
     end
-    alias_method :index, :algolia_index unless method_defined? :index
 
     def algolia_index_name
       name = @algolia_options[:index_name] || model_name.to_s.gsub('::', '_')
       name = "#{name}_#{Rails.env.to_s}" if @algolia_options[:per_environment]
       name
     end
-    alias_method :index_name, :algolia_index_name unless method_defined? :index_name
 
     def algolia_must_reindex?(object)
       return true if algolia_object_id_changed?(object)
@@ -221,7 +229,6 @@ module AlgoliaSearch
       end
       return false
     end
-    alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
 
     protected
     def algolia_ensure_init
@@ -260,7 +267,7 @@ module AlgoliaSearch
       false
     end
 
-    def full_const_get(name)
+    def algolia_full_const_get(name)
       list = name.split('::')
       list.shift if list.first.blank?
       obj = self
@@ -276,15 +283,21 @@ module AlgoliaSearch
 
   # these are the instance methods included
   module InstanceMethods
-    def algolia_index!
-      self.class.index!(self, algolia_synchronous?)
+
+    def self.included(base)
+      base.instance_eval do
+        alias_method :index!, :algolia_index! unless method_defined? :index!
+        alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
+      end
     end
-    alias_method :index!, :algolia_index! unless method_defined? :index!
+
+    def algolia_index!
+      self.class.algolia_index!(self, algolia_synchronous?)
+    end
 
     def algolia_remove_from_index!
-      self.class.remove_from_index!(self, algolia_synchronous?)
+      self.class.algolia_remove_from_index!(self, algolia_synchronous?)
     end
-    alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
 
     private
 
@@ -307,7 +320,7 @@ module AlgoliaSearch
 
     def algolia_perform_index_tasks
       return if !@algolia_auto_indexing || @algolia_must_reindex == false
-      index!
+      algolia_index!
       remove_instance_variable(:@algolia_auto_indexing) if instance_variable_defined?(:@algolia_auto_indexing)
       remove_instance_variable(:@algolia_synchronous) if instance_variable_defined?(:@algolia_synchronous)
       remove_instance_variable(:@algolia_must_reindex) if instance_variable_defined?(:@algolia_must_reindex)

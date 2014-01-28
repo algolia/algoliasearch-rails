@@ -46,6 +46,9 @@ ActiveRecord::Schema.define do
     t.float :lat
     t.float :lng
   end
+  create_table :mongo_objects do |t|
+    t.string :name
+  end
 end
 
 # avoid concurrent access to the same index
@@ -134,6 +137,21 @@ class City < ActiveRecord::Base
 
   algoliasearch synchronous: true, index_name: safe_index_name("City"), per_environment: true do
     geoloc :lat, :lng
+  end
+end
+
+class MongoObject < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+  end
+
+  def self.reindex!
+    raise NameError.new("never reached")
+  end
+
+  def index!
+    raise NameError.new("never reached")
   end
 end
 
@@ -414,5 +432,15 @@ describe 'Cities' do
     results.should have_exactly(2).cities
     results.should include(mv)
     results.should include(sf)
+  end
+end
+
+describe 'MongoObject' do
+
+  it "should not have method conflicts" do
+    expect { MongoObject.reindex! }.to raise_error(NameError)
+    expect { MongoObject.new.index! }.to raise_error(NameError)
+    MongoObject.algolia_reindex!
+    MongoObject.create(name: 'mongo').algolia_index!
   end
 end
