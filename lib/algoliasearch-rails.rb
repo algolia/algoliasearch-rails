@@ -118,125 +118,135 @@ module AlgoliaSearch
   module ClassMethods
 
     def algoliasearch(options = {}, &block)
-      @index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
-      @settings = @index_settings.to_settings
-      @options = { type: full_const_get(model_name.to_s), per_page: @index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      @algolia_index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
+      @algolia_settings = @algolia_index_settings.to_settings
+      @algolia_options = { type: full_const_get(model_name.to_s), per_page: @algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
 
       attr_accessor :highlight_result
 
       if options[:synchronous] == true
-        after_validation :mark_synchronous if respond_to?(:before_validation)
+        after_validation :algolia_mark_synchronous if respond_to?(:before_validation)
       end
       unless options[:auto_index] == false
-        after_validation :mark_must_reindex if respond_to?(:after_validation)
-        before_save :mark_for_auto_indexing if respond_to?(:before_save)
-        after_save :perform_index_tasks if respond_to?(:after_save)
+        after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
+        before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
+        after_save :algolia_perform_index_tasks if respond_to?(:after_save)
       end
       unless options[:auto_remove] == false
         after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
       end
     end
 
-    def without_auto_index(&block)
-      @without_auto_index_scope = true
+    def algolia_without_auto_index(&block)
+      @algolia_without_auto_index_scope = true
       begin
         yield
       ensure
-        @without_auto_index_scope = false
+        @algolia_without_auto_index_scope = false
       end
     end
+    alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
 
-    def reindex!(batch_size = 1000, synchronous = false)
-      return if @without_auto_index_scope
-      ensure_init
+    def algolia_reindex!(batch_size = 1000, synchronous = false)
+      return if @algolia_without_auto_index_scope
+      algolia_ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
-        objects = group.map { |o| @index_settings.get_attributes(o).merge 'objectID' => object_id_of(o) }
-        last_task = @index.save_objects(objects)
+        objects = group.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
+        last_task = @algolia_index.save_objects(objects)
       end
-      @index.wait_task(last_task["taskID"]) if last_task and synchronous == true
+      @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
     end
+    alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
 
-    def index!(object, synchronous = false)
-      return if @without_auto_index_scope
-      ensure_init
+    def algolia_index!(object, synchronous = false)
+      return if @algolia_without_auto_index_scope
+      algolia_ensure_init
       if synchronous
-        @index.add_object!(@index_settings.get_attributes(object), object_id_of(object))
+        @algolia_index.add_object!(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       else
-        @index.add_object(@index_settings.get_attributes(object), object_id_of(object))
+        @algolia_index.add_object(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       end
     end
+    alias_method :index!, :algolia_index! unless method_defined? :index!
 
-    def remove_from_index!(object, synchronous = false)
-      return if @without_auto_index_scope
-      ensure_init
+    def algolia_remove_from_index!(object, synchronous = false)
+      return if @algolia_without_auto_index_scope
+      algolia_ensure_init
       if synchronous
-        @index.delete_object!(object_id_of(object))
+        @algolia_index.delete_object!(algolia_object_id_of(object))
       else
-        @index.delete_object(object_id_of(object))
+        @algolia_index.delete_object(algolia_object_id_of(object))
       end
     end
+    alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
 
-    def clear_index!(synchronous = false)
-      ensure_init
-      synchronous ? @index.clear! : @index.clear
-      @index = nil
+    def algolia_clear_index!(synchronous = false)
+      algolia_ensure_init
+      synchronous ? @algolia_index.clear! : @algolia_index.clear
+      @algolia_index = nil
     end
+    alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
 
-    def search(q, settings = {})
-      ensure_init
-      json = @index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
+    def algolia_search(q, settings = {})
+      algolia_ensure_init
+      json = @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = @options[:type].where(object_id_method => hit['objectID']).first
+        o = @algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
         o.highlight_result = hit['_highlightResult']
         o
       end
-      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @options)
+      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @algolia_options)
     end
+    alias_method :search, :algolia_search unless method_defined? :search
 
-    def ensure_init
-      return if @index
-      @index = Algolia::Index.new(index_name)
-      current_settings = @index.get_settings rescue nil # if the index doesn't exist
-      @index.set_settings(@settings) if index_settings_changed?(current_settings, @settings)
+    def algolia_index
+      algolia_ensure_init
+      @algolia_index
     end
+    alias_method :index, :algolia_index unless method_defined? :index
 
-    def index
-      ensure_init
-      @index
+    def algolia_index_name
+      name = @algolia_options[:index_name] || model_name.to_s.gsub('::', '_')
+      name = "#{name}_#{Rails.env.to_s}" if @algolia_options[:per_environment]
+      name
     end
+    alias_method :index_name, :algolia_index_name unless method_defined? :index_name
 
-    def must_reindex?(object)
-      return true if object_id_changed?(object)
-      @index_settings.get_attributes(object).each do |k, v|
+    def algolia_must_reindex?(object)
+      return true if algolia_object_id_changed?(object)
+      @algolia_index_settings.get_attributes(object).each do |k, v|
         changed_method = "#{k}_changed?"
         return true if object.respond_to?(changed_method) && object.send(changed_method)
       end
       return false
     end
+    alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
 
-    def index_name
-      name = @options[:index_name] || model_name.to_s.gsub('::', '_')
-      name = "#{name}_#{Rails.env.to_s}" if @options[:per_environment]
-      name
+    protected
+    def algolia_ensure_init
+      return if @algolia_index
+      @algolia_index = Algolia::Index.new(algolia_index_name)
+      current_settings = @algolia_index.get_settings rescue nil # if the index doesn't exist
+      @algolia_index.set_settings(@algolia_settings) if algolia_index_settings_changed?(current_settings, @algolia_settings)
     end
 
     private
 
-    def object_id_method
-      @options[:id] || @options[:object_id] || :id
+    def algolia_object_id_method
+      @algolia_options[:id] || @algolia_options[:object_id] || :id
     end
 
-    def object_id_of(o)
-      o.send(object_id_method).to_s
+    def algolia_object_id_of(o)
+      o.send(algolia_object_id_method).to_s
     end
 
-    def object_id_changed?(o)
-      m = "#{object_id_method}_changed?"
+    def algolia_object_id_changed?(o)
+      m = "#{algolia_object_id_method}_changed?"
       o.respond_to?(m) ? o.send(m) : false
     end
 
-    def index_settings_changed?(prev, current)
+    def algolia_index_settings_changed?(prev, current)
       return true if prev.nil?
       current.each do |k, v|
         prev_v = prev[k.to_s]
@@ -266,39 +276,41 @@ module AlgoliaSearch
 
   # these are the instance methods included
   module InstanceMethods
-    def index!
-      self.class.index!(self, synchronous?)
+    def algolia_index!
+      self.class.index!(self, algolia_synchronous?)
     end
+    alias_method :index!, :algolia_index! unless method_defined? :index!
 
-    def remove_from_index!
-      self.class.remove_from_index!(self, synchronous?)
+    def algolia_remove_from_index!
+      self.class.remove_from_index!(self, algolia_synchronous?)
     end
+    alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
 
     private
 
-    def synchronous?
-      @synchronous == true
+    def algolia_synchronous?
+      @algolia_synchronous == true
     end
 
-    def mark_synchronous
-      @synchronous = true
+    def algolia_mark_synchronous
+      @algolia_synchronous = true
     end
 
-    def mark_for_auto_indexing
-      @auto_indexing = true
+    def algolia_mark_for_auto_indexing
+      @algolia_auto_indexing = true
     end
 
-    def mark_must_reindex
-      @must_reindex = new_record? || self.class.must_reindex?(self)
+    def algolia_mark_must_reindex
+      @algolia_must_reindex = new_record? || self.class.algolia_must_reindex?(self)
       true
     end
 
-    def perform_index_tasks
-      return if !@auto_indexing || @must_reindex == false
+    def algolia_perform_index_tasks
+      return if !@algolia_auto_indexing || @algolia_must_reindex == false
       index!
-      remove_instance_variable(:@auto_indexing) if instance_variable_defined?(:@auto_indexing)
-      remove_instance_variable(:@synchronous) if instance_variable_defined?(:@synchronous)
-      remove_instance_variable(:@must_reindex) if instance_variable_defined?(:@must_reindex)
+      remove_instance_variable(:@algolia_auto_indexing) if instance_variable_defined?(:@algolia_auto_indexing)
+      remove_instance_variable(:@algolia_synchronous) if instance_variable_defined?(:@algolia_synchronous)
+      remove_instance_variable(:@algolia_must_reindex) if instance_variable_defined?(:@algolia_must_reindex)
     end
   end
 end

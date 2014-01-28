@@ -140,16 +140,16 @@ end
 describe 'Settings' do
 
   it "should detect settings changes" do
-    Color.send(:index_settings_changed?, nil, {}).should be_true
-    Color.send(:index_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
-    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
-    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
+    Color.send(:algolia_index_settings_changed?, nil, {}).should be_true
+    Color.send(:algolia_index_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
+    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
+    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
   end
 
   it "should not detect settings changes" do
-    Color.send(:index_settings_changed?, {}, {}).should be_false
-    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"]}, {attributesToIndex: ["name"]}).should be_false
-    Color.send(:index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
+    Color.send(:algolia_index_settings_changed?, {}, {}).should be_false
+    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {attributesToIndex: ["name"]}).should be_false
+    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
   end
 
 end
@@ -165,7 +165,7 @@ describe 'Namespaced::Model' do
 
   it "should use the block to determine attribute's value" do
     m = Namespaced::Model.create!
-    attributes = Namespaced::Model.instance_variable_get(:@index_settings).get_attributes(m)
+    attributes = Namespaced::Model.instance_variable_get(:@algolia_index_settings).get_attributes(m)
     attributes['customAttr'].should == 42
     attributes['myid'].should == m.id
     Namespaced::Model.search('').length.should == 1
@@ -209,7 +209,7 @@ describe 'Colors' do
   it "should be synchronous" do
     c = Color.new
     c.valid?
-    c.send(:synchronous?).should be_true
+    c.send(:algolia_synchronous?).should be_true
   end
 
   it "should auto index" do
@@ -317,7 +317,7 @@ describe 'An imaginary store' do
   it "should not be synchronous" do
     p = Product.new
     p.valid?
-    p.send(:synchronous?).should be_false
+    p.send(:algolia_synchronous?).should be_false
   end
 
   describe 'pagination' do
