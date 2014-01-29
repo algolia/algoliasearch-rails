@@ -394,6 +394,16 @@ describe 'An imaginary store' do
       results.should have_exactly(0).product
     end
 
+    it "should not throw an exception if a search result isn't found locally" do
+      Product.without_auto_index { @palmpre.destroy }
+      expect { Product.search('pal').to_json }.to_not raise_error
+    end
+
+    it 'should return the other results if those are still available locally' do
+      Product.without_auto_index { @palmpre.destroy }
+      JSON.parse(Product.search('pal').to_json).size.should == 1
+    end
+
     it "should not duplicate an already indexed record" do
       Product.search('nokia').should have_exactly(1).product
       @nokia.index!
