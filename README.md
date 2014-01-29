@@ -16,6 +16,7 @@ Table of Content
 1. [Setup](#setup)
 1. [Quick Start](#quick-start)
 1. [Options](#options)
+1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
 1. [Tags](#tags)
 1. [Geo-search](#geo-search)
@@ -191,6 +192,71 @@ class UniqUser < ActiveRecord::Base
 
   algoliasearch id: :uniq_name do
   end
+end
+```
+
+Configuration example
+---------------------
+
+Here is a real-word configuration example (from [HN Search](https://github.com/algolia/hn-search)):
+
+```ruby
+class Item < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch per_environment: true do
+    # the list of attributes sent to Algolia's API
+    attribute :created_at, :title, :url, :author, :points, :story_text, :comment_text, :author, :num_comments, :story_id, :story_title, :
+
+    # integer version of the created_at datetime field, to use numerical filtering
+    attribute :created_at_i do
+      created_at.to_i
+    end
+
+    # `title` is more important than `{story,comment}_text`, `{story,comment}_text` more than `url`, `url` more than `author`
+    # btw, do not take into account position in most fields to avoid first word match boost
+    attributesToIndex ['unordered(title)', 'unordered(story_text)', 'unordered(comment_text)', 'unordered(url)', 'author', 'created_at_i']
+
+    # list of attributes to highlight
+    attributesToHighlight ['title', 'story_text', 'comment_text', 'url', 'story_url', 'author', 'story_title']
+
+    # tags used for filtering
+    tags do
+      [item_type, "author_#{author}", "story_#{story_id}"]
+    end
+
+    # use associated number of HN points to sort results (last sort criteria)
+    customRanking ['desc(points)', 'desc(num_comments)']
+
+    # controls the way results are sorted sorting on the following 4 criteria (one after another)
+    # I removed the 'exact' match critera (improve 1-words query relevance, doesn't fit HNSearch needs)
+    ranking ['typo', 'proximity', 'attribute', 'custom']
+
+    # google+, $1.5M raises, C#: we love you
+    separatorsToIndex '+#$'
+  end
+
+  def story_text
+    item_type_cd != Item.comment ? text : nil
+  end
+
+  def story_title
+    comment? && story ? story.title : nil
+  end
+
+  def story_url
+    comment? && story ? story.url : nil
+  end
+
+  def comment_text
+    comment? ? text : nil
+  end
+
+  def comment?
+    item_type_cd == Item.comment
+  end
+
+  # [...]
 end
 ```
 
