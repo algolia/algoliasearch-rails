@@ -204,9 +204,11 @@ module AlgoliaSearch
       json = @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
         o = @algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
-        o.highlight_result = hit['_highlightResult']
-        o
-      end
+        if o
+          o.highlight_result = hit['_highlightResult']
+          o
+        end
+      end.compact
       AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @algolia_options)
     end
 
