@@ -51,7 +51,7 @@ module AlgoliaSearch
       :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
-      :separatorsToIndex, :optionalWords, :attributeForDistinct]
+      :separatorsToIndex, :optionalWords, :attributeForDistinct, :if]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
@@ -167,20 +167,26 @@ module AlgoliaSearch
       algolia_ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
-        objects = group.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
+        selected = @algolia_options[:if].present? ? group.select { |o| algolia_indexable?(o) } : group
+        objects = selected.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
       end
       @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
     end
 
     def algolia_index!(object, synchronous = false)
-      return if @algolia_without_auto_index_scope
+      return if @algolia_without_auto_index_scope || !algolia_indexable?(object)
       algolia_ensure_init
       if synchronous
         @algolia_index.add_object!(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       else
         @algolia_index.add_object(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       end
+    end
+
+    def algolia_indexable?(object)
+      if_opt = @algolia_options[:if]
+      if_opt.nil? || algolia_constraint_passes?(object, if_opt)
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
@@ -233,6 +239,7 @@ module AlgoliaSearch
     end
 
     protected
+
     def algolia_ensure_init
       return if @algolia_index
       @algolia_index = Algolia::Index.new(algolia_index_name)
@@ -281,6 +288,23 @@ module AlgoliaSearch
       obj
     end
 
+    def algolia_constraint_passes?(object, constraint)
+      case constraint
+      when Symbol
+        object.send(constraint)
+      when String
+        object.send(constraint.to_sym)
+      when Enumerable
+        # All constraints must pass
+        constraint.all? { |inner_constraint| algolia_constraint_passes?(object, inner_constraint) }
+      else
+        if constraint.respond_to?(:call) # Proc
+          constraint.call(object)
+        else
+          raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
+        end
+      end
+    end
   end
 
   # these are the instance methods included
