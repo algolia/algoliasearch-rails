@@ -15,4 +15,6 @@ AlgoliaSearch.configuration = { application_id: ENV['ALGOLIA_APPLICATION_ID'], a
 
 RSpec.configure do |c|
   c.mock_with :rspec
+  c.filter_run focus: true
+  c.run_all_when_everything_filtered = true
 end

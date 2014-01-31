@@ -26,6 +26,7 @@ ActiveRecord::Schema.define do
     t.string :href
     t.string :tags
     t.text :description
+    t.datetime :release_date
   end
   create_table :colors do |t|
     t.string :name
@@ -63,7 +64,10 @@ class Product < ActiveRecord::Base
 
   scope :amazon, -> { where(href: "amazon") }
 
-  algoliasearch auto_index: false, index_name: safe_index_name("my_products_index") do
+  algoliasearch auto_index: false,
+    if: :published?, unless: lambda { |o| o.href.blank? },
+    index_name: safe_index_name("my_products_index") do
+
     attribute :href, :name, :tags
     tags do
       [name, name] # multiple tags
@@ -72,6 +76,10 @@ class Product < ActiveRecord::Base
 
   def tags=(names)
     @tags = names.join(",")
+  end
+
+  def published?
+    release_date.blank? || release_date <= Time.now
   end
 end
 
@@ -325,6 +333,10 @@ describe 'An imaginary store' do
     @iphone = Product.create!(:name => 'iphone', :href => "apple", :tags => ['awesome', 'poor reception'], 
       :description => 'Puts even more features at your fingertips')
 
+    # Unindexed products
+    @sekrit = Product.create!(:name => 'super sekrit', :href => "amazon", :release_date => Time.now + 1.day)
+    @no_href = Product.create!(:name => 'super sekrit too; missing href')
+
     100.times do ; Product.create!(:name => 'crapoola', :href => "crappy", :tags => ['crappy']) ; end
 
     @products_in_database = Product.all
@@ -422,6 +434,10 @@ describe 'An imaginary store' do
       Product.search('', hitsPerPage: 1000).should have_exactly(n).product
     end
 
+    it "should not return products that are not indexable" do
+      results = Product.search('sekrit')
+      results.should have_exactly(0).product
+    end
   end
 
 end
