@@ -25,6 +25,7 @@ ActiveRecord::Schema.define do
     t.string :name
     t.string :href
     t.string :tags
+    t.string :type
     t.text :description
     t.datetime :release_date
   end
@@ -81,6 +82,9 @@ class Product < ActiveRecord::Base
   def published?
     release_date.blank? || release_date <= Time.now
   end
+end
+
+class Camera < Product
 end
 
 class Color < ActiveRecord::Base
@@ -191,7 +195,7 @@ describe 'Namespaced::Model' do
 
   it "should use the block to determine attribute's value" do
     m = Namespaced::Model.create!
-    attributes = Namespaced::Model.instance_variable_get(:@algolia_index_settings).get_attributes(m)
+    attributes = Namespaced::Model.algolia_index_settings.get_attributes(m)
     attributes['customAttr'].should == 42
     attributes['myid'].should == m.id
     Namespaced::Model.search('').length.should == 1
@@ -337,6 +341,9 @@ describe 'An imaginary store' do
     @sekrit = Product.create!(:name => 'super sekrit', :href => "amazon", :release_date => Time.now + 1.day)
     @no_href = Product.create!(:name => 'super sekrit too; missing href')
 
+    # Subproducts
+    @camera = Camera.create!(:name => 'canon eos rebel t3', :href => 'canon')
+
     100.times do ; Product.create!(:name => 'crapoola', :href => "crappy", :tags => ['crappy']) ; end
 
     @products_in_database = Product.all
@@ -435,8 +442,17 @@ describe 'An imaginary store' do
     end
 
     it "should not return products that are not indexable" do
+      @sekrit.index!
+      @no_href.index!
       results = Product.search('sekrit')
       results.should have_exactly(0).product
+    end
+
+    it "should include items belong to subclasses" do
+      @camera.index!
+      results = Product.search('eos rebel')
+      results.should have_exactly(1).product
+      results.should include(@camera)
     end
   end
 
