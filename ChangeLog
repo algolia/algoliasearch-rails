@@ -1,5 +1,10 @@
 CHANGELOG
 
+2014-01-31  1.7.1
+
+      * Ensure methods are not conflicting with already defined ones (use algolia_METHOD_NAME)
+      * Add ```:if``` and ```:unless``` options to control objects indexing
+
 2014-01-07  1.7.0
 
       * Updated algoliasearch to 1.2 (httpclient instead of curb as underlying HTTP layer)
