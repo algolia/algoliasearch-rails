@@ -64,7 +64,10 @@ class Product < ActiveRecord::Base
 
   scope :amazon, -> { where(href: "amazon") }
 
-  algoliasearch auto_index: false, if: :published?, index_name: safe_index_name("my_products_index") do
+  algoliasearch auto_index: false,
+    if: :published?, unless: lambda { |o| o.href.blank? },
+    index_name: safe_index_name("my_products_index") do
+
     attribute :href, :name, :tags
     tags do
       [name, name] # multiple tags
@@ -330,8 +333,9 @@ describe 'An imaginary store' do
     @iphone = Product.create!(:name => 'iphone', :href => "apple", :tags => ['awesome', 'poor reception'], 
       :description => 'Puts even more features at your fingertips')
 
-    # Unreleased secret products
-    @sekrit = Product.create!(:name => 'super sekrit', :href => "", :release_date => Time.now + 1.day)
+    # Unindexed products
+    @sekrit = Product.create!(:name => 'super sekrit', :href => "amazon", :release_date => Time.now + 1.day)
+    @no_href = Product.create!(:name => 'super sekrit too; missing href')
 
     100.times do ; Product.create!(:name => 'crapoola', :href => "crappy", :tags => ['crappy']) ; end
 
@@ -431,11 +435,9 @@ describe 'An imaginary store' do
     end
 
     it "should not return products that are not indexable" do
-      @sekrit.index!
       results = Product.search('sekrit')
       results.should have_exactly(0).product
     end
-
   end
 
 end

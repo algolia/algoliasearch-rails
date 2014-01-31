@@ -51,7 +51,8 @@ module AlgoliaSearch
       :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
-      :separatorsToIndex, :optionalWords, :attributeForDistinct, :if]
+      :separatorsToIndex, :optionalWords, :attributeForDistinct,
+      :if, :unless]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
@@ -167,8 +168,8 @@ module AlgoliaSearch
       algolia_ensure_init
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
-        selected = @algolia_options[:if].present? ? group.select { |o| algolia_indexable?(o) } : group
-        objects = selected.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
+        group.select! { |o| algolia_indexable?(o) } if algolia_conditional_index?
+        objects = group.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
       end
       @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
@@ -182,11 +183,6 @@ module AlgoliaSearch
       else
         @algolia_index.add_object(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       end
-    end
-
-    def algolia_indexable?(object)
-      if_opt = @algolia_options[:if]
-      if_opt.nil? || algolia_constraint_passes?(object, if_opt)
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
@@ -286,6 +282,16 @@ module AlgoliaSearch
         obj = obj.const_defined?(x) ? obj.const_get(x) : obj.const_missing(x)
       end
       obj
+    end
+
+    def algolia_conditional_index?
+      @algolia_options[:if].present? || @algolia_options[:unless].present?
+    end
+
+    def algolia_indexable?(object)
+      if_passes = @algolia_options[:if].blank? || algolia_constraint_passes?(object, @algolia_options[:if])
+      unless_passes = @algolia_options[:unless].blank? || !algolia_constraint_passes?(object, @algolia_options[:unless])
+      if_passes && unless_passes
     end
 
     def algolia_constraint_passes?(object, constraint)
