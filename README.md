@@ -106,6 +106,14 @@ end
 p Contact.search("jon doe")
 ```
 
+**Notes:** All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
+
+```ruby
+Contact.algolia_reindex! # <=> Contact.reindex!
+
+Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
+```
+
 Options
 ----------
 
