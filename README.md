@@ -195,6 +195,25 @@ class UniqUser < ActiveRecord::Base
 end
 ```
 
+You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
+
+```ruby
+class Post < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch if: :published?, unless: :deleted? do
+  end
+
+  def published?
+    # [...]
+  end
+
+  def deleted?
+    # [...]
+  end
+end
+```
+
 Configuration example
 ---------------------
 
