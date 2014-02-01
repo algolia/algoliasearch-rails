@@ -132,12 +132,14 @@ module AlgoliaSearch
         alias_method :index_name, :algolia_index_name unless method_defined? :index_name
         alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
       end
+
+      base.cattr_accessor :algolia_options, :algolia_settings, :algolia_index_settings
     end
 
     def algoliasearch(options = {}, &block)
-      @algolia_index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
-      @algolia_settings = @algolia_index_settings.to_settings
-      @algolia_options = { type: algolia_full_const_get(model_name.to_s), per_page: @algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      self.algolia_index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
+      self.algolia_settings = algolia_index_settings.to_settings
+      self.algolia_options = { type: algolia_full_const_get(model_name.to_s), per_page: algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
 
       attr_accessor :highlight_result
 
@@ -169,7 +171,7 @@ module AlgoliaSearch
       last_task = nil
       find_in_batches(batch_size: batch_size) do |group|
         group.select! { |o| algolia_indexable?(o) } if algolia_conditional_index?
-        objects = group.map { |o| @algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
+        objects = group.map { |o| algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
       end
       @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
@@ -179,9 +181,9 @@ module AlgoliaSearch
       return if @algolia_without_auto_index_scope || !algolia_indexable?(object)
       algolia_ensure_init
       if synchronous
-        @algolia_index.add_object!(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+        @algolia_index.add_object!(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       else
-        @algolia_index.add_object(@algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+        @algolia_index.add_object(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
       end
     end
 
@@ -205,13 +207,13 @@ module AlgoliaSearch
       algolia_ensure_init
       json = @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
       results = json['hits'].map do |hit|
-        o = @algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
+        o = algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
         if o
           o.highlight_result = hit['_highlightResult']
           o
         end
       end.compact
-      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, @algolia_options)
+      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options)
     end
 
     def algolia_index
@@ -220,14 +222,14 @@ module AlgoliaSearch
     end
 
     def algolia_index_name
-      name = @algolia_options[:index_name] || model_name.to_s.gsub('::', '_')
-      name = "#{name}_#{Rails.env.to_s}" if @algolia_options[:per_environment]
+      name = algolia_options[:index_name] || model_name.to_s.gsub('::', '_')
+      name = "#{name}_#{Rails.env.to_s}" if algolia_options[:per_environment]
       name
     end
 
     def algolia_must_reindex?(object)
       return true if algolia_object_id_changed?(object)
-      @algolia_index_settings.get_attributes(object).each do |k, v|
+      algolia_index_settings.get_attributes(object).each do |k, v|
         changed_method = "#{k}_changed?"
         return true if object.respond_to?(changed_method) && object.send(changed_method)
       end
@@ -240,13 +242,13 @@ module AlgoliaSearch
       return if @algolia_index
       @algolia_index = Algolia::Index.new(algolia_index_name)
       current_settings = @algolia_index.get_settings rescue nil # if the index doesn't exist
-      @algolia_index.set_settings(@algolia_settings) if algolia_index_settings_changed?(current_settings, @algolia_settings)
+      @algolia_index.set_settings(algolia_settings) if algolia_index_settings_changed?(current_settings, algolia_settings)
     end
 
     private
 
     def algolia_object_id_method
-      @algolia_options[:id] || @algolia_options[:object_id] || :id
+      algolia_options[:id] || algolia_options[:object_id] || :id
     end
 
     def algolia_object_id_of(o)
@@ -285,12 +287,12 @@ module AlgoliaSearch
     end
 
     def algolia_conditional_index?
-      @algolia_options[:if].present? || @algolia_options[:unless].present?
+      algolia_options[:if].present? || algolia_options[:unless].present?
     end
 
     def algolia_indexable?(object)
-      if_passes = @algolia_options[:if].blank? || algolia_constraint_passes?(object, @algolia_options[:if])
-      unless_passes = @algolia_options[:unless].blank? || !algolia_constraint_passes?(object, @algolia_options[:unless])
+      if_passes = algolia_options[:if].blank? || algolia_constraint_passes?(object, algolia_options[:if])
+      unless_passes = algolia_options[:unless].blank? || !algolia_constraint_passes?(object, algolia_options[:unless])
       if_passes && unless_passes
     end
 
