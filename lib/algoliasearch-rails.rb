@@ -169,7 +169,8 @@ module AlgoliaSearch
       return if @algolia_without_auto_index_scope
       algolia_ensure_init
       last_task = nil
-      find_in_batches(batch_size: batch_size) do |group|
+
+      algolia_find_in_batches(batch_size) do |group|
         group.select! { |o| algolia_indexable?(o) } if algolia_conditional_index?
         objects = group.map { |o| algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
@@ -310,6 +311,23 @@ module AlgoliaSearch
           constraint.call(object)
         else
           raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
+        end
+      end
+    end
+
+    def algolia_find_in_batches(batch_size, &block)
+      if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
+        find_in_batches(batch_size: batch_size, &block)
+      else
+        # don't worry, mongoid has its own underlying cursor/streaming mechanism
+        items = []
+        all.each do |item|
+          items << item
+          if items.length % batch_size == 0
+            yield items
+            items = []
+          end
+          yield items unless items.empty?
         end
       end
     end
