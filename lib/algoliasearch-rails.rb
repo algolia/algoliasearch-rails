@@ -128,6 +128,7 @@ module AlgoliaSearch
         alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
         alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
         alias_method :search, :algolia_search unless method_defined? :search
+        alias_method :raw_search, :algolia_raw_search unless method_defined? :raw_search
         alias_method :index, :algolia_index unless method_defined? :index
         alias_method :index_name, :algolia_index_name unless method_defined? :index_name
         alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
@@ -204,9 +205,13 @@ module AlgoliaSearch
       @algolia_index = nil
     end
 
-    def algolia_search(q, settings = {})
+    def algolia_raw_search(q, settings = {})
       algolia_ensure_init
-      json = @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
+      @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
+    end
+
+    def algolia_search(q, settings = {})
+      json = algolia_raw_search(q, settings)
       results = json['hits'].map do |hit|
         o = algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
         if o

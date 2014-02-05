@@ -249,6 +249,12 @@ describe 'Colors' do
     results.should include(@blue)
   end
 
+  it "should be raw searchable" do
+    results = Color.raw_search("blue")
+    results['hits'].size.should eq(1)
+    results['nbHits'].should eq(1)
+  end
+
   it "should not auto index if scoped" do
     Color.without_auto_index do
       Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)

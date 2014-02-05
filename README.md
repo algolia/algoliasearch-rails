@@ -102,9 +102,19 @@ class Product < ActiveRecord::Base
 end
 ```
 
+A search returns ORM-compliant objects reloading them from your database.
+
 ```ruby
 p Contact.search("jon doe")
 ```
+
+If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
+
+```ruby
+p Contact.raw_search("jon doe")
+```
+
+By the way, we recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries.
 
 **Notes:** All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
 
