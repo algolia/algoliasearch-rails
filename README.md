@@ -399,11 +399,11 @@ p Contact.search("jon doe", hitsPerPage: 5, page: 2)
 Typeahead UI
 -------------
 
-Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.js``` (a modified version of typeahead.js with custom transports, see the [pull request](https://github.com/twitter/typeahead.js/pull/473)) somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.jquery.js``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
 ```javascript
 //= require algolia/algoliasearch.min
-//= require algolia/typeahead.min
+//= require algolia/typeahead.jquery
 ```
 
 We recommend the usage of [hogan](http://twitter.github.io/hogan.js/), a JavaScript templating engine from Twitter.
@@ -416,15 +416,19 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
 
 ```javascript
 <input name="email" placeholder="test@example.org" id="user_email" />
+
 <script type="text/javascript">
   $(document).ready(function() {
     var client = new AlgoliaSearch('YourApplicationID', 'SearchOnlyApplicationKey');
-    $('input#user_email').typeahead({
-      name: 'emails',
-      remote: client.initIndex('<%= Contact.index_name %>').getTypeaheadTransport(),
-      engine: Hogan,
-      template: '{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})',
-      valueKey: 'email'
+    var template = Hogan.compile('{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})');
+    $('input#user_email').typeahead(null, {
+      source: client.initIndex('<%= Contact.index_name %>').ttAdapter(),
+      displayKey: 'email',
+      templates: {
+        suggestion: function(hit) {
+          return template.render(hit);
+        }
+      }
     });
   });
 </script>
