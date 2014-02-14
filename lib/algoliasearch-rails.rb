@@ -205,13 +205,35 @@ module AlgoliaSearch
       @algolia_index = nil
     end
 
-    def algolia_raw_search(q, settings = {})
+    def algolia_raw_search(q, params = {})
       algolia_ensure_init
-      @algolia_index.search(q, Hash[settings.map { |k,v| [k.to_s, v.to_s] }])
+      @algolia_index.search(q, Hash[params.map { |k,v| [k.to_s, v.to_s] }])
     end
 
-    def algolia_search(q, settings = {})
-      json = algolia_raw_search(q, settings)
+    module AdditionalMethods
+      def self.extended(base)
+        class <<base
+          alias_method :raw_answer, :algolia_raw_answer unless method_defined? :raw_answer
+          alias_method :facets, :algolia_facets unless method_defined? :facets
+        end
+      end
+
+      def algolia_raw_answer
+        @algolia_json
+      end
+
+      def algolia_facets
+        @algolia_json['facets']
+      end
+
+      private
+      def algolia_init_raw_answer(json)
+        @algolia_json = json
+      end
+    end
+
+    def algolia_search(q, params = {})
+      json = algolia_raw_search(q, params)
       results = json['hits'].map do |hit|
         o = algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
         if o
@@ -219,7 +241,10 @@ module AlgoliaSearch
           o
         end
       end.compact
-      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ page: json['page'] + 1 }))
+      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ page: json['page'] + 1 }))
+      res.extend(AdditionalMethods)
+      res.send(:algolia_init_raw_answer, json)
+      res
     end
 
     def algolia_index

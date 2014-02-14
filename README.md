@@ -19,8 +19,9 @@ Table of Content
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
 1. [Tags](#tags)
+1. [Search](#search)
+1. [Faceting](#faceting)
 1. [Geo-search](#geo-search)
-1. [Search settings](#search-settings)
 1. [Typeahead UI](#typeahead-ui)
 1. [Note on testing](#note-on-testing)
 
@@ -357,6 +358,80 @@ end
 
 At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
 
+Search
+----------
+
+A search returns ORM-compliant objects reloading them from your database. We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries to decrease the overall latency and offload your servers.
+
+
+```ruby
+hits =  Contact.search("jon doe")
+p hits
+p hits.raw_answer # to get the original JSON raw answer
+```
+
+If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
+
+```ruby
+json_answer = Contact.raw_search("jon doe")
+p json_answer
+p json_answer['hits']
+p json_answer['facets']
+```
+
+Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the ```search``` method:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    attribute :first_name, :last_name, :email
+    
+    # default search parameters stored in the index settings
+    minWordSizeForApprox1 4
+    minWordSizeForApprox2 8
+    hitsPerPage 42
+  end
+end
+```
+
+```ruby
+# dynamical search parameters
+p Contact.search("jon doe", { :hitsPerPage => 5, :page => 2 })
+```
+
+Faceting
+---------
+
+Facets can be retrieved calling the extra ```facets``` method of the search answer.
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # [...]
+
+    # specify the list of attributes available for faceting
+    attributesForFaceting [:company, :zip_code]
+  end
+end
+```
+
+```ruby
+hits = Contact.search("jon doe", { :facets => '*' })
+p hits                    # ORM-compliant array of objects
+p hits.facets             # extra method added to retrieve facets
+p hits.facets['company']  # facet values+count of facet 'company'
+p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
+```
+
+```ruby
+raw_json = Contact.raw_search("jon doe", { :facets => '*' })
+p raw_json['facets']
+```
+
 Geo-Search
 -----------
 
@@ -373,28 +448,6 @@ end
 ```
 
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
-
-Search settings
-----------
-
-All [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings) can be specified either statically in your model or dynamically at search time using [search options](https://github.com/algolia/algoliasearch-client-ruby#search):
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    attribute :first_name, :last_name, :email
-    minWordSizeForApprox1 2
-    minWordSizeForApprox2 5
-    hitsPerPage 42
-  end
-end
-```
-
-```ruby
-p Contact.search("jon doe", hitsPerPage: 5, page: 2)
-```
 
 Typeahead UI
 -------------

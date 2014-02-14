@@ -92,6 +92,7 @@ class Color < ActiveRecord::Base
 
   algoliasearch synchronous: true, index_name: safe_index_name("Color"), per_environment: true do
     attributesToIndex [:name]
+    attributesForFaceting [:short_name]
     customRanking ["asc(hex)"]
     tags do
       name # single tag
@@ -247,6 +248,14 @@ describe 'Colors' do
     results = Color.search("blue")
     results.should have_exactly(1).product
     results.should include(@blue)
+  end
+
+  it "should return facet as well" do
+    results = Color.search("", :facets => '*')
+    results.raw_answer.should_not be_nil
+    results.facets.should_not be_nil
+    results.facets.size.should eq(1)
+    results.facets['short_name']['b'].should eq(1)
   end
 
   it "should be raw searchable" do
