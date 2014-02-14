@@ -219,7 +219,7 @@ module AlgoliaSearch
           o
         end
       end.compact
-      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options)
+      AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ page: json['page'] + 1 }))
     end
 
     def algolia_index
