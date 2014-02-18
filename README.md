@@ -18,6 +18,7 @@ Table of Content
 1. [Options](#options)
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
+1. [Advanced indexing](#advanced-indexing)
 1. [Tags](#tags)
 1. [Search](#search)
 1. [Faceting](#faceting)
@@ -325,6 +326,42 @@ To clear an index, use the <code>clear_index!</code> class method:
 
 ```ruby
 Contact.clear_index!
+```
+
+Advanced indexing
+---------
+
+You can index a record in several indexes using the <code>add_index</code> method.
+
+```ruby
+class Book < ActiveRecord::Base
+  attr_protected
+
+  include AlgoliaSearch
+
+  PUBLIC_INDEX_NAME  = "Book_#{Rails.env}"
+  SECURED_INDEX_NAME = "SecuredBook_#{Rails.env}"
+
+  # store all books in index 'SECURED_INDEX_NAME' 
+  algoliasearch index_name: SECURED_INDEX_NAME do
+    attributesToIndex [:name, :author]
+    # convert security to tags
+    tags do
+      [released ? 'public' : 'private', premium ? 'premium' : 'standard']
+    end
+
+    # store all 'public' (released and not premium) books in index 'PUBLIC_INDEX_NAME'
+    add_index PUBLIC_INDEX_NAME, if: :public? do
+      attributesToIndex [:name, :author]
+    end
+  end
+
+  private
+  def public?
+    released && !premium
+  end
+
+end
 ```
 
 Tags
