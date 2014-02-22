@@ -29,7 +29,7 @@ GEM
       thread_safe (~> 0.1)
       tzinfo (~> 0.3.37)
     addressable (2.3.5)
-    algoliasearch (1.2.2)
+    algoliasearch (1.2.4)
       httpclient (~> 2.3)
       json (>= 1.5.1)
     arel (4.0.1)

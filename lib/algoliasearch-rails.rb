@@ -172,7 +172,13 @@ module AlgoliaSearch
       last_task = nil
 
       algolia_find_in_batches(batch_size) do |group|
-        group.select! { |o| algolia_indexable?(o) } if algolia_conditional_index?
+        if algolia_conditional_index?
+          # delete non-indexable objects
+          objects = group.select { |o| !algolia_indexable?(o) }.map { |o| algolia_object_id_of(o) }
+          @algolia_index.delete_objects(objects)
+          # select only indexable objects
+          group.select! { |o| algolia_indexable?(o) }
+        end
         objects = group.map { |o| algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
       end
@@ -180,12 +186,21 @@ module AlgoliaSearch
     end
 
     def algolia_index!(object, synchronous = false)
-      return if @algolia_without_auto_index_scope || !algolia_indexable?(object)
+      return if @algolia_without_auto_index_scope
       algolia_ensure_init
-      if synchronous
-        @algolia_index.add_object!(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
-      else
-        @algolia_index.add_object(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+      if algolia_indexable?(object)
+        if synchronous
+          @algolia_index.add_object!(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+        else
+          @algolia_index.add_object(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+        end
+      elsif algolia_conditional_index?
+        # remove non-indexable objects
+        if synchronous
+          @algolia_index.delete_object!(algolia_object_id_of(object))
+        else
+          @algolia_index.delete_object(algolia_object_id_of(object))
+        end
       end
     end
 

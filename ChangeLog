@@ -3,6 +3,8 @@ CHANGELOG
 2014-02-21  1.9.0
 
       * Fixed pagination starting at 1 in Kaminari & WillPaginate and 0 in Algolia
+      * As soon as :if or :unless are used, we need to remove the objects from the index
+        if the constraints don't match
 
 2014-02-15  1.8.2
 

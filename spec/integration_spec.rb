@@ -469,6 +469,30 @@ describe 'An imaginary store' do
       results.should have_exactly(1).product
       results.should include(@camera)
     end
+
+    it "should delete a not-anymore-indexable product" do
+      results = Product.search('sekrit')
+      results.should have_exactly(0).product
+
+      @sekrit.release_date = Time.now - 1.day
+      @sekrit.save!
+      @sekrit.index!
+      results = Product.search('sekrit')
+      results.should have_exactly(1).product
+
+      @sekrit.release_date = Time.now + 1.day
+      @sekrit.save!
+      @sekrit.index!
+      results = Product.search('sekrit')
+      results.should have_exactly(0).product
+    end
+
+    it "should delete not-anymore-indexable product while reindexing" do
+      n = Product.search('', hitsPerPage: 1000).size
+      Product.where(release_date: nil).first.update_attribute :release_date, Time.now + 1.day
+      Product.reindex!(1000, true)
+      Product.search('', hitsPerPage: 1000).should have_exactly(n - 1).product
+    end
   end
 
 end
