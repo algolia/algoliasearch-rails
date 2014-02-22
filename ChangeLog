@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-02-21  1.9.0
+
+      * Fixed pagination starting at 1 in Kaminari & WillPaginate and 0 in Algolia
+
 2014-02-15  1.8.2
 
       * Ability to retrieve facets and raw answer as well

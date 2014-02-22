@@ -233,6 +233,11 @@ module AlgoliaSearch
     end
 
     def algolia_search(q, params = {})
+      if AlgoliaSearch.configuration[:pagination_backend]
+        # kaminari and will_paginate start pagination at 1, Algolia starts at 0
+        params[:page] = (params.delete('page') || params.delete(:page)).to_i
+        params[:page] -= 1 if params[:page].to_i > 0
+      end
       json = algolia_raw_search(q, params)
       results = json['hits'].map do |hit|
         o = algolia_options[:type].where(algolia_object_id_method => hit['objectID']).first
