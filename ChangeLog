@@ -1,7 +1,8 @@
 CHANGELOG
 
-2014-02-21  1.9.0
+2014-02-24  1.9.0
 
+      * Upgrade to algoliasearch 1.2.5 and algoliasearch-client-js 2.4.2
       * Fixed pagination starting at 1 in Kaminari & WillPaginate and 0 in Algolia
       * As soon as :if or :unless are used, we need to remove the objects from the index
         if the constraints don't match
