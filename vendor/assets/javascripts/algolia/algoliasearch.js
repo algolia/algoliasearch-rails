@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.4.0';
+var ALGOLIA_VERSION = '2.4.2';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -91,7 +91,8 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
 
 function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
 
-    function _getHitAxplainationForOneAttr_recurse(obj, foundWords) {
+    function _getHitExplanationForOneAttr_recurse(obj, foundWords) {
+        var res = [];
         if (typeof obj === 'object' && 'matchedWords' in obj && 'value' in obj) {
             var match = false;
             for (var j = 0; j < obj.matchedWords.length; ++j) {
@@ -101,30 +102,28 @@ function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
                     match = true;
                 }
             }
-            return match ? [obj.value] : [];
-        } else if (obj instanceof Array) {
-            var res = [];
+            if (match) {
+                res.push(obj.value);
+            }
+        } else if (Object.prototype.toString.call(obj) === '[object Array]') {
             for (var i = 0; i < obj.length; ++i) {
-                var array = _getHitAxplainationForOneAttr_recurse(obj[i], foundWords);
+                var array = _getHitExplanationForOneAttr_recurse(obj[i], foundWords);
                 res = res.concat(array);
             }
-            return res;
         } else if (typeof obj === 'object') {
-            var res = [];
-            for (prop in obj) {
+            for (var prop in obj) {
                 if (obj.hasOwnProperty(prop)){
-                    res = res.concat(_getHitAxplainationForOneAttr_recurse(obj[prop], foundWords));
+                    res = res.concat(_getHitExplanationForOneAttr_recurse(obj[prop], foundWords));
                 }
             }
-            return res;
         }
-        return [];
+        return res;
     }
     
-    function _getHitAxplainationForOneAttr(hit, foundWords, attr) {
+    function _getHitExplanationForOneAttr(hit, foundWords, attr) {
         if (attr.indexOf('.') === -1) {
             if (attr in hit._highlightResult) {
-                return _getHitAxplainationForOneAttr_recurse(hit._highlightResult[attr], foundWords);
+                return _getHitExplanationForOneAttr_recurse(hit._highlightResult[attr], foundWords);
             }
             return [];
         }
@@ -137,18 +136,18 @@ function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
                 return [];
             }
         }
-        return _getHitAxplainationForOneAttr_recurse(obj, foundWords);
+        return _getHitExplanationForOneAttr_recurse(obj, foundWords);
     }
 
     var res = {};
     var foundWords = {};
-    var title = _getHitAxplainationForOneAttr(hit, foundWords, titleAttribute);
-    res.title = (title.length > 0) ? title[0] : "";
+    var title = _getHitExplanationForOneAttr(hit, foundWords, titleAttribute);
+    res.title = (title.length > 0) ? title[0] : '';
     res.subtitles = [];
 
     if (typeof otherAttributes !== 'undefined') {
         for (var i = 0; i < otherAttributes.length; ++i) {
-            var attr = _getHitAxplainationForOneAttr(hit, foundWords, otherAttributes[i]);
+            var attr = _getHitExplanationForOneAttr(hit, foundWords, otherAttributes[i]);
             for (var j = 0; j < attr.length; ++j) {
                 res.subtitles.push({ attr: otherAttributes[i], value: attr[j] });
             }
@@ -334,6 +333,38 @@ AlgoliaSearch.prototype = {
                             body: aclsObject,
                             callback: callback });
     },
+
+    /**
+     * Set the extra security tagFilters header
+     * @param {string|array} tags The list of tags defining the current security filters
+     */
+    setSecurityTags: function(tags) {
+        if (Object.prototype.toString.call(tags) === '[object Array]') {
+            var strTags = [];
+            for (var i = 0; i < tags.length; ++i) {
+                if (Object.prototype.toString.call(tags[i]) === '[object Array]') {
+                    var oredTags = [];
+                    for (var j = 0; j < tags[i].length; ++j) {
+                        oredTags.push(tags[i][j]);
+                    }
+                    strTags.push('(' + oredTags.join(',') + ')');
+                } else {
+                    strTags.push(tags[i]);
+                }
+            }
+            tags = strTags.join(',');
+        }
+        this.setExtraHeader('X-Algolia-TagFilters', tags);
+    },
+
+    /**
+     * Set the extra user token header
+     * @param {string} userToken The token identifying a uniq user (used to apply rate limits)
+     */
+    setUserToken: function(userToken) {
+      this.setExtraHeader('X-Algolia-UserToken', userToken);
+    },
+
     /*
      * Initialize a new batch of search queries
      */
@@ -1084,6 +1115,21 @@ AlgoliaSearch.prototype.Index.prototype = {
 
 (function($) {
   var self;
+
+  var extend = function(out) {
+    out = out || {};
+    for (var i = 1; i < arguments.length; i++) {
+      if (!arguments[i]) {
+        continue;
+      }
+      for (var key in arguments[i]) {
+        if (arguments[i].hasOwnProperty(key)) {
+          out[key] = arguments[i][key];
+        }
+      }
+    }
+    return out;
+  };
   
   /**
    * Algolia Search Helper providing faceting and disjunctive faceting
@@ -1099,7 +1145,7 @@ AlgoliaSearch.prototype.Index.prototype = {
       hitsPerPage: 20        // number of hits per page
     };
 
-    this.init(client, index, $.extend({}, defaults, options));
+    this.init(client, index, extend({}, defaults, options));
     self = this;
   };
 
@@ -1295,4 +1341,4 @@ AlgoliaSearch.prototype.Index.prototype = {
       return facetFilters;
     }
   };
-})(jQuery);
+})();
