@@ -377,8 +377,8 @@ module AlgoliaSearch
             yield items
             items = []
           end
-          yield items unless items.empty?
         end
+        yield items unless items.empty?
       end
     end
   end
