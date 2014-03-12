@@ -2,36 +2,29 @@ unless defined? Kaminari
   raise(AlgoliaSearch::BadConfiguration, "AlgoliaSearch: Please add 'kaminari' to your Gemfile to use kaminari pagination backend")
 end
 
+require "kaminari/models/array_extension"
+
 module AlgoliaSearch
   module Pagination
-    class Kaminari < Array
-      include ::Kaminari::ConfigurationMethods::ClassMethods
-      include ::Kaminari::PageScopeMethods
+    class Kaminari < ::Kaminari::PaginatableArray
 
-      attr_reader :limit_value, :offset_value, :total_count
-
-      def initialize(original_array, limit_val, offset_val, total_count)
-        @limit_value = limit_val || default_per_page
-        @offset_value, @total_count = offset_val, total_count
-        super(original_array)
-      end
-
-      def page(num = 1)
-        self
+      def initialize(array, options)
+        super(array, options)
       end
 
       def limit(num)
+        # noop
         self
       end
 
-      def current_page
-        offset_value+1
+      def offset(num)
+        # noop
+        self
       end
 
       class << self
         def create(results, total_hits, options = {})
-          instance = new(results, options[:per_page], options[:page]-1, total_hits)
-          instance
+          new results, offset: ((options[:page] - 1) * options[:per_page]), limit: options[:per_page], total_count: total_hits
         end
       end
     end

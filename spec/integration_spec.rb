@@ -514,3 +514,27 @@ describe 'MongoObject' do
     MongoObject.create(name: 'mongo').algolia_index!
   end
 end
+
+describe 'Kaminari' do
+
+  before(:all) do
+    require 'kaminari'
+    AlgoliaSearch.configuration = { application_id: ENV['ALGOLIA_APPLICATION_ID'], api_key: ENV['ALGOLIA_API_KEY'], pagination_backend: :kaminari }
+  end
+
+  it "should paginate" do
+    pagination = City.search ''
+    pagination.total_count.should eq(City.raw_search('')['nbHits'])
+
+    p1 = City.search '', page: 1, hitsPerPage: 1
+    p1.size.should eq(1)
+    p1[0].should eq(pagination[0])
+    p1.total_count.should eq(City.raw_search('')['nbHits'])
+
+    p2 = City.search '', page: 2, hitsPerPage: 1
+    p2.size.should eq(1)
+    p2[0].should eq(pagination[1])
+    p2.total_count.should eq(City.raw_search('')['nbHits'])
+  end
+
+end

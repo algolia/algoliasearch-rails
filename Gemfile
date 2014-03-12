@@ -6,7 +6,7 @@ gem 'rubysl', '~> 2.0', platform: :rbx
 
 group :test do 
   gem 'rspec', '>= 2.5.0'
-  gem 'activerecord', '>= 3.0.7'
+  gem 'rails', '>= 3.0.7'
   gem 'sqlite3', platform: [:rbx, :ruby]
   gem 'jdbc-sqlite3', platform: :jruby
   gem 'activerecord-jdbc-adapter', platform: :jruby
@@ -18,9 +18,12 @@ group :test do
 end
 
 group :development do
-  gem 'will_paginate', '>= 2.3.15'
-  gem 'kaminari'
   gem 'travis'
   gem 'rake'
   gem 'rdoc'
+end
+
+group :test, :development do
+  gem 'will_paginate', '>= 2.3.15'
+  gem 'kaminari'
 end
