@@ -4,11 +4,7 @@ require 'active_record'
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 
-class Rails
-  def self.env
-    "fake"
-  end
-end
+AlgoliaSearch.configuration = { application_id: ENV['ALGOLIA_APPLICATION_ID'], api_key: ENV['ALGOLIA_API_KEY'] }
 
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
@@ -51,13 +47,6 @@ ActiveRecord::Schema.define do
   create_table :mongo_objects do |t|
     t.string :name
   end
-end
-
-# avoid concurrent access to the same index
-def safe_index_name(name)
-  return name if ENV['TRAVIS'].to_s != "true"
-  id = ENV['TRAVIS_JOB_NUMBER'].split('.').last
-  "#{name}_travis-#{id}"
 end
 
 class Product < ActiveRecord::Base
