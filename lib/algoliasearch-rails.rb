@@ -187,30 +187,34 @@ module AlgoliaSearch
 
     def algolia_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
+      object_id = algolia_object_id_of(object)
+      raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
       algolia_ensure_init
       if algolia_indexable?(object)
         if synchronous
-          @algolia_index.add_object!(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+          @algolia_index.add_object!(algolia_index_settings.get_attributes(object), object_id)
         else
-          @algolia_index.add_object(algolia_index_settings.get_attributes(object), algolia_object_id_of(object))
+          @algolia_index.add_object(algolia_index_settings.get_attributes(object), object_id)
         end
       elsif algolia_conditional_index?
         # remove non-indexable objects
         if synchronous
-          @algolia_index.delete_object!(algolia_object_id_of(object))
+          @algolia_index.delete_object!(object_id)
         else
-          @algolia_index.delete_object(algolia_object_id_of(object))
+          @algolia_index.delete_object(object_id)
         end
       end
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
+      object_id = algolia_object_id_of(object)
+      raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
       algolia_ensure_init
       if synchronous
-        @algolia_index.delete_object!(algolia_object_id_of(object))
+        @algolia_index.delete_object!(object_id)
       else
-        @algolia_index.delete_object(algolia_object_id_of(object))
+        @algolia_index.delete_object(object_id)
       end
     end
 

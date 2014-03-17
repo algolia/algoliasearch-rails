@@ -309,6 +309,10 @@ describe 'Colors' do
     results.should include(@blue)
   end
 
+  it "should not index non-saved object" do
+    expect { Color.new(name: 'purple').index! }.to raise_error(ArgumentError)
+    expect { Color.new(name: 'purple').remove_from_index! }.to raise_error(ArgumentError)
+  end
 end
 
 describe 'An imaginary store' do

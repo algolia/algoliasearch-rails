@@ -1,9 +1,12 @@
 CHANGELOG
 
+2014-03-17  1.9.2
+
+      * Raise an exception while attempting to index a non-saved object (blank objectID)
+
 2014-03-06  1.9.1
 
       * When using MongoId, the `reindex!` method was calling add_objects too many times. (credits go to sush.io)
-
 
 2014-02-24  1.9.0
 
