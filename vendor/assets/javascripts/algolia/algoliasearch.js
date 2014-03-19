@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.4.2';
+var ALGOLIA_VERSION = '2.4.4';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -72,7 +72,7 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
         }
         if (this._isUndefined(method) || method == null) {
             this.hosts.push(('https:' == document.location.protocol ? 'https' : 'http') + '://' + hostsArray[i]);
-        } else if (method === 'https' || method === 'HTTPS') {
+        } else if (method === 'https' || method === 'HTTPS') {
             this.hosts.push('https://' + hostsArray[i]);
         } else {
             this.hosts.push('http://' + hostsArray[i]);
@@ -700,7 +700,7 @@ AlgoliaSearch.prototype.Index.prototype = {
          *  success: boolean set to true if the request was successfull
          *  content: the server answer that updateAt and taskID
          */
-        saveObject: function(object, callback) {
+        saveObject: function(object, callback) {
             var indexObj = this;
             this.as._jsonRequest({ method: 'PUT',
                                    url: '/1/indexes/' + encodeURIComponent(indexObj.indexName) + '/' + encodeURIComponent(object.objectID),
@@ -879,10 +879,12 @@ AlgoliaSearch.prototype.Index.prototype = {
             this.as._jsonRequest({ method: 'GET',
                                    url: '/1/indexes/' + encodeURIComponent(indexObj.indexName) + '/task/' + taskID,
                                    callback: function(success, body) {
-                if (success && body.status === 'published') {
-                    callback(true, body);
-                } else if (success && body.pendingTask) {
-                    return indexObj.waitTask(taskID, callback);
+                if (success) {
+                    if (body.status === 'published') {
+                        callback(true, body);
+                    } else {
+                        setTimeout(function() { indexObj.waitTask(taskID, callback); }, 100);
+                    }
                 } else {
                     callback(false, body);
                 }
@@ -1173,12 +1175,13 @@ AlgoliaSearch.prototype.Index.prototype = {
      *  success: boolean set to true if the request was successfull
      *  content: the query answer with an extra 'disjunctiveFacets' attribute
      */
-    search: function(q, searchCallback) {
+    search: function(q, searchCallback, searchParams) {
       this.q = q;
       this.searchCallback = searchCallback;
-      this.page = 0;
-      this.refinements = {};
-      this.disjunctiveRefinements = {};
+      this.searchParams = searchParams || {};
+      this.page = this.page || 0;
+      this.refinements = this.refinements || {};
+      this.disjunctiveRefinements = this.disjunctiveRefinements || {};
       this._search();
     },
 
@@ -1291,12 +1294,12 @@ AlgoliaSearch.prototype.Index.prototype = {
      * @return {hash}
      */
     _getHitsSearchParams: function() {
-      return {
+      return extend({}, this.searchParams, {
         hitsPerPage: this.options.hitsPerPage,
         page: this.page,
         facets: this.options.facets,
         facetFilters: this._getFacetFilters()
-      };
+      });
     },
 
     /**
@@ -1305,12 +1308,12 @@ AlgoliaSearch.prototype.Index.prototype = {
      * @return {hash}
      */
     _getDisjunctiveFacetSearchParams: function(facet) {
-      return {
+      return extend({}, this.searchParams, {
         hitsPerPage: 1,
         page: 0,
         facets: facet,
         facetFilters: this._getFacetFilters(facet)
-      };
+      });
     },
 
     /**
