@@ -92,7 +92,7 @@ module AlgoliaSearch
 
     def geoloc(lat_attr, lng_attr)
       add_attribute :_geoloc do |o|
-        { lat: o.send(lat_attr).to_f, lng: o.send(lng_attr).to_f }
+        { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 
@@ -140,7 +140,7 @@ module AlgoliaSearch
     def algoliasearch(options = {}, &block)
       self.algolia_index_settings = IndexSettings.new(block_given? ? Proc.new : nil)
       self.algolia_settings = algolia_index_settings.to_settings
-      self.algolia_options = { type: algolia_full_const_get(model_name.to_s), per_page: algolia_index_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      self.algolia_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algolia_index_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result
 
@@ -177,7 +177,7 @@ module AlgoliaSearch
           objects = group.select { |o| !algolia_indexable?(o) }.map { |o| algolia_object_id_of(o) }
           @algolia_index.delete_objects(objects)
           # select only indexable objects
-          group.select! { |o| algolia_indexable?(o) }
+          group = group.select { |o| algolia_indexable?(o) }
         end
         objects = group.map { |o| algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) }
         last_task = @algolia_index.save_objects(objects)
@@ -265,7 +265,7 @@ module AlgoliaSearch
           o
         end
       end.compact
-      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ page: json['page'] + 1 }))
+      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ :page => json['page'] + 1 }))
       res.extend(AdditionalMethods)
       res.send(:algolia_init_raw_answer, json)
       res
@@ -332,7 +332,7 @@ module AlgoliaSearch
     def algolia_full_const_get(name)
       list = name.split('::')
       list.shift if list.first.blank?
-      obj = self
+      obj = Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9 ? Object : self
       list.each do |x|
         # This is required because const_get tries to look for constants in the
         # ancestor chain, but we only want constants that are HERE
@@ -371,7 +371,7 @@ module AlgoliaSearch
 
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
-        find_in_batches(batch_size: batch_size, &block)
+        find_in_batches(:batch_size => batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []

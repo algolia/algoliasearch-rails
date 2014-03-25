@@ -24,7 +24,7 @@ module AlgoliaSearch
 
       class << self
         def create(results, total_hits, options = {})
-          new results, offset: ((options[:page] - 1) * options[:per_page]), limit: options[:per_page], total_count: total_hits
+          new results, :offset => ((options[:page] - 1) * options[:per_page]), :limit => options[:per_page], :total_count => total_hits
         end
       end
     end

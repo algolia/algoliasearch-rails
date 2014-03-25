@@ -4,7 +4,7 @@ require 'active_record'
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 
-AlgoliaSearch.configuration = { application_id: ENV['ALGOLIA_APPLICATION_ID'], api_key: ENV['ALGOLIA_API_KEY'] }
+AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
 
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
@@ -33,7 +33,7 @@ ActiveRecord::Schema.define do
   create_table :namespaced_models do |t|
     t.string :name
   end
-  create_table :uniq_users, id: false do |t|
+  create_table :uniq_users, :id => false do |t|
     t.string :name
   end
   create_table :nested_items do |t|
@@ -52,11 +52,9 @@ end
 class Product < ActiveRecord::Base
   include AlgoliaSearch
 
-  scope :amazon, -> { where(href: "amazon") }
-
-  algoliasearch auto_index: false,
-    if: :published?, unless: lambda { |o| o.href.blank? },
-    index_name: safe_index_name("my_products_index") do
+  algoliasearch :auto_index => false,
+    :if => :published?, :unless => lambda { |o| o.href.blank? },
+    :index_name => safe_index_name("my_products_index") do
 
     attribute :href, :name, :tags
     tags do
@@ -79,7 +77,7 @@ end
 class Color < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("Color"), per_environment: true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
     attributesToIndex [:name]
     attributesForFaceting [:short_name]
     customRanking ["asc(hex)"]
@@ -97,7 +95,7 @@ end
 class Namespaced::Model < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true do
+  algoliasearch :synchronous => true do
     attribute :customAttr do
       40 + another_private_value
     end
@@ -116,16 +114,16 @@ end
 class UniqUser < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("UniqUser"), per_environment: true, id: :name do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("UniqUser"), :per_environment => true, :id => :name do
   end
 end
 
 class NestedItem < ActiveRecord::Base
-  has_many :children, class_name: "NestedItem", foreign_key: "parent_id"
+  has_many :children, :class_name => "NestedItem", :foreign_key => "parent_id"
 
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("UniqUser"), per_environment: true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("UniqUser"), :per_environment => true do
     attribute :nb_children
   end
 
@@ -137,7 +135,7 @@ end
 class City < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("City"), per_environment: true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
     geoloc :lat, :lng
   end
 end
@@ -168,7 +166,7 @@ describe 'Settings' do
 
   it "should not detect settings changes" do
     Color.send(:algolia_index_settings_changed?, {}, {}).should be_false
-    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {attributesToIndex: ["name"]}).should be_false
+    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should be_false
     Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
   end
 
@@ -198,7 +196,7 @@ describe 'UniqUsers' do
   end
 
   it "should not use the id field" do
-    u = UniqUser.create name: 'fooBar'
+    u = UniqUser.create :name => 'fooBar'
     results = UniqUser.search('foo')
     results.should have_exactly(1).uniq_users
   end
@@ -214,7 +212,7 @@ describe 'NestedItem' do
     @i2 = NestedItem.create
 
     @i1.children << NestedItem.create << NestedItem.create
-    NestedItem.where(id: [@i1.id, @i2.id]).reindex!(1000, true)
+    NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(1000, true)
 
     result = NestedItem.index.get_object(@i1.id)
     result['nb_children'].should == 2
@@ -233,7 +231,7 @@ describe 'Colors' do
   end
 
   it "should auto index" do
-    @blue = Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
+    @blue = Color.create!(:name => "blue", :short_name => "b", :hex => 0xFF0000)
     results = Color.search("blue")
     results.should have_exactly(1).product
     results.should include(@blue)
@@ -255,7 +253,7 @@ describe 'Colors' do
 
   it "should not auto index if scoped" do
     Color.without_auto_index do
-      Color.create!(name: "blue", short_name: "b", hex: 0xFF0000)
+      Color.create!(:name => "blue", :short_name => "b", :hex => 0xFF0000)
     end
     Color.search("blue").should have_exactly(1).product
     Color.reindex!(1000, true)
@@ -263,15 +261,15 @@ describe 'Colors' do
   end
 
   it "should not be searchable with non-indexed fields" do
-    @blue = Color.create!(name: "blue", short_name: "x", hex: 0xFF0000)
+    @blue = Color.create!(:name => "blue", :short_name => "x", :hex => 0xFF0000)
     results = Color.search("x")
     results.should have_exactly(0).product
   end
 
   it "should rank with custom hex" do
-    @blue = Color.create!(name: "red", short_name: "r3", hex: 3)
-    @blue2 = Color.create!(name: "red", short_name: "r1", hex: 1)
-    @blue3 = Color.create!(name: "red", short_name: "r2", hex: 2)
+    @blue = Color.create!(:name => "red", :short_name => "r3", :hex => 3)
+    @blue2 = Color.create!(:name => "red", :short_name => "r1", :hex => 1)
+    @blue3 = Color.create!(:name => "red", :short_name => "r2", :hex => 2)
     results = Color.search("red")
     results.should have_exactly(3).product
     results[0].hex.should eq(1)
@@ -280,7 +278,7 @@ describe 'Colors' do
   end
 
   it "should update the index if the attribute changed" do
-    @purple = Color.create!(name: "purple", short_name: "p")
+    @purple = Color.create!(:name => "purple", :short_name => "p")
     Color.search("purple").should have_exactly(1).product
     Color.search("pink").should have_exactly(0).product
     @purple.name = "pink"
@@ -291,10 +289,10 @@ describe 'Colors' do
 
   it "should use the specified scope" do
     Color.clear_index!(true)
-    Color.where(name: 'red').reindex!(1000, true)
+    Color.where(:name => 'red').reindex!(1000, true)
     Color.search("").should have_exactly(3).product
     Color.clear_index!(true)
-    Color.where(id: Color.first.id).reindex!(1000, true)
+    Color.where(:id => Color.first.id).reindex!(1000, true)
     Color.search("").should have_exactly(1).product
   end
 
@@ -303,15 +301,15 @@ describe 'Colors' do
   end
 
   it "should add tags" do
-    @blue = Color.create!(name: "green", short_name: "b", hex: 0xFF0000)
-    results = Color.search("green", { tagFilters: 'green' })
+    @blue = Color.create!(:name => "green", :short_name => "b", :hex => 0xFF0000)
+    results = Color.search("green", { :tagFilters => 'green' })
     results.should have_exactly(1).product
     results.should include(@blue)
   end
 
   it "should not index non-saved object" do
-    expect { Color.new(name: 'purple').index! }.to raise_error(ArgumentError)
-    expect { Color.new(name: 'purple').remove_from_index! }.to raise_error(ArgumentError)
+    expect { Color.new(:name => 'purple').index! }.to raise_error(ArgumentError)
+    expect { Color.new(:name => 'purple').remove_from_index! }.to raise_error(ArgumentError)
   end
 end
 
@@ -367,8 +365,8 @@ describe 'An imaginary store' do
 
   describe 'pagination' do
     it 'should display total results correctly' do
-      results = Product.search('crapoola', hitsPerPage: 1000)
-      results.length.should == Product.where(name: 'crapoola').count
+      results = Product.search('crapoola', :hitsPerPage => 1000)
+      results.length.should == Product.where(:name => 'crapoola').count
     end
   end
 
@@ -441,12 +439,12 @@ describe 'An imaginary store' do
     end
 
     it "should not duplicate while reindexing" do
-      n = Product.search('', hitsPerPage: 1000).length
+      n = Product.search('', :hitsPerPage => 1000).length
       Product.reindex!(1000, true)
-      Product.search('', hitsPerPage: 1000).should have_exactly(n).product
+      Product.search('', :hitsPerPage => 1000).should have_exactly(n).product
       Product.reindex!(1000, true)
       Product.reindex!(1000, true)
-      Product.search('', hitsPerPage: 1000).should have_exactly(n).product
+      Product.search('', :hitsPerPage => 1000).should have_exactly(n).product
     end
 
     it "should not return products that are not indexable" do
@@ -481,10 +479,10 @@ describe 'An imaginary store' do
     end
 
     it "should delete not-anymore-indexable product while reindexing" do
-      n = Product.search('', hitsPerPage: 1000).size
-      Product.where(release_date: nil).first.update_attribute :release_date, Time.now + 1.day
+      n = Product.search('', :hitsPerPage => 1000).size
+      Product.where(:release_date => nil).first.update_attribute :release_date, Time.now + 1.day
       Product.reindex!(1000, true)
-      Product.search('', hitsPerPage: 1000).should have_exactly(n - 1).product
+      Product.search('', :hitsPerPage => 1000).should have_exactly(n - 1).product
     end
   end
 
@@ -496,13 +494,13 @@ describe 'Cities' do
   end
 
   it "should index geo" do
-    sf = City.create name: 'San Francisco', lat: 37.75, lng: -122.68
-    mv = City.create name: 'Mountain View', lat: 37.38, lng: -122.08
-    results = City.search('', { aroundLatLng: "37.33, -121.89", aroundRadius: 50000 })
+    sf = City.create :name => 'San Francisco', :lat => 37.75, :lng => -122.68
+    mv = City.create :name => 'Mountain View', :lat => 37.38, :lng => -122.08
+    results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
     results.should have_exactly(1).city
     results.should include(mv)
 
-    results = City.search('', { aroundLatLng: "37.33, -121.89", aroundRadius: 500000 })
+    results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 500000 })
     results.should have_exactly(2).cities
     results.should include(mv)
     results.should include(sf)
@@ -515,7 +513,7 @@ describe 'MongoObject' do
     expect { MongoObject.reindex! }.to raise_error(NameError)
     expect { MongoObject.new.index! }.to raise_error(NameError)
     MongoObject.algolia_reindex!
-    MongoObject.create(name: 'mongo').algolia_index!
+    MongoObject.create(:name => 'mongo').algolia_index!
   end
 end
 
@@ -523,19 +521,19 @@ describe 'Kaminari' do
 
   before(:all) do
     require 'kaminari'
-    AlgoliaSearch.configuration = { application_id: ENV['ALGOLIA_APPLICATION_ID'], api_key: ENV['ALGOLIA_API_KEY'], pagination_backend: :kaminari }
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :kaminari }
   end
 
   it "should paginate" do
     pagination = City.search ''
     pagination.total_count.should eq(City.raw_search('')['nbHits'])
 
-    p1 = City.search '', page: 1, hitsPerPage: 1
+    p1 = City.search '', :page => 1, :hitsPerPage => 1
     p1.size.should eq(1)
     p1[0].should eq(pagination[0])
     p1.total_count.should eq(City.raw_search('')['nbHits'])
 
-    p2 = City.search '', page: 2, hitsPerPage: 1
+    p2 = City.search '', :page => 2, :hitsPerPage => 1
     p2.size.should eq(1)
     p2[0].should eq(pagination[1])
     p2.total_count.should eq(City.raw_search('')['nbHits'])
