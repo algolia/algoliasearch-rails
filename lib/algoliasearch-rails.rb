@@ -265,7 +265,7 @@ module AlgoliaSearch
           o
         end
       end.compact
-      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ :page => json['page'] + 1 }))
+      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algolia_options.merge({ :page => json['page'] + 1, :per_page => json['hitsPerPage'] }))
       res.extend(AdditionalMethods)
       res.send(:algolia_init_raw_answer, json)
       res
