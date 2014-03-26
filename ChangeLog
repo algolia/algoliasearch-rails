@@ -1,5 +1,10 @@
 CHANGELOG
 
+2014-03-26  1.9.3
+
+      * Ruby 1.8 compatibility
+      * Fixed a bug ignoring hitsPerPage parameter while using backend pagination (will_paginate/kaminari)
+
 2014-03-17  1.9.2
 
       * Raise an exception while attempting to index a non-saved object (blank objectID)
