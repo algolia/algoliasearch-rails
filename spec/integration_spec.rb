@@ -307,10 +307,17 @@ describe 'Colors' do
     results.should include(@blue)
   end
 
+  it "should index an array of objects" do
+    json = Color.raw_search('')
+    Color.index_objects Color.limit(1), true # reindex last color, `limit` is incompatible with the reindex! method
+    json['nbHits'].should eq(Color.raw_search('')['nbHits'])
+  end
+
   it "should not index non-saved object" do
     expect { Color.new(:name => 'purple').index! }.to raise_error(ArgumentError)
     expect { Color.new(:name => 'purple').remove_from_index! }.to raise_error(ArgumentError)
   end
+
 end
 
 describe 'An imaginary store' do

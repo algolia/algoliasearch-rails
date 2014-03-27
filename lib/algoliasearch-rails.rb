@@ -124,6 +124,7 @@ module AlgoliaSearch
       class <<base
         alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
         alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
+        alias_method :index_objects, :algolia_index_objects unless method_defined? :index_objects
         alias_method :index!, :algolia_index! unless method_defined? :index!
         alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
         alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
@@ -183,6 +184,11 @@ module AlgoliaSearch
         last_task = @algolia_index.save_objects(objects)
       end
       @algolia_index.wait_task(last_task["taskID"]) if last_task and synchronous == true
+    end
+
+    def algolia_index_objects(objects, synchronous = false)
+      task = @algolia_index.save_objects(objects.map { |o| algolia_index_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o) })
+      @algolia_index.wait_task(task["taskID"]) if synchronous == true
     end
 
     def algolia_index!(object, synchronous = false)
