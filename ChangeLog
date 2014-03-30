@@ -1,5 +1,12 @@
 CHANGELOG
 
+2014-03-30  1.9.4
+
+      * Ability to index an array of objects using the `index_objects` method. Ref #15
+      * Upgrade typeahead.js to 0.10.2 (fixed flickering)
+      * Upgrade algoliasearch-client-ruby to 1.2.8 (fixed unhandled exception)
+      * Upgrade algoliasearch-client-js to 2.4.5 (embed last ExplainResults helper fixes)
+
 2014-03-26  1.9.3
 
       * Ruby 1.8 compatibility
