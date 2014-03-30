@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.4.4';
+var ALGOLIA_VERSION = '2.4.5';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -121,15 +121,23 @@ function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
     }
     
     function _getHitExplanationForOneAttr(hit, foundWords, attr) {
+        var base = hit._highlightResult || hit;
         if (attr.indexOf('.') === -1) {
-            if (attr in hit._highlightResult) {
-                return _getHitExplanationForOneAttr_recurse(hit._highlightResult[attr], foundWords);
+            if (attr in base) {
+                return _getHitExplanationForOneAttr_recurse(base[attr], foundWords);
             }
             return [];
         }
         var array = attr.split('.');
-        var obj = hit._highlightResult;
+        var obj = base;
         for (var i = 0; i < array.length; ++i) {
+            if (Object.prototype.toString.call(obj) === '[object Array]') {
+                var res = [];
+                for (var j = 0; j < obj.length; ++j) {
+                    res = res.concat(_getHitExplanationForOneAttr(obj[j], foundWords, array.slice(i).join('.')));
+                }
+                return res;
+            }
             if (array[i] in obj) {
                 obj = obj[array[i]];
             } else {
