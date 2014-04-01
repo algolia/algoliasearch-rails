@@ -47,8 +47,8 @@ module AlgoliaSearch
   class IndexSettings
 
     # AlgoliaSearch settings
-    OPTIONS = [:attributesToIndex, :minWordSizefor1Typo,
-      :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
+    OPTIONS = [:minWordSizefor1Typo, :minWordSizefor2Typos,
+      :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct]
@@ -91,7 +91,7 @@ module AlgoliaSearch
 
     def geoloc(lat_attr, lng_attr)
       add_attribute :_geoloc do |o|
-        { lat: o.send(lat_attr).to_f, lng: o.send(lng_attr).to_f }
+        { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 
@@ -135,6 +135,7 @@ module AlgoliaSearch
       class <<base
         alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
         alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
+        alias_method :index_objects, :algolia_index_objects unless method_defined? :index_objects
         alias_method :index!, :algolia_index! unless method_defined? :index!
         alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
         alias_method :clear_index!, :algolia_clear_index! unless method_defined? :clear_index!
@@ -150,7 +151,7 @@ module AlgoliaSearch
 
     def algoliasearch(options = {}, &block)
       self.algoliasearch_settings = IndexSettings.new(block_given? ? Proc.new : nil)
-      self.algoliasearch_options = { type: algolia_full_const_get(model_name.to_s), per_page: algoliasearch_settings.get_setting(:hitsPerPage) || 10, page: 1 }.merge(options)
+      self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result
 
@@ -183,24 +184,49 @@ module AlgoliaSearch
         last_task = nil
 
         algolia_find_in_batches(batch_size) do |group|
-          group.select! { |o| algolia_indexable?(o, options) } if algolia_conditional_index?(options)
+          if algolia_conditional_index?(options)
+            # delete non-indexable objects
+            objects = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
+            index.delete_objects(objects)
+            # select only indexable objects  
+            group = group.select { |o| algolia_indexable?(o, options) }
+          end
           objects = group.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) }
           last_task = index.save_objects(objects)
         end
+
         index.wait_task(last_task["taskID"]) if last_task and synchronous == true
       end
       nil
     end
 
+    def algolia_index_objects(objects, synchronous = false)
+      algolia_configurations.each do |options, settings|
+        index = algolia_ensure_init(options, settings)
+        task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
+        index.wait_task(task["taskID"]) if synchronous == true
+      end
+    end
+
     def algolia_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
-        next if !algolia_indexable?(object, options)
+        object_id = algolia_object_id_of(object, options)
+        raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
         index = algolia_ensure_init(options, settings)
-        if synchronous
-          index.add_object!(settings.get_attributes(object), algolia_object_id_of(object, options))
-        else
-          index.add_object(settings.get_attributes(object), algolia_object_id_of(object, options))
+        if algolia_indexable?(object, options)
+          if synchronous
+            index.add_object!(settings.get_attributes(object), object_id)
+          else
+            index.add_object(settings.get_attributes(object), object_id)
+          end
+        elsif algolia_conditional_index?(options)
+          # remove non-indexable objects
+          if synchronous
+            index.delete_object!(object_id)
+          else
+            index.delete_object(object_id)
+          end
         end
       end
       nil
@@ -208,12 +234,14 @@ module AlgoliaSearch
 
     def algolia_remove_from_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
+      object_id = algolia_object_id_of(object)
+      raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
         index = algolia_ensure_init(options, settings)
         if synchronous
-          index.delete_object!(algolia_object_id_of(object, options))
+          index.delete_object!(object_id)
         else
-          index.delete_object(algolia_object_id_of(object, options))
+          index.delete_object(object_id)
         end
       end
       nil
@@ -256,6 +284,11 @@ module AlgoliaSearch
     end
 
     def algolia_search(q, params = {})
+      if AlgoliaSearch.configuration[:pagination_backend]
+        # kaminari and will_paginate start pagination at 1, Algolia starts at 0
+        params[:page] = (params.delete('page') || params.delete(:page)).to_i
+        params[:page] -= 1 if params[:page].to_i > 0
+      end
       json = algolia_raw_search(q, params)
       results = json['hits'].map do |hit|
         o = algoliasearch_options[:type].where(algolia_object_id_method => hit['objectID']).first
@@ -264,7 +297,7 @@ module AlgoliaSearch
           o
         end
       end.compact
-      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algoliasearch_options.merge({ page: json['page'] + 1 }))
+      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algoliasearch_options.merge({ :page => json['page'] + 1, :per_page => json['hitsPerPage'] }))
       res.extend(AdditionalMethods)
       res.send(:algolia_init_raw_answer, json)
       res
@@ -355,7 +388,7 @@ module AlgoliaSearch
     def algolia_full_const_get(name)
       list = name.split('::')
       list.shift if list.first.blank?
-      obj = self
+      obj = Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9 ? Object : self
       list.each do |x|
         # This is required because const_get tries to look for constants in the
         # ancestor chain, but we only want constants that are HERE
@@ -396,7 +429,7 @@ module AlgoliaSearch
 
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
-        find_in_batches(batch_size: batch_size, &block)
+        find_in_batches(:batch_size => batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
@@ -406,8 +439,8 @@ module AlgoliaSearch
             yield items
             items = []
           end
-          yield items unless items.empty?
         end
+        yield items unless items.empty?
       end
     end
   end

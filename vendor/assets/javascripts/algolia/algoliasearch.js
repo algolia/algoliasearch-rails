@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.4.0';
+var ALGOLIA_VERSION = '2.4.5';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -72,7 +72,7 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
         }
         if (this._isUndefined(method) || method == null) {
             this.hosts.push(('https:' == document.location.protocol ? 'https' : 'http') + '://' + hostsArray[i]);
-        } else if (method === 'https' || method === 'HTTPS') {
+        } else if (method === 'https' || method === 'HTTPS') {
             this.hosts.push('https://' + hostsArray[i]);
         } else {
             this.hosts.push('http://' + hostsArray[i]);
@@ -91,7 +91,8 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
 
 function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
 
-    function _getHitAxplainationForOneAttr_recurse(obj, foundWords) {
+    function _getHitExplanationForOneAttr_recurse(obj, foundWords) {
+        var res = [];
         if (typeof obj === 'object' && 'matchedWords' in obj && 'value' in obj) {
             var match = false;
             for (var j = 0; j < obj.matchedWords.length; ++j) {
@@ -101,54 +102,60 @@ function AlgoliaExplainResults(hit, titleAttribute, otherAttributes) {
                     match = true;
                 }
             }
-            return match ? [obj.value] : [];
-        } else if (obj instanceof Array) {
-            var res = [];
+            if (match) {
+                res.push(obj.value);
+            }
+        } else if (Object.prototype.toString.call(obj) === '[object Array]') {
             for (var i = 0; i < obj.length; ++i) {
-                var array = _getHitAxplainationForOneAttr_recurse(obj[i], foundWords);
+                var array = _getHitExplanationForOneAttr_recurse(obj[i], foundWords);
                 res = res.concat(array);
             }
-            return res;
         } else if (typeof obj === 'object') {
-            var res = [];
-            for (prop in obj) {
+            for (var prop in obj) {
                 if (obj.hasOwnProperty(prop)){
-                    res = res.concat(_getHitAxplainationForOneAttr_recurse(obj[prop], foundWords));
+                    res = res.concat(_getHitExplanationForOneAttr_recurse(obj[prop], foundWords));
                 }
             }
-            return res;
         }
-        return [];
+        return res;
     }
     
-    function _getHitAxplainationForOneAttr(hit, foundWords, attr) {
+    function _getHitExplanationForOneAttr(hit, foundWords, attr) {
+        var base = hit._highlightResult || hit;
         if (attr.indexOf('.') === -1) {
-            if (attr in hit._highlightResult) {
-                return _getHitAxplainationForOneAttr_recurse(hit._highlightResult[attr], foundWords);
+            if (attr in base) {
+                return _getHitExplanationForOneAttr_recurse(base[attr], foundWords);
             }
             return [];
         }
         var array = attr.split('.');
-        var obj = hit._highlightResult;
+        var obj = base;
         for (var i = 0; i < array.length; ++i) {
+            if (Object.prototype.toString.call(obj) === '[object Array]') {
+                var res = [];
+                for (var j = 0; j < obj.length; ++j) {
+                    res = res.concat(_getHitExplanationForOneAttr(obj[j], foundWords, array.slice(i).join('.')));
+                }
+                return res;
+            }
             if (array[i] in obj) {
                 obj = obj[array[i]];
             } else {
                 return [];
             }
         }
-        return _getHitAxplainationForOneAttr_recurse(obj, foundWords);
+        return _getHitExplanationForOneAttr_recurse(obj, foundWords);
     }
 
     var res = {};
     var foundWords = {};
-    var title = _getHitAxplainationForOneAttr(hit, foundWords, titleAttribute);
-    res.title = (title.length > 0) ? title[0] : "";
+    var title = _getHitExplanationForOneAttr(hit, foundWords, titleAttribute);
+    res.title = (title.length > 0) ? title[0] : '';
     res.subtitles = [];
 
     if (typeof otherAttributes !== 'undefined') {
         for (var i = 0; i < otherAttributes.length; ++i) {
-            var attr = _getHitAxplainationForOneAttr(hit, foundWords, otherAttributes[i]);
+            var attr = _getHitExplanationForOneAttr(hit, foundWords, otherAttributes[i]);
             for (var j = 0; j < attr.length; ++j) {
                 res.subtitles.push({ attr: otherAttributes[i], value: attr[j] });
             }
@@ -334,6 +341,38 @@ AlgoliaSearch.prototype = {
                             body: aclsObject,
                             callback: callback });
     },
+
+    /**
+     * Set the extra security tagFilters header
+     * @param {string|array} tags The list of tags defining the current security filters
+     */
+    setSecurityTags: function(tags) {
+        if (Object.prototype.toString.call(tags) === '[object Array]') {
+            var strTags = [];
+            for (var i = 0; i < tags.length; ++i) {
+                if (Object.prototype.toString.call(tags[i]) === '[object Array]') {
+                    var oredTags = [];
+                    for (var j = 0; j < tags[i].length; ++j) {
+                        oredTags.push(tags[i][j]);
+                    }
+                    strTags.push('(' + oredTags.join(',') + ')');
+                } else {
+                    strTags.push(tags[i]);
+                }
+            }
+            tags = strTags.join(',');
+        }
+        this.setExtraHeader('X-Algolia-TagFilters', tags);
+    },
+
+    /**
+     * Set the extra user token header
+     * @param {string} userToken The token identifying a uniq user (used to apply rate limits)
+     */
+    setUserToken: function(userToken) {
+      this.setExtraHeader('X-Algolia-UserToken', userToken);
+    },
+
     /*
      * Initialize a new batch of search queries
      */
@@ -669,7 +708,7 @@ AlgoliaSearch.prototype.Index.prototype = {
          *  success: boolean set to true if the request was successfull
          *  content: the server answer that updateAt and taskID
          */
-        saveObject: function(object, callback) {
+        saveObject: function(object, callback) {
             var indexObj = this;
             this.as._jsonRequest({ method: 'PUT',
                                    url: '/1/indexes/' + encodeURIComponent(indexObj.indexName) + '/' + encodeURIComponent(object.objectID),
@@ -848,10 +887,12 @@ AlgoliaSearch.prototype.Index.prototype = {
             this.as._jsonRequest({ method: 'GET',
                                    url: '/1/indexes/' + encodeURIComponent(indexObj.indexName) + '/task/' + taskID,
                                    callback: function(success, body) {
-                if (success && body.status === 'published') {
-                    callback(true, body);
-                } else if (success && body.pendingTask) {
-                    return indexObj.waitTask(taskID, callback);
+                if (success) {
+                    if (body.status === 'published') {
+                        callback(true, body);
+                    } else {
+                        setTimeout(function() { indexObj.waitTask(taskID, callback); }, 100);
+                    }
                 } else {
                     callback(false, body);
                 }
@@ -1084,6 +1125,21 @@ AlgoliaSearch.prototype.Index.prototype = {
 
 (function($) {
   var self;
+
+  var extend = function(out) {
+    out = out || {};
+    for (var i = 1; i < arguments.length; i++) {
+      if (!arguments[i]) {
+        continue;
+      }
+      for (var key in arguments[i]) {
+        if (arguments[i].hasOwnProperty(key)) {
+          out[key] = arguments[i][key];
+        }
+      }
+    }
+    return out;
+  };
   
   /**
    * Algolia Search Helper providing faceting and disjunctive faceting
@@ -1099,7 +1155,7 @@ AlgoliaSearch.prototype.Index.prototype = {
       hitsPerPage: 20        // number of hits per page
     };
 
-    this.init(client, index, $.extend({}, defaults, options));
+    this.init(client, index, extend({}, defaults, options));
     self = this;
   };
 
@@ -1127,12 +1183,13 @@ AlgoliaSearch.prototype.Index.prototype = {
      *  success: boolean set to true if the request was successfull
      *  content: the query answer with an extra 'disjunctiveFacets' attribute
      */
-    search: function(q, searchCallback) {
+    search: function(q, searchCallback, searchParams) {
       this.q = q;
       this.searchCallback = searchCallback;
-      this.page = 0;
-      this.refinements = {};
-      this.disjunctiveRefinements = {};
+      this.searchParams = searchParams || {};
+      this.page = this.page || 0;
+      this.refinements = this.refinements || {};
+      this.disjunctiveRefinements = this.disjunctiveRefinements || {};
       this._search();
     },
 
@@ -1245,12 +1302,12 @@ AlgoliaSearch.prototype.Index.prototype = {
      * @return {hash}
      */
     _getHitsSearchParams: function() {
-      return {
+      return extend({}, this.searchParams, {
         hitsPerPage: this.options.hitsPerPage,
         page: this.page,
         facets: this.options.facets,
         facetFilters: this._getFacetFilters()
-      };
+      });
     },
 
     /**
@@ -1259,12 +1316,12 @@ AlgoliaSearch.prototype.Index.prototype = {
      * @return {hash}
      */
     _getDisjunctiveFacetSearchParams: function(facet) {
-      return {
+      return extend({}, this.searchParams, {
         hitsPerPage: 1,
         page: 0,
         facets: facet,
         facetFilters: this._getFacetFilters(facet)
-      };
+      });
     },
 
     /**
@@ -1295,4 +1352,4 @@ AlgoliaSearch.prototype.Index.prototype = {
       return facetFilters;
     }
   };
-})(jQuery);
+})();

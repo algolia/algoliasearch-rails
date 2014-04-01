@@ -1,5 +1,32 @@
 CHANGELOG
 
+2014-03-30  1.9.4
+
+      * Ability to index an array of objects using the `index_objects` method. Ref #15
+      * Upgrade typeahead.js to 0.10.2 (fixed flickering)
+      * Upgrade algoliasearch-client-ruby to 1.2.8 (fixed unhandled exception)
+      * Upgrade algoliasearch-client-js to 2.4.5 (embed last ExplainResults helper fixes)
+
+2014-03-26  1.9.3
+
+      * Ruby 1.8 compatibility
+      * Fixed a bug ignoring hitsPerPage parameter while using backend pagination (will_paginate/kaminari)
+
+2014-03-17  1.9.2
+
+      * Raise an exception while attempting to index a non-saved object (blank objectID)
+
+2014-03-06  1.9.1
+
+      * When using MongoId, the `reindex!` method was calling add_objects too many times. (credits go to sush.io)
+
+2014-02-24  1.9.0
+
+      * Upgrade to algoliasearch 1.2.5 and algoliasearch-client-js 2.4.2
+      * Fixed pagination starting at 1 in Kaminari & WillPaginate and 0 in Algolia
+      * As soon as :if or :unless are used, we need to remove the objects from the index
+        if the constraints don't match
+
 2014-02-15  1.8.2
 
       * Ability to retrieve facets and raw answer as well

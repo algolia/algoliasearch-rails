@@ -234,6 +234,20 @@ class Post < ActiveRecord::Base
 end
 ```
 
+You can index a subset of your records using either:
+
+```ruby
+# will generate batch API calls (recommended)
+MyModel.where('updated_at > ?', 10.minutes.ago).reindex!
+```
+
+or
+
+```ruby
+MyModel.index_objects MyModel.limit(5)
+```
+
+
 Configuration example
 ---------------------
 
