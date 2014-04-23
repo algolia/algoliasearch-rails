@@ -50,6 +50,7 @@ module AlgoliaSearch
     OPTIONS = [:attributesToIndex, :minWordSizefor1Typo,
       :minWordSizefor2Typos, :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
+      :highlightPreTag, :highlightPostTag,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
       :if, :unless]
