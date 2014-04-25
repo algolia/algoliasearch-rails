@@ -119,6 +119,7 @@ module AlgoliaSearch
     def add_index(index_name, options = {}, &block)
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
+      index_name = "#{index_name}_#{Rails.env.to_s}" if options[:per_environment]
       options[:index_name] = index_name
       @additional_indexes ||= {}
       @additional_indexes[options] = IndexSettings.new(Proc.new)
@@ -307,7 +308,9 @@ module AlgoliaSearch
     def algolia_index(name = nil)
       if name
         algolia_configurations.each do |o, s|
-          return algolia_ensure_init(o, s) if o[:index_name].to_s == name.to_s
+          if o[:index_name].to_s == name.to_s || (o[:per_environment] && "#{name}_#{Rails.env}" == o[:index_name].to_s)
+            return algolia_ensure_init(o, s)
+          end
         end
         raise ArgumentError.new("Invalid index name: #{name}")
       end
