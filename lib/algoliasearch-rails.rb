@@ -472,12 +472,12 @@ module AlgoliaSearch
       end
     end
 
-    def algolia_index!
-      self.class.algolia_index!(self, algolia_synchronous?)
+    def algolia_index!(synchronous = false)
+      self.class.algolia_index!(self, synchronous || algolia_synchronous?)
     end
 
-    def algolia_remove_from_index!
-      self.class.algolia_remove_from_index!(self, algolia_synchronous?)
+    def algolia_remove_from_index!(synchronous = false)
+      self.class.algolia_remove_from_index!(self, synchronous || algolia_synchronous?)
     end
 
     private

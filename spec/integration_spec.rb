@@ -509,13 +509,13 @@ describe 'An imaginary store' do
 
       @sekrit.release_date = Time.now - 1.day
       @sekrit.save!
-      @sekrit.index!
+      @sekrit.index!(true)
       results = Product.search('sekrit')
       results.should have_exactly(1).product
 
       @sekrit.release_date = Time.now + 1.day
       @sekrit.save!
-      @sekrit.index!
+      @sekrit.index!(true)
       results = Product.search('sekrit')
       results.should have_exactly(0).product
     end
