@@ -41,11 +41,18 @@ ActiveRecord::Schema.define do
   end
   create_table :cities do |t|
     t.string :name
+    t.string :country
     t.float :lat
     t.float :lng
   end
   create_table :mongo_objects do |t|
     t.string :name
+  end
+  create_table :books do |t|
+    t.string :name
+    t.string :author
+    t.boolean :premium
+    t.boolean :released
   end
 end
 
@@ -137,6 +144,10 @@ class City < ActiveRecord::Base
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
     geoloc :lat, :lng
+
+    add_slave safe_index_name('City_slave1'), :per_environment => true do
+      attributesToIndex [:country]
+    end
   end
 end
 
@@ -155,19 +166,43 @@ class MongoObject < ActiveRecord::Base
   end
 end
 
+class Book < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch synchronous: true, index_name: safe_index_name("SecuredBook"), per_environment: true do
+    attributesToIndex [:name]
+    tags do
+      [premium ? 'premium' : 'standard', released ? 'public' : 'private']
+    end
+
+    add_index safe_index_name('BookAuthor'), per_environment: true do
+      attributesToIndex [:author]
+    end    
+
+    add_index safe_index_name('Book'), per_environment: true, if: :public? do
+      attributesToIndex [:name]
+    end
+  end
+
+  private
+  def public?
+    released && !premium
+  end
+end
+
 describe 'Settings' do
 
   it "should detect settings changes" do
-    Color.send(:algolia_index_settings_changed?, nil, {}).should be_true
-    Color.send(:algolia_index_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
-    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
-    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
+    Color.send(:algoliasearch_settings_changed?, nil, {}).should be_true
+    Color.send(:algoliasearch_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
   end
 
   it "should not detect settings changes" do
-    Color.send(:algolia_index_settings_changed?, {}, {}).should be_false
-    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should be_false
-    Color.send(:algolia_index_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
+    Color.send(:algoliasearch_settings_changed?, {}, {}).should be_false
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should be_false
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
   end
 
 end
@@ -183,7 +218,7 @@ describe 'Namespaced::Model' do
 
   it "should use the block to determine attribute's value" do
     m = Namespaced::Model.create!
-    attributes = Namespaced::Model.algolia_index_settings.get_attributes(m)
+    attributes = Namespaced::Model.algoliasearch_settings.get_attributes(m)
     attributes['customAttr'].should == 42
     attributes['myid'].should == m.id
     Namespaced::Model.search('').length.should == 1
@@ -501,8 +536,8 @@ describe 'Cities' do
   end
 
   it "should index geo" do
-    sf = City.create :name => 'San Francisco', :lat => 37.75, :lng => -122.68
-    mv = City.create :name => 'Mountain View', :lat => 37.38, :lng => -122.08
+    sf = City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    mv = City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
     results.should have_exactly(1).city
     results.should include(mv)
@@ -511,6 +546,11 @@ describe 'Cities' do
     results.should have_exactly(2).cities
     results.should include(mv)
     results.should include(sf)
+  end
+
+  it "should be searchable using slave index" do
+    r = City.index(safe_index_name('City_slave1')).search 'no land'
+    r['nbHits'].should eq(1)
   end
 end
 
@@ -524,8 +564,35 @@ describe 'MongoObject' do
   end
 end
 
-describe 'Kaminari' do
+describe 'Book' do
+  before(:all) do
+    Book.clear_index!(true)
+    Book.index(safe_index_name('BookAuthor')).clear
+    Book.index(safe_index_name('Book')).clear
+  end
 
+  it "should index the book in 2 indexes of 3" do
+    @steve_jobs = Book.create! name: 'Steve Jobs', author: 'Walter Isaacson', premium: true, released: true
+    results = Book.search('steve')
+    results.should have_exactly(1).book
+    results.should include(@steve_jobs)
+
+    index_author = Book.index(safe_index_name('BookAuthor'))
+    index_author.should_not be_nil
+    results = index_author.search('steve')
+    results['hits'].length.should eq(0)
+    results = index_author.search('walter')
+    results['hits'].length.should eq(1)
+
+    # premium -> not part of the public index
+    index_book = Book.index(safe_index_name('Book'))
+    index_book.should_not be_nil
+    results = index_book.search('steve')
+    results['hits'].length.should eq(0)
+  end
+end
+
+describe 'Kaminari' do
   before(:all) do
     require 'kaminari'
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :kaminari }
@@ -545,5 +612,4 @@ describe 'Kaminari' do
     p2[0].should eq(pagination[1])
     p2.total_count.should eq(City.raw_search('')['nbHits'])
   end
-
 end
