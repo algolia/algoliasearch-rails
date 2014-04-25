@@ -113,16 +113,25 @@ module AlgoliaSearch
         v = get_setting(k)
         settings[k] = v if !v.nil?
       end
+      settings[:slaves] = additional_indexes.select { |options, s| options[:slave] }.map do |options, s|
+        name = options[:index_name]
+        name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
+        name
+      end
       settings
     end
 
     def add_index(index_name, options = {}, &block)
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
-      index_name = "#{index_name}_#{Rails.env.to_s}" if options[:per_environment]
       options[:index_name] = index_name
       @additional_indexes ||= {}
       @additional_indexes[options] = IndexSettings.new(Proc.new)
+    end
+
+    def add_slave(index_name, options, &block)
+      raise ArgumentError.new('No block given') if !block_given?
+      add_index(index_name, options.merge({ :slave => true }), &block)
     end
 
     def additional_indexes
@@ -183,6 +192,7 @@ module AlgoliaSearch
       return if @algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         index = algolia_ensure_init(options, settings)
+        next if options[:slave]
         last_task = nil
 
         algolia_find_in_batches(batch_size) do |group|
@@ -205,6 +215,7 @@ module AlgoliaSearch
     def algolia_index_objects(objects, synchronous = false)
       algolia_configurations.each do |options, settings|
         index = algolia_ensure_init(options, settings)
+        next if options[:slave]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
         index.wait_task(task["taskID"]) if synchronous == true
       end
@@ -216,6 +227,7 @@ module AlgoliaSearch
         object_id = algolia_object_id_of(object, options)
         raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
         index = algolia_ensure_init(options, settings)
+        next if options[:slave]
         if algolia_indexable?(object, options)
           if synchronous
             index.add_object!(settings.get_attributes(object), object_id)
@@ -240,6 +252,7 @@ module AlgoliaSearch
       raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
         index = algolia_ensure_init(options, settings)
+        next if options[:slave]
         if synchronous
           index.delete_object!(object_id)
         else
@@ -252,6 +265,7 @@ module AlgoliaSearch
     def algolia_clear_index!(synchronous = false)
       algolia_configurations.each do |options, settings|
         index = algolia_ensure_init(options, settings)
+        next if options[:slave]
         synchronous ? index.clear! : index.clear
         @algolia_indexes[settings] = nil
       end
@@ -308,9 +322,7 @@ module AlgoliaSearch
     def algolia_index(name = nil)
       if name
         algolia_configurations.each do |o, s|
-          if o[:index_name].to_s == name.to_s || (o[:per_environment] && "#{name}_#{Rails.env}" == o[:index_name].to_s)
-            return algolia_ensure_init(o, s)
-          end
+          return algolia_ensure_init(o, s) if o[:index_name].to_s == name.to_s
         end
         raise ArgumentError.new("Invalid index name: #{name}")
       end
@@ -326,6 +338,7 @@ module AlgoliaSearch
 
     def algolia_must_reindex?(object)
       algolia_configurations.each do |options, settings|
+        next if options[:slave]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attributes(object).each do |k, v|
           changed_method = "#{k}_changed?"

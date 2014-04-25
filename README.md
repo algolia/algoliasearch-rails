@@ -18,6 +18,7 @@ Table of Content
 1. [Options](#options)
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
+1. [Master/Slave](#masterslave)
 1. [Advanced indexing](#advanced-indexing)
 1. [Tags](#tags)
 1. [Search](#search)
@@ -340,6 +341,34 @@ To clear an index, use the <code>clear_index!</code> class method:
 
 ```ruby
 Contact.clear_index!
+```
+
+Master/slave
+---------
+
+You can define slave indexes using the <code>add_slave</code> method.
+
+```ruby
+class Book < ActiveRecord::Base
+  attr_protected
+
+  include AlgoliaSearch
+
+  algoliasearch do
+    attributesToIndex [:name, :author, :editor]
+
+    # define a slave to search by `author` only
+    add_slave 'Book_by_author' do
+      attributesToIndex [:author]
+    end
+
+    # define a slave to search by `editor` only
+    add_slave 'Book_by_editor' do
+      attributesToIndex [:editor]
+    end
+  end
+
+end
 ```
 
 Advanced indexing

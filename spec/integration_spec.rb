@@ -41,6 +41,7 @@ ActiveRecord::Schema.define do
   end
   create_table :cities do |t|
     t.string :name
+    t.string :country
     t.float :lat
     t.float :lng
   end
@@ -143,6 +144,10 @@ class City < ActiveRecord::Base
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
     geoloc :lat, :lng
+
+    add_slave safe_index_name('City_slave1'), :per_environment => true do
+      attributesToIndex [:country]
+    end
   end
 end
 
@@ -531,8 +536,8 @@ describe 'Cities' do
   end
 
   it "should index geo" do
-    sf = City.create :name => 'San Francisco', :lat => 37.75, :lng => -122.68
-    mv = City.create :name => 'Mountain View', :lat => 37.38, :lng => -122.08
+    sf = City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    mv = City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
     results.should have_exactly(1).city
     results.should include(mv)
@@ -541,6 +546,11 @@ describe 'Cities' do
     results.should have_exactly(2).cities
     results.should include(mv)
     results.should include(sf)
+  end
+
+  it "should be searchable using slave index" do
+    r = City.index(safe_index_name('City_slave1')).search 'no land'
+    r['nbHits'].should eq(1)
   end
 end
 
