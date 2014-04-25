@@ -396,7 +396,7 @@ describe 'An imaginary store' do
 
     @products_in_database = Product.all
 
-    Product.reindex!
+    Product.reindex!(1000, true)
   end
 
   it "should not be synchronous" do
