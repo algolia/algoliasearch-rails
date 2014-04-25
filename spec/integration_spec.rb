@@ -169,17 +169,17 @@ end
 class Book < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch synchronous: true, index_name: safe_index_name("SecuredBook"), per_environment: true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true do
     attributesToIndex [:name]
     tags do
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
     end
 
-    add_index safe_index_name('BookAuthor'), per_environment: true do
+    add_index safe_index_name('BookAuthor'), :per_environment => true do
       attributesToIndex [:author]
     end    
 
-    add_index safe_index_name('Book'), per_environment: true, if: :public? do
+    add_index safe_index_name('Book'), :per_environment => true, :if => :public? do
       attributesToIndex [:name]
     end
   end
@@ -572,7 +572,7 @@ describe 'Book' do
   end
 
   it "should index the book in 2 indexes of 3" do
-    @steve_jobs = Book.create! name: 'Steve Jobs', author: 'Walter Isaacson', premium: true, released: true
+    @steve_jobs = Book.create! :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
     results = Book.search('steve')
     results.should have_exactly(1).book
     results.should include(@steve_jobs)
