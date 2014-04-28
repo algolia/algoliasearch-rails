@@ -59,12 +59,14 @@ module AlgoliaSearch
       end
     end
 
-    def initialize(block)
+    def initialize(options, block)
+      @options = options
       instance_exec(&block) if block
     end
 
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
+      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       @attributes ||= {}
       names.each do |name|
         @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -74,6 +76,7 @@ module AlgoliaSearch
 
     def add_attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
+      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       @additional_attributes ||= {}
       names.each do |name|
         @additional_attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -91,12 +94,14 @@ module AlgoliaSearch
     end
 
     def geoloc(lat_attr, lng_attr)
+      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       add_attribute :_geoloc do |o|
         { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 
     def tags(*args, &block)
+      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       add_attribute :_tags do |o|
         v = block_given? ? o.instance_eval(&block) : args
         v.is_a?(Array) ? v : [v]
@@ -122,14 +127,16 @@ module AlgoliaSearch
     end
 
     def add_index(index_name, options = {}, &block)
+      raise ArgumentError.new('Cannot specify additional index on a slave index') if @options[:slave]
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
       options[:index_name] = index_name
       @additional_indexes ||= {}
-      @additional_indexes[options] = IndexSettings.new(Proc.new)
+      @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
 
     def add_slave(index_name, options = {}, &block)
+      raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave]
       raise ArgumentError.new('No block given') if !block_given?
       add_index(index_name, options.merge({ :slave => true }), &block)
     end
@@ -161,7 +168,7 @@ module AlgoliaSearch
     end
 
     def algoliasearch(options = {}, &block)
-      self.algoliasearch_settings = IndexSettings.new(block_given? ? Proc.new : nil)
+      self.algoliasearch_settings = IndexSettings.new(options, block_given? ? Proc.new : nil)
       self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result
