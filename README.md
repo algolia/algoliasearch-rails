@@ -19,7 +19,7 @@ Table of Content
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
 1. [Master/Slave](#masterslave)
-1. [Advanced indexing](#advanced-indexing)
+1. [Target multiple indexes](#target-multiple-indexes)
 1. [Tags](#tags)
 1. [Search](#search)
 1. [Faceting](#faceting)
@@ -346,7 +346,7 @@ Contact.clear_index!
 Master/slave
 ---------
 
-You can define slave indexes using the <code>add_slave</code> method.
+You can define slave indexes using the <code>add_slave</code> method:
 
 ```ruby
 class Book < ActiveRecord::Base
@@ -354,16 +354,16 @@ class Book < ActiveRecord::Base
 
   include AlgoliaSearch
 
-  algoliasearch do
+  algoliasearch per_environment: true do
     attributesToIndex [:name, :author, :editor]
 
-    # define a slave to search by `author` only
-    add_slave 'Book_by_author' do
+    # define a slave index to search by `author` only
+    add_slave 'Book_by_author', per_environment: true do
       attributesToIndex [:author]
     end
 
-    # define a slave to search by `editor` only
-    add_slave 'Book_by_editor' do
+    # define a slave index to search by `editor` only
+    add_slave 'Book_by_editor', per_environment: true do
       attributesToIndex [:editor]
     end
   end
@@ -371,10 +371,10 @@ class Book < ActiveRecord::Base
 end
 ```
 
-Advanced indexing
+Target multiple indexes
 ---------
 
-You can index a record in several indexes using the <code>add_index</code> method.
+You can index a record in several indexes using the <code>add_index</code> method:
 
 ```ruby
 class Book < ActiveRecord::Base
