@@ -129,7 +129,7 @@ module AlgoliaSearch
       @additional_indexes[options] = IndexSettings.new(Proc.new)
     end
 
-    def add_slave(index_name, options, &block)
+    def add_slave(index_name, options = {}, &block)
       raise ArgumentError.new('No block given') if !block_given?
       add_index(index_name, options.merge({ :slave => true }), &block)
     end
