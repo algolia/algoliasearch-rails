@@ -38,6 +38,7 @@ ActiveRecord::Schema.define do
   end
   create_table :nested_items do |t|
     t.integer :parent_id
+    t.boolean :hidden
   end
   create_table :cities do |t|
     t.string :name
@@ -130,8 +131,8 @@ class NestedItem < ActiveRecord::Base
 
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("UniqUser"), :per_environment => true do
-    attribute :nb_children
+  algoliasearch :synchronous => true, :index_name => safe_index_name("NestedItem"), :per_environment => true, :unless => :hidden do
+    add_attribute :nb_children
   end
 
   def nb_children
@@ -243,14 +244,22 @@ describe 'NestedItem' do
   end
 
   it "should fetch attributes unscoped" do
-    @i1 = NestedItem.create
-    @i2 = NestedItem.create
+    @i1 = NestedItem.create :hidden => false
+    @i2 = NestedItem.create :hidden => true
 
-    @i1.children << NestedItem.create << NestedItem.create
+    @i1.children << NestedItem.create(:hidden => true) << NestedItem.create(:hidden => true)
     NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(1000, true)
 
     result = NestedItem.index.get_object(@i1.id)
     result['nb_children'].should == 2
+
+    result = NestedItem.raw_search('')
+    result['nbHits'].should == 1
+
+    @i2.update_attribute :hidden, false
+
+    result = NestedItem.raw_search('')
+    result['nbHits'].should == 2
   end
 end
 
