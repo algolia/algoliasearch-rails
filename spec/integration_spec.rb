@@ -240,7 +240,7 @@ end
 
 describe 'NestedItem' do
   before(:all) do
-    NestedItem.clear_index!(true)
+    NestedItem.clear_index!(true) rescue nil # not fatal
   end
 
   it "should fetch attributes unscoped" do
