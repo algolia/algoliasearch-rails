@@ -132,7 +132,7 @@ class NestedItem < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("NestedItem"), :per_environment => true, :unless => :hidden do
-    add_attribute :nb_children
+    attribute :nb_children
   end
 
   def nb_children
