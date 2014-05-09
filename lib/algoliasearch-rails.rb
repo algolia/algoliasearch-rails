@@ -52,7 +52,8 @@ module AlgoliaSearch
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :highlightPreTag, :highlightPostTag,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
-      :separatorsToIndex, :optionalWords, :attributeForDistinct]
+      :separatorsToIndex, :optionalWords, :attributeForDistinct,
+      :synonyms, :placeholders]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)

@@ -68,6 +68,12 @@ class Product < ActiveRecord::Base
     tags do
       [name, name] # multiple tags
     end
+
+    synonyms [
+      ['iphone', 'applephone', 'iBidule'],
+      ['apple', 'pomme'],
+      ['samsung', 'galaxy']
+    ]
   end
 
   def tags=(names)
@@ -534,6 +540,10 @@ describe 'An imaginary store' do
       Product.where(:release_date => nil).first.update_attribute :release_date, Time.now + 1.day
       Product.reindex!(1000, true)
       Product.search('', :hitsPerPage => 1000).should have_exactly(n - 1).product
+    end
+
+    it "should find using synonyms" do
+      Product.search('pomme').should have_exactly(Product.search('apple').size).product
     end
   end
 
