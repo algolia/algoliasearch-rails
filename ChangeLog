@@ -1,5 +1,10 @@
 CHANGELOG
 
+2014-05-09 1.10.2
+
+      * Expose synoyms/placeholders features
+      * Upgrade to algoliasearch-client-js 2.5.0 (fallback on JSONP if CORS is not available)
+
 2014-04-29 1.10.1
 
       * Use :if and :unless constraints to detect if a record has changed as well
