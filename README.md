@@ -25,6 +25,7 @@ Table of Content
 1. [Faceting](#faceting)
 1. [Geo-search](#geo-search)
 1. [Typeahead UI](#typeahead-ui)
+1. [Caveats](#caveats)
 1. [Note on testing](#note-on-testing)
 
 Install
@@ -567,6 +568,10 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
 </script>
 ```
 
+Caveats
+--------
+
+This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing ```after_validation```, ```before_save``` or ```after_save``` callbacks, it will not index your changes. For example: ```update_attribute``` doesn't perform validations checks, to perform validations when updating use ```update_attributes```.
 
 Note on testing
 -----------------

@@ -262,7 +262,7 @@ describe 'NestedItem' do
     result = NestedItem.raw_search('')
     result['nbHits'].should == 1
 
-    @i2.update_attribute :hidden, false
+    @i2.update_attributes :hidden => false
 
     result = NestedItem.raw_search('')
     result['nbHits'].should == 2
