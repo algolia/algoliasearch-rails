@@ -175,7 +175,7 @@ module AlgoliaSearch
       attr_accessor :highlight_result
 
       if options[:synchronous] == true
-        after_validation :algolia_mark_synchronous if respond_to?(:before_validation)
+        after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
       end
       unless options[:auto_index] == false
         after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
