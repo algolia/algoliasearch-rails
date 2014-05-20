@@ -577,3 +577,26 @@ Note on testing
 -----------------
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
+
+You may want to mock Algolia's API calls. We provide a [WebMock](https://github.com/bblimke/webmock) configuration that you can use including `algolia/webmock`:
+
+```ruby
+require 'algolia/webmock'
+
+describe 'With a mocked client' do
+
+  before(:each) do
+    WebMock.enable!
+  end
+
+  it "shouldn't perform any API calls here" do
+    User.create(name: 'My Indexed User')  # mocked, no API call performed
+    User.search('').should == {}          # mocked, no API call performed
+  end
+
+  after(:each) do
+    WebMock.disable!
+  end
+
+end
+```
