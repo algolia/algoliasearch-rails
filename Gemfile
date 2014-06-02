@@ -5,7 +5,7 @@ gem 'algoliasearch', '~> 1.2'
 gem 'rubysl', '~> 2.0', :platform => :rbx
 
 group :test do 
-  gem 'rspec', '>= 2.5.0'
+  gem 'rspec', '>= 2.5.0', '< 3.0'
   gem 'rails', '>= 3.2.0', '< 4.0'
   gem 'sqlite3', :platform => [:rbx, :ruby]
   gem 'jdbc-sqlite3', :platform => :jruby
