@@ -73,7 +73,7 @@ GEM
     journey (1.0.4)
     json (1.8.1)
     json (1.8.1-java)
-    kaminari (0.15.1)
+    kaminari (0.16.1)
       actionpack (>= 3.0.0)
       activesupport (>= 3.0.0)
     launchy (2.4.2)
