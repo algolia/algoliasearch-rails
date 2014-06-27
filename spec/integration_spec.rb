@@ -659,12 +659,12 @@ describe 'Disabled' do
   end
 
   it "should disable the indexing using a boolean" do
-    DisabledBoolean.create name: 'foo'
+    DisabledBoolean.create :name => 'foo'
     expect(DisabledBoolean.search('').size).to eq(0)
   end
 
   it "should disable the indexing using a proc" do
-    DisabledProc.create name: 'foo'
+    DisabledProc.create :name => 'foo'
     expect(DisabledProc.search('').size).to eq(0)
   end
 end
