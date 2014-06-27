@@ -199,6 +199,7 @@ module AlgoliaSearch
     def algolia_reindex!(batch_size = 1000, synchronous = false)
       return if @algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         last_task = nil
@@ -222,6 +223,7 @@ module AlgoliaSearch
 
     def algolia_index_objects(objects, synchronous = false)
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
@@ -232,6 +234,7 @@ module AlgoliaSearch
     def algolia_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
         raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
         index = algolia_ensure_init(options, settings)
@@ -259,6 +262,7 @@ module AlgoliaSearch
       object_id = algolia_object_id_of(object)
       raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         if synchronous
@@ -272,6 +276,7 @@ module AlgoliaSearch
 
     def algolia_clear_index!(synchronous = false)
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         synchronous ? index.clear! : index.clear
@@ -374,7 +379,7 @@ module AlgoliaSearch
       return @algolia_indexes[settings] if @algolia_indexes[settings]
       @algolia_indexes[settings] = Algolia::Index.new(algolia_index_name(options))
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
-      @algolia_indexes[settings].set_settings(settings.to_settings) if algoliasearch_settings_changed?(current_settings, settings.to_settings)
+      @algolia_indexes[settings].set_settings(settings.to_settings) if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, settings.to_settings)
       @algolia_indexes[settings]
     end
 
@@ -458,6 +463,20 @@ module AlgoliaSearch
         else
           raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
         end
+      end
+    end
+
+    def algolia_indexing_disabled?(options = nil)
+      options ||= algoliasearch_options
+      constraint = options[:disable_indexing] || options['disable_indexing']
+      if constraint.nil?
+        false
+      elsif constraint == true || constraint == false
+        constraint
+      elsif constraint.respond_to?(:call) # Proc
+        constraint.call
+      else
+        raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
       end
     end
 

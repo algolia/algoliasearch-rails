@@ -578,7 +578,25 @@ Note on testing
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
 
-You may want to mock Algolia's API calls. We provide a [WebMock](https://github.com/bblimke/webmock) configuration that you can use including `algolia/webmock`:
+You may want to disable all indexing (add, update & delete operations) API calls, you can set the ```disable_indexing``` option:
+
+```ruby
+class User < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :per_environment => true, :disable_indexing => Rails.env.test? do
+  end
+end
+
+class User < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :per_environment => true, :disable_indexing => Proc.new { Rails.env.test? || more_complex_condition } do
+  end
+end
+```
+
+Or you may want to mock Algolia's API calls. We provide a [WebMock](https://github.com/bblimke/webmock) sample configuration that you can use including `algolia/webmock`:
 
 ```ruby
 require 'algolia/webmock'

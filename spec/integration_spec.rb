@@ -55,6 +55,12 @@ ActiveRecord::Schema.define do
     t.boolean :premium
     t.boolean :released
   end
+  create_table :disabled_booleans do |t|
+    t.string :name
+  end
+  create_table :disabled_procs do |t|
+    t.string :name
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -98,6 +104,20 @@ class Color < ActiveRecord::Base
     tags do
       name # single tag
     end
+  end
+end
+
+class DisabledBoolean < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :disable_indexing => true do
+  end
+end
+
+class DisabledProc < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :disable_indexing => Proc.new { true } do
   end
 end
 
@@ -574,7 +594,6 @@ describe 'Cities' do
 end
 
 describe 'MongoObject' do
-
   it "should not have method conflicts" do
     expect { MongoObject.reindex! }.to raise_error(NameError)
     expect { MongoObject.new.index! }.to raise_error(NameError)
@@ -630,5 +649,22 @@ describe 'Kaminari' do
     p2.size.should eq(1)
     p2[0].should eq(pagination[1])
     p2.total_count.should eq(City.raw_search('')['nbHits'])
+  end
+end
+
+describe 'Disabled' do
+  before(:all) do
+    DisabledBoolean.index.clear_index!
+    DisabledProc.index.clear_index!
+  end
+
+  it "should disable the indexing using a boolean" do
+    DisabledBoolean.create name: 'foo'
+    expect(DisabledBoolean.search('').size).to eq(0)
+  end
+
+  it "should disable the indexing using a proc" do
+    DisabledProc.create name: 'foo'
+    expect(DisabledProc.search('').size).to eq(0)
   end
 end
