@@ -200,16 +200,16 @@ end
 describe 'Settings' do
 
   it "should detect settings changes" do
-    Color.send(:algoliasearch_settings_changed?, nil, {}).should be_true
-    Color.send(:algoliasearch_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should be_true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should be_true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should be_true
+    Color.send(:algoliasearch_settings_changed?, nil, {}).should == true
+    Color.send(:algoliasearch_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should == true
   end
 
   it "should not detect settings changes" do
-    Color.send(:algoliasearch_settings_changed?, {}, {}).should be_false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should be_false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should be_false
+    Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
   end
 
 end
@@ -240,7 +240,7 @@ describe 'UniqUsers' do
   it "should not use the id field" do
     u = UniqUser.create :name => 'fooBar'
     results = UniqUser.search('foo')
-    results.should have_exactly(1).uniq_users
+    expect(results.size).to eq(1)
   end
 end
 
@@ -277,13 +277,13 @@ describe 'Colors' do
   it "should be synchronous" do
     c = Color.new
     c.valid?
-    c.send(:algolia_synchronous?).should be_true
+    c.send(:algolia_synchronous?).should == true
   end
 
   it "should auto index" do
     @blue = Color.create!(:name => "blue", :short_name => "b", :hex => 0xFF0000)
     results = Color.search("blue")
-    results.should have_exactly(1).product
+    expect(results.size).to eq(1)
     results.should include(@blue)
   end
 
@@ -305,15 +305,15 @@ describe 'Colors' do
     Color.without_auto_index do
       Color.create!(:name => "blue", :short_name => "b", :hex => 0xFF0000)
     end
-    Color.search("blue").should have_exactly(1).product
+    expect(Color.search("blue").size).to eq(1)
     Color.reindex!(1000, true)
-    Color.search("blue").should have_exactly(2).product
+    expect(Color.search("blue").size).to eq(2)
   end
 
   it "should not be searchable with non-indexed fields" do
     @blue = Color.create!(:name => "blue", :short_name => "x", :hex => 0xFF0000)
     results = Color.search("x")
-    results.should have_exactly(0).product
+    expect(results.size).to eq(0)
   end
 
   it "should rank with custom hex" do
@@ -321,7 +321,7 @@ describe 'Colors' do
     @blue2 = Color.create!(:name => "red", :short_name => "r1", :hex => 1)
     @blue3 = Color.create!(:name => "red", :short_name => "r2", :hex => 2)
     results = Color.search("red")
-    results.should have_exactly(3).product
+    expect(results.size).to eq(3)
     results[0].hex.should eq(1)
     results[1].hex.should eq(2)
     results[2].hex.should eq(3)
@@ -329,21 +329,21 @@ describe 'Colors' do
 
   it "should update the index if the attribute changed" do
     @purple = Color.create!(:name => "purple", :short_name => "p")
-    Color.search("purple").should have_exactly(1).product
-    Color.search("pink").should have_exactly(0).product
+    expect(Color.search("purple").size).to eq(1)
+    expect(Color.search("pink").size).to eq(0)
     @purple.name = "pink"
     @purple.save
-    Color.search("purple").should have_exactly(0).product
-    Color.search("pink").should have_exactly(1).product
+    expect(Color.search("purple").size).to eq(0)
+    expect(Color.search("pink").size).to eq(1)
   end
 
   it "should use the specified scope" do
     Color.clear_index!(true)
     Color.where(:name => 'red').reindex!(1000, true)
-    Color.search("").should have_exactly(3).product
+    expect(Color.search("").size).to eq(3)
     Color.clear_index!(true)
     Color.where(:id => Color.first.id).reindex!(1000, true)
-    Color.search("").should have_exactly(1).product
+    expect(Color.search("").size).to eq(1)
   end
 
   it "should have a Rails env-based index name" do
@@ -353,7 +353,7 @@ describe 'Colors' do
   it "should add tags" do
     @blue = Color.create!(:name => "green", :short_name => "b", :hex => 0xFF0000)
     results = Color.search("green", { :tagFilters => 'green' })
-    results.should have_exactly(1).product
+    expect(results.size).to eq(1)
     results.should include(@blue)
   end
 
@@ -417,7 +417,7 @@ describe 'An imaginary store' do
   it "should not be synchronous" do
     p = Product.new
     p.valid?
-    p.send(:algolia_synchronous?).should be_false
+    p.send(:algolia_synchronous?).should == false
   end
 
   describe 'pagination' do
@@ -431,49 +431,49 @@ describe 'An imaginary store' do
 
     it 'should find the iphone' do
       results = Product.search('iphone')
-      results.should have_exactly(1).product
+      expect(results.size).to eq(1)
       results.should include(@iphone)
     end
 
     it "should search case insensitively" do
       results = Product.search('IPHONE')
-      results.should have(1).product
+      expect(results.size).to eq(1)
       results.should include(@iphone)
     end
 
     it 'should find all amazon products' do
       results = Product.search('amazon')
-      results.should have_exactly(3).products
+      expect(results.size).to eq(3)
       results.should include(@android, @samsung, @motorola)
     end
 
     it 'should find all "palm" phones with wildcard word search' do
       results = Product.search('pal')
-      results.should have_exactly(2).products
+      expect(results.size).to eq(2)
       results.should include(@palmpre, @palm_pixi_plus)
     end
 
     it 'should search multiple words from the same field' do
       results = Product.search('palm pixi plus')
-      results.should have_exactly(1).product
+      expect(results.size).to eq(1)
       results.should include(@palm_pixi_plus)
     end
 
     it "should narrow the results by searching across multiple fields" do
       results = Product.search('apple iphone')
-      results.should have_exactly(1).product
+      expect(results.size).to eq(1)
       results.should include(@iphone)
     end
 
     it "should not search on non-indexed fields" do
       results = Product.search('features')
-      results.should have_exactly(0).product
+      expect(results.size).to eq(0)
     end
 
     it "should delete the associated record" do
       @iphone.destroy
       results = Product.search('iphone')
-      results.should have_exactly(0).product
+      expect(results.size).to eq(0)
     end
 
     it "should not throw an exception if a search result isn't found locally" do
@@ -487,63 +487,63 @@ describe 'An imaginary store' do
     end
 
     it "should not duplicate an already indexed record" do
-      Product.search('nokia').should have_exactly(1).product
+      expect(Product.search('nokia').size).to eq(1)
       @nokia.index!
-      Product.search('nokia').should have_exactly(1).product
+      expect(Product.search('nokia').size).to eq(1)
       @nokia.index!
       @nokia.index!
-      Product.search('nokia').should have_exactly(1).product
+      expect(Product.search('nokia').size).to eq(1)
     end
 
     it "should not duplicate while reindexing" do
       n = Product.search('', :hitsPerPage => 1000).length
       Product.reindex!(1000, true)
-      Product.search('', :hitsPerPage => 1000).should have_exactly(n).product
+      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n)
       Product.reindex!(1000, true)
       Product.reindex!(1000, true)
-      Product.search('', :hitsPerPage => 1000).should have_exactly(n).product
+      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n)
     end
 
     it "should not return products that are not indexable" do
       @sekrit.index!
       @no_href.index!
       results = Product.search('sekrit')
-      results.should have_exactly(0).product
+      expect(results.size).to eq(0)
     end
 
     it "should include items belong to subclasses" do
       @camera.index!
       results = Product.search('eos rebel')
-      results.should have_exactly(1).product
+      expect(results.size).to eq(1)
       results.should include(@camera)
     end
 
     it "should delete a not-anymore-indexable product" do
       results = Product.search('sekrit')
-      results.should have_exactly(0).product
+      expect(results.size).to eq(0)
 
       @sekrit.release_date = Time.now - 1.day
       @sekrit.save!
       @sekrit.index!(true)
       results = Product.search('sekrit')
-      results.should have_exactly(1).product
+      expect(results.size).to eq(1)
 
       @sekrit.release_date = Time.now + 1.day
       @sekrit.save!
       @sekrit.index!(true)
       results = Product.search('sekrit')
-      results.should have_exactly(0).product
+      expect(results.size).to eq(0)
     end
 
     it "should delete not-anymore-indexable product while reindexing" do
       n = Product.search('', :hitsPerPage => 1000).size
       Product.where(:release_date => nil).first.update_attribute :release_date, Time.now + 1.day
       Product.reindex!(1000, true)
-      Product.search('', :hitsPerPage => 1000).should have_exactly(n - 1).product
+      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n - 1)
     end
 
     it "should find using synonyms" do
-      Product.search('pomme').should have_exactly(Product.search('apple').size).product
+      expect(Product.search('pomme').size).to eq(Product.search('apple').size)
     end
   end
 
@@ -558,11 +558,11 @@ describe 'Cities' do
     sf = City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
     mv = City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
-    results.should have_exactly(1).city
+    expect(results.size).to eq(1)
     results.should include(mv)
 
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 500000 })
-    results.should have_exactly(2).cities
+    expect(results.size).to eq(2)
     results.should include(mv)
     results.should include(sf)
   end
@@ -593,7 +593,7 @@ describe 'Book' do
   it "should index the book in 2 indexes of 3" do
     @steve_jobs = Book.create! :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
     results = Book.search('steve')
-    results.should have_exactly(1).book
+    expect(results.size).to eq(1)
     results.should include(@steve_jobs)
 
     index_author = Book.index(safe_index_name('BookAuthor'))
