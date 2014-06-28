@@ -1,8 +1,12 @@
 CHANGELOG
 
+2014-06-28 1.10.4
+
+      * Ability to disable all indexing tasks (testing purpose)
+
 2014-06-17 1.10.3
 
-      * Kaminari: pad the result array to match the options/offset parameters
+      * Pagination: fixed a padding issue with recent versions of Kaminari
 
 2014-05-09 1.10.2
 
