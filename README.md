@@ -236,6 +236,8 @@ class Post < ActiveRecord::Base
 end
 ```
 
+**Notes:** As soon as you use those constraints, ```deleteObjects``` calls will be performed in order to keep the index synced with the DB (The state-less gem doesn't know if the object don't match your constraints anymore or never matched, so we force DELETE operations, even on never-indexed objects).
+
 You can index a subset of your records using either:
 
 ```ruby
