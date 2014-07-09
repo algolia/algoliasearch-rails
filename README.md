@@ -334,7 +334,13 @@ c.remove_from_index!
 c.destroy
 ```
 
-To reindex all your records, use the <code>reindex!</code> class method:
+To *safely* reindex all your records (index to a temporary index + move the temporary index to the current one atomically), use the <code>reindex</code> class method:
+
+```ruby
+Contact.reindex
+```
+
+To reindex all your records (in place, without deleting out-dated records), use the <code>reindex!</code> class method:
 
 ```ruby
 Contact.reindex!

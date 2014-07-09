@@ -154,6 +154,7 @@ module AlgoliaSearch
       class <<base
         alias_method :without_auto_index, :algolia_without_auto_index unless method_defined? :without_auto_index
         alias_method :reindex!, :algolia_reindex! unless method_defined? :reindex!
+        alias_method :reindex, :algolia_reindex unless method_defined? :reindex
         alias_method :index_objects, :algolia_index_objects unless method_defined? :index_objects
         alias_method :index!, :algolia_index! unless method_defined? :index!
         alias_method :remove_from_index!, :algolia_remove_from_index! unless method_defined? :remove_from_index!
@@ -217,6 +218,33 @@ module AlgoliaSearch
         end
 
         index.wait_task(last_task["taskID"]) if last_task and synchronous == true
+      end
+      nil
+    end
+
+    # reindex whole database using a extra temporary index + move operation
+    def algolia_reindex(batch_size = 1000, synchronous = false)
+      return if @algolia_without_auto_index_scope
+      algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
+        next if options[:slave]
+        index_name = algolia_index_name(options)
+
+        tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
+        tmp_settings = settings.dup
+        tmp_index = algolia_ensure_init(tmp_options, tmp_settings)
+
+        algolia_find_in_batches(batch_size) do |group|
+          if algolia_conditional_index?(tmp_options)
+            # select only indexable objects
+            group = group.select { |o| algolia_indexable?(o, tmp_options) }
+          end
+          objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
+          tmp_index.save_objects(objects)
+        end
+
+        move_task = ::Algolia.move_index(tmp_index.name, index_name)
+        tmp_index.wait_task(move_task["taskID"]) if synchronous == true
       end
       nil
     end
