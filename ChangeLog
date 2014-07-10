@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-07-10 1.10.6
+
+      * Pass the configuration hash to the underlying ```Algolia.init``` method.
+
 2014-07-09 1.10.5
 
       * Safely reindex your data using ```MyModel.reindex``` (index with a temporary index + move), ```MyModel.reindex!``` do it in-place without removing out-dated records
