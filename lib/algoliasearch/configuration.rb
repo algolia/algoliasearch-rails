@@ -6,7 +6,7 @@ module AlgoliaSearch
 
     def configuration=(configuration)
       @@configuration = configuration
-      Algolia.init :application_id => @@configuration[:application_id], :api_key => @@configuration[:api_key], :hosts => @@configuration[:hosts]
+      Algolia.init @@configuration
     end
   end
 end
