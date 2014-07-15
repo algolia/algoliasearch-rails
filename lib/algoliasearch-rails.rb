@@ -86,11 +86,20 @@ module AlgoliaSearch
     alias :add_attributes :add_attribute
 
     def get_attributes(object)
-      object.class.unscoped do
+      clazz = object.class
+      if defined?(::Mongoid::Document) && clazz.include?(::Mongoid::Document)
+        # work-around mongoid 2.4's unscoped method, not accepting a block
         res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
+      else
+        object.class.unscoped do
+          res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+            Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+          @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
+          res
+        end
       end
     end
 
