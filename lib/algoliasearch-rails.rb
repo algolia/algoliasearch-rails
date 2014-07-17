@@ -356,8 +356,12 @@ module AlgoliaSearch
         params[:page] -= 1 if params[:page].to_i > 0
       end
       json = algolia_raw_search(q, params)
+      hit_ids = json['hits'].map { |hit| hit['objectID'] }
+      results_by_id = algoliasearch_options[:type].where(algolia_object_id_method => hit_ids).index_by do |hit|
+        algolia_object_id_of(hit)
+      end
       results = json['hits'].map do |hit|
-        o = algoliasearch_options[:type].where(algolia_object_id_method => hit['objectID']).first
+        o = results_by_id[hit['objectID']]
         if o
           o.highlight_result = hit['_highlightResult']
           o
