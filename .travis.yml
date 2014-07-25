@@ -11,5 +11,5 @@ rvm:
 - rbx-2
 env:
   global:
-  - secure: wRDLGbg+GS7Eo6KhjyAA6YNm6rFVo8j53b0oEZLBkJ2VzvLsKMnpEfopzc0W2wttgVwgkX8C/9adbd/BPsEYbpO+uJFt5DX3A2HVVXCZ2jP0TgLj2m4dOA4ohroYDcdeB0fuZM7a7hvFNswd9vSRLmes6vLQ0GcFTSz1rWQLf6U=
-  - secure: e7We+H6/XlWrPVSlLNcXdQxSC520SP2BteSddBjD9YNx9DosMDLTi85Rw3KJGRQowoftv00TwAe+iCRTyPElrW0Q/y5ozAU9UyipAtwhZhM06IPx1fhkU/Q3FIX/iwgruS253aiGlIUg7YcdGwfYuURk2iu7Xp3OdhS/evxbj/E=
+  - secure: kD+PX8ZNg+AAzyr6WYs1vp9teAkzMfEoYkIMI0hrRN0ml9ccJVsJR1pIGpaIwyCa5PmFtCZ1Xi2vFb4XzTTeaZoHHS/ll9LwuQH6mwvdgj3n6TmNRdq3b/oGRHBX4Z0HMobqaftuzY/V8iTpVk92jwIY8NPj00k055b2jrKqhdw=
+  - secure: Eai99h4K7s9/Sh3CHClWs3IQNaEUdVagpmA/A8m0rysGBAYJdMKbUOp9DZPAmCnT+06l0aFv87+CRYtgyX05pE5f21nqBOU46eKS38cLif3aPTwFmwokf28WLDgmZKa/zJp767SiQ/dp0hz+LJrkJvkDRnA1un36f7wiyY9xnYs=
