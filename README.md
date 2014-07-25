@@ -106,6 +106,17 @@ class Product < ActiveRecord::Base
 end
 ```
 
+#### Frontend Search (realtime experience)
+
+
+We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries. The JS API client is part of the gem, just require ```algolia/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+
+```javascript
+//= require algolia/algoliasearch.min
+```
+
+#### Backend Search
+
 A search returns ORM-compliant objects reloading them from your database.
 
 ```ruby
@@ -118,9 +129,9 @@ If you want to retrieve the raw JSON answer from the API, without re-loading the
 p Contact.raw_search("jon doe")
 ```
 
-By the way, we recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries.
+#### Notes
 
-**Notes:** All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
+All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
 
 ```ruby
 Contact.algolia_reindex! # <=> Contact.reindex!
@@ -130,6 +141,8 @@ Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
 
 Options
 ----------
+
+#### Auto-indexing & asynchronism
 
 Each time a record is saved; it will be - asynchronously - indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index.
 
@@ -167,6 +180,8 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+#### Custom index name
+
 You can force the index name using the following option:
 
 ```ruby
@@ -179,6 +194,8 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+#### Per-environment indexes
+
 You can suffix the index name with the current Rails environment using the following option:
 
 ```ruby
@@ -190,6 +207,8 @@ class Contact < ActiveRecord::Base
   end
 end
 ```
+
+#### Custom attribute definition
 
 You can use a block to specify a complex attribute value
 
@@ -206,6 +225,8 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+#### Custom ```objectID```
+
 By default, the `objectID` is based on your record's `id`. You can change this behavior specifying the `:id` option (be sure to use a uniq field).
 
 ```ruby
@@ -216,6 +237,8 @@ class UniqUser < ActiveRecord::Base
   end
 end
 ```
+
+#### Restrict to index a subset
 
 You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
 
@@ -320,6 +343,8 @@ end
 Indexing
 ---------
 
+#### Manual indexing
+
 You can trigger indexing using the <code>index!</code> instance method.
 
 ```ruby
@@ -327,12 +352,16 @@ c = Contact.create!(params[:contact])
 c.index!
 ```
 
+#### Manual removal
+
 And trigger index removing using the <code>remove_from_index!</code> instance method.
 
 ```ruby
 c.remove_from_index!
 c.destroy
 ```
+
+#### Reindexing
 
 To *safely* reindex all your records (index to a temporary index + move the temporary index to the current one atomically), use the <code>reindex</code> class method:
 
@@ -345,6 +374,8 @@ To reindex all your records (in place, without deleting out-dated records), use 
 ```ruby
 Contact.reindex!
 ```
+
+#### Clearing an index
 
 To clear an index, use the <code>clear_index!</code> class method:
 
@@ -449,6 +480,8 @@ At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFil
 
 Search
 ----------
+
+***Notes:*** We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries directly from the end-user browser without going through your server.
 
 A search returns ORM-compliant objects reloading them from your database. We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries to decrease the overall latency and offload your servers.
 
