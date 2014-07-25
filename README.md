@@ -238,7 +238,7 @@ class UniqUser < ActiveRecord::Base
 end
 ```
 
-#### Restrict to index a subset
+#### Restrict indexing to a subset of your data
 
 You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
 
