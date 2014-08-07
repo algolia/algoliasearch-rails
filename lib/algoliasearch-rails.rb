@@ -357,7 +357,12 @@ module AlgoliaSearch
       end
       json = algolia_raw_search(q, params)
       hit_ids = json['hits'].map { |hit| hit['objectID'] }
-      results_by_id = algoliasearch_options[:type].where(algolia_object_id_method => hit_ids).index_by do |hit|
+      if defined?(::Mongoid::Document) && self.include?(::Mongoid::Document)
+        condition_key = algolia_object_id_method.in
+      else
+        condition_key = algolia_object_id_method
+      end
+      results_by_id = algoliasearch_options[:type].where(condition_key => hit_ids).index_by do |hit|
         algolia_object_id_of(hit)
       end
       results = json['hits'].map do |hit|
