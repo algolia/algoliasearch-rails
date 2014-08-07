@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-08-07 1.10.8
+
+      * Fixes searches on Mongoid introduced in 1.10.7 (author: @zarqman)
+
 2014-07-17 1.10.7
 
       * Query optimization: load search results from database using a single query (author: @outoftime)
