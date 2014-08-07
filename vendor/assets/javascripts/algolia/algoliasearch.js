@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.5.0';
+var ALGOLIA_VERSION = '2.5.3';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -238,15 +238,17 @@ AlgoliaSearch.prototype = {
                             callback: callback });
     },
     /*
-     * List all existing indexes
+     * List all existing indexes (paginated)
      *
      * @param callback the result callback with two arguments
      *  success: boolean set to true if the request was successfull
      *  content: the server answer with index list or error description if success is false.
+     * @param page The page to retrieve, starting at 0.
      */
-    listIndexes: function(callback) {
+    listIndexes: function(callback, page) {
+        var params = page ? '?page=' + page : '';
         this._jsonRequest({ method: 'GET',
-                            url: '/1/indexes/',
+                            url: '/1/indexes' + params,
                             callback: callback });
     },
 
@@ -427,10 +429,12 @@ AlgoliaSearch.prototype = {
     sendQueriesBatch: function(callback, delay) {
         var as = this;
         var params = {requests: [], apiKey: this.apiKey, appID: this.applicationID};
-        if (this.userToken)
+        if (this.userToken) {
             params['X-Algolia-UserToken'] = this.userToken;
-        if (this.tagFilters)
+        }
+        if (this.tagFilters) {
             params['X-Algolia-TagFilters'] = this.tagFilters;
+        }
         for (var i = 0; i < as.batch.length; ++i) {
             params.requests.push(as.batch[i]);
         }
@@ -499,7 +503,7 @@ AlgoliaSearch.prototype = {
             cache = opts.cache;
             if (!this._isUndefined(cache[cacheID])) {
                 if (!this._isUndefined(callback)) {
-                    callback(true, cache[cacheID]);
+                    setTimeout(function () { callback(true, cache[cacheID]); }, 1);
                 }
                 return;
             }
@@ -1187,10 +1191,12 @@ AlgoliaSearch.prototype.Index.prototype = {
                 return;
             }
             var pObj = {params: params, apiKey: this.as.apiKey, appID: this.as.applicationID};
-            if (this.as.tagFilters)
+            if (this.as.tagFilters) {
                 pObj['X-Algolia-TagFilters'] = this.as.tagFilters;
-            if (this.as.userToken)
+            }
+            if (this.as.userToken) {
                 pObj['X-Algolia-UserToken'] = this.as.userToken;
+            }
             if (this.as.jsonp) {
                 this.as._jsonRequest({ cache: this.cache,
                                        method: 'GET', jsonp: true,
@@ -1304,6 +1310,62 @@ AlgoliaSearch.prototype.Index.prototype = {
       this.disjunctiveRefinements = this.disjunctiveRefinements || {};
       this._search();
     },
+    
+    /**
+     * Remove all refinements (disjunctive + conjunctive)
+     */
+    clearRefinements: function() {
+      this.disjunctiveRefinements = {};
+      this.refinements = {};
+    },
+
+    /**
+     * Ensure a facet refinement exists
+     * @param  {string} facet the facet to refine
+     * @param  {string} value the associated value
+     */
+    addDisjunctiveRefine: function(facet, value) {
+      this.disjunctiveRefinements = this.disjunctiveRefinements || {};
+      this.disjunctiveRefinements[facet] = this.disjunctiveRefinements[facet] || {};
+      this.disjunctiveRefinements[facet][value] = true;
+    },
+
+    /**
+     * Ensure a facet refinement does not exist
+     * @param  {string} facet the facet to refine
+     * @param  {string} value the associated value
+     */
+    removeDisjunctiveRefine: function(facet, value) {
+      this.disjunctiveRefinements = this.disjunctiveRefinements || {};
+      this.disjunctiveRefinements[facet] = this.disjunctiveRefinements[facet] || {};
+      try {
+        delete this.disjunctiveRefinements[facet][value];
+      } catch (e) {
+        this.disjunctiveRefinements[facet][value] = undefined; // IE compat
+      }
+    },
+
+    /**
+     * Ensure a facet refinement exists
+     * @param  {string} facet the facet to refine
+     * @param  {string} value the associated value
+     */
+    addRefine: function(facet, value) {
+      var refinement = facet + ':' + value;
+      this.refinements = this.refinements || {};
+      this.refinements[refinement] = true;
+    },
+
+    /**
+     * Ensure a facet refinement does not exist
+     * @param  {string} facet the facet to refine
+     * @param  {string} value the associated value
+     */
+    removeRefine: function(facet, value) {
+      var refinement = facet + ':' + value;
+      this.refinements = this.refinements || {};
+      this.refinements[refinement] = false;
+    },
 
     /**
      * Toggle refinement state of a facet
@@ -1366,6 +1428,37 @@ AlgoliaSearch.prototype.Index.prototype = {
       }
     },
 
+    /**
+     * Goto a page
+     * @param  {integer} page The page number
+     */
+    gotoPage: function(page) {
+        this._gotoPage(page);
+    },
+
+    /**
+     * Configure the page but do not trigger a reload
+     * @param  {integer} page The page number
+     */
+    setPage: function(page) {
+      this.page = page;
+    },
+
+    /**
+     * Configure the underlying index name
+     * @param {string} name the index name
+     */
+    setIndex: function(name) {
+      this.index = name;
+    },
+
+    /**
+     * Get the underlying configured index name
+     */
+    getIndex: function() {
+      return this.index;
+    },
+
     ///////////// PRIVATE
 
     /**
@@ -1394,6 +1487,7 @@ AlgoliaSearch.prototype.Index.prototype = {
         }
         var aggregatedAnswer = content.results[0];
         aggregatedAnswer.disjunctiveFacets = {};
+        aggregatedAnswer.facetStats = {};
         for (var i = 1; i < content.results.length; ++i) {
           for (var facet in content.results[i].facets) {
             aggregatedAnswer.disjunctiveFacets[facet] = content.results[i].facets[facet];
@@ -1405,6 +1499,10 @@ AlgoliaSearch.prototype.Index.prototype = {
               }
             }
           }
+          for (var stats in content.results[i].facets_stats)
+          {
+            aggregatedAnswer.facetStats[stats] = content.results[i].facets_stats[stats];
+          }
         }
         self.searchCallback(true, aggregatedAnswer);
       });
@@ -1415,12 +1513,12 @@ AlgoliaSearch.prototype.Index.prototype = {
      * @return {hash}
      */
     _getHitsSearchParams: function() {
-      return extend({}, this.searchParams, {
+      return extend({}, {
         hitsPerPage: this.options.hitsPerPage,
         page: this.page,
         facets: this.options.facets,
         facetFilters: this._getFacetFilters()
-      });
+      }, this.searchParams);
     },
 
     /**
