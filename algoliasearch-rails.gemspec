@@ -6,7 +6,7 @@
 
 Gem::Specification.new do |s|
   s.name = "algoliasearch-rails"
-  s.version = "1.10.8"
+  s.version = "1.10.9"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Algolia"]

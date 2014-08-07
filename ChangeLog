@@ -1,5 +1,10 @@
 CHANGELOG
 
+2014-08-07 1.10.9
+
+      * Upgrade to algoliasearch-client-js 2.5.3
+      * Upgrade to typeahead 1.10.4
+
 2014-08-07 1.10.8
 
       * Fixes searches on Mongoid introduced in 1.10.7 (author: @zarqman)
