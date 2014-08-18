@@ -13,7 +13,7 @@ module AlgoliaSearch
 
       def reindex_all_models
         get_model_classes.each do |klass|
-          klass.reindex!
+          klass.reindex
         end
       end
     end
