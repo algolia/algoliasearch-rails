@@ -401,14 +401,14 @@ module AlgoliaSearch
         return true if algolia_object_id_changed?(object, options)
         settings.get_attributes(object).each do |k, v|
           changed_method = "#{k}_changed?"
-          return true if object.respond_to?(changed_method) && object.send(changed_method)
+          return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
             changed_method = "#{condition}_changed?"
-            return true if object.respond_to?(changed_method) && object.send(changed_method)
+            return true if !object.respond_to?(changed_method) || object.send(changed_method)
           else
           end
         end
