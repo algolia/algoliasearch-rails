@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-08-20 1.11.0
+
+      * Do not rely of _changed? method to detect reindexing needs, if those methods are missing we probably need to reindex
+
 2014-08-07 1.10.9
 
       * Upgrade to algoliasearch-client-js 2.5.3
