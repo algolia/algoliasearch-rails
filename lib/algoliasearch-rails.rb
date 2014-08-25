@@ -241,7 +241,7 @@ module AlgoliaSearch
 
         tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
         tmp_settings = settings.dup
-        tmp_index = algolia_ensure_init(tmp_options, tmp_settings)
+        tmp_index = algolia_ensure_init(tmp_options, tmp_settings, true)
 
         algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(tmp_options)
@@ -418,14 +418,21 @@ module AlgoliaSearch
 
     protected
 
-    def algolia_ensure_init(options = nil, settings = nil)
+    def algolia_ensure_init(options = nil, settings = nil, remove_slaves = false)
       @algolia_indexes ||= {}
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
       return @algolia_indexes[settings] if @algolia_indexes[settings]
       @algolia_indexes[settings] = Algolia::Index.new(algolia_index_name(options))
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
-      @algolia_indexes[settings].set_settings(settings.to_settings) if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, settings.to_settings)
+      if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, settings.to_settings)
+        index_settings = settings.to_settings
+        if remove_slaves
+          index_settings.delete :slaves
+          index_settings.delete 'slaves'
+        end
+        @algolia_indexes[settings].set_settings(index_settings)
+      end
       @algolia_indexes[settings]
     end
 

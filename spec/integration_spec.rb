@@ -591,6 +591,16 @@ describe 'Cities' do
     r = City.index(safe_index_name('City_slave1')).search 'no land'
     r['nbHits'].should eq(1)
   end
+
+  it "should reindex with slaves in place" do
+    City.reindex!(1000, true)
+    expect(City.index.get_settings['slaves'].length).to eq(1)
+  end
+
+  it "should reindex with slaves using a temporary index" do
+    City.reindex(1000, true)
+    expect(City.index.get_settings['slaves'].length).to eq(1)
+  end
 end
 
 describe 'MongoObject' do
