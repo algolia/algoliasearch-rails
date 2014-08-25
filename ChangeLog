@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-08-25 1.11.1
+
+      * While using a temporary index to reindex, do not set the "slaves" index setting (will be set at move-time)
+
 2014-08-20 1.11.0
 
       * Do not rely of _changed? method to detect reindexing needs, if those methods are missing we probably need to reindex
