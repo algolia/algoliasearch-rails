@@ -274,6 +274,21 @@ or
 MyModel.index_objects MyModel.limit(5)
 ```
 
+#### Sanitizer
+
+You can sanitize all your attributes using the ```sanitize``` option. It will strip all HTML tags from your attributes.
+
+```ruby
+class User < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch per_environment: true, sanitize: true do
+    attributes :name, :email, :company
+  end
+end
+
+```
+
 
 Configuration example
 ---------------------

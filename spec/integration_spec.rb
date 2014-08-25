@@ -196,7 +196,7 @@ end
 class Book < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true, :sanitize => true do
     attributesToIndex [:name]
     tags do
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
@@ -637,6 +637,15 @@ describe 'Book' do
     index_book.should_not be_nil
     results = index_book.search('steve')
     results['hits'].length.should eq(0)
+  end
+
+  it "should sanitize attributes" do
+    @hack = Book.create! :name => "\"><img src=x onerror=alert(1)> hack0r", :author => "<script type=\"text/javascript\">alert(1)</script>", :premium => true, :released => true
+    b = Book.raw_search('hack')
+    expect(b['hits'].length).to eq(1)
+    expect(b['hits'][0]['name']).to eq('"> hack0r')
+    expect(b['hits'][0]['author']).to eq('alert(1)')
+    expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('"> <em>hack</em>0r')
   end
 end
 

@@ -87,7 +87,7 @@ module AlgoliaSearch
 
     def get_attributes(object)
       clazz = object.class
-      if defined?(::Mongoid::Document) && clazz.include?(::Mongoid::Document)
+      attributes = if defined?(::Mongoid::Document) && clazz.include?(::Mongoid::Document)
         # work-around mongoid 2.4's unscoped method, not accepting a block
         res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
@@ -100,6 +100,26 @@ module AlgoliaSearch
           @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
           res
         end
+      end
+
+      if @options[:sanitize]
+        sanitizer = HTML::FullSanitizer.new
+        attributes = sanitize_attributes(attributes, sanitizer)
+      end
+
+      attributes
+    end
+
+    def sanitize_attributes(v, sanitizer)
+      case v
+      when String
+        sanitizer.sanitize(v)
+      when Hash
+        v.each { |key, value| v[key] = sanitize_attributes(value, sanitizer) }
+      when Array
+        v.map { |x| sanitize_attributes(x, sanitizer) }
+      else
+        v
       end
     end
 
