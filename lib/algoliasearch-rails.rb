@@ -343,7 +343,8 @@ module AlgoliaSearch
     end
 
     def algolia_raw_search(q, params = {})
-      index = algolia_ensure_init
+      index_name = params.delete(:index) || params.delete('index') || params.delete(:slave) || params.delete('slave')
+      index = algolia_index(index_name)
       index.search(q, Hash[params.map { |k,v| [k.to_s, v.to_s] }])
     end
 
@@ -403,7 +404,7 @@ module AlgoliaSearch
         algolia_configurations.each do |o, s|
           return algolia_ensure_init(o, s) if o[:index_name].to_s == name.to_s
         end
-        raise ArgumentError.new("Invalid index name: #{name}")
+        raise ArgumentError.new("Invalid index/slave name: #{name}")
       end
       algolia_ensure_init
     end

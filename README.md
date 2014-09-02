@@ -426,6 +426,14 @@ class Book < ActiveRecord::Base
 end
 ```
 
+To search using a slave, use the following code:
+
+```ruby
+Book.raw_search 'foo bar', slave: 'Book_by_editor'
+# or
+Book.search 'foo bar', slave: 'Book_by_editor'
+```
+
 Target multiple indexes
 ---------
 
@@ -460,6 +468,14 @@ class Book < ActiveRecord::Base
   end
 
 end
+```
+
+To search using an extra index, use the following code:
+
+```ruby
+Book.raw_search 'foo bar', index: 'Book_by_editor'
+# or
+Book.search 'foo bar', index: 'Book_by_editor'
 ```
 
 Tags

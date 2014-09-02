@@ -592,6 +592,26 @@ describe 'Cities' do
     r['nbHits'].should eq(1)
   end
 
+  it "should be searchable using slave index 2" do
+    r = City.raw_search 'no land', :index => safe_index_name('City_slave1')
+    r['nbHits'].should eq(1)
+  end
+
+  it "should be searchable using slave index 3" do
+    r = City.raw_search 'no land', :slave => safe_index_name('City_slave1')
+    r['nbHits'].should eq(1)
+  end
+
+  it "should be searchable using slave index 4" do
+    r = City.search 'no land', :index => safe_index_name('City_slave1')
+    r.size.should eq(1)
+  end
+
+  it "should be searchable using slave index 5" do
+    r = City.search 'no land', :slave => safe_index_name('City_slave1')
+    r.size.should eq(1)
+  end
+
   it "should reindex with slaves in place" do
     City.reindex!(1000, true)
     expect(City.index.get_settings['slaves'].length).to eq(1)
