@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-09-16 1.11.3
+
+      * While reindexing, fetch the master's settings to setup the temporary index
+
 2014-09-02 1.11.2
 
       * Ability to search in a slave or extra index using the ```:index```/```:slave``` parameter
