@@ -257,11 +257,21 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         next if options[:slave]
-        index_name = algolia_index_name(options)
 
+        # fetch the master settings
+        master_index = algolia_ensure_init(options, settings)
+        master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
+        master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
+
+        # remove the slaves of the temporary index
+        master_settings.delete :slaves
+        master_settings.delete 'slaves'
+
+        # init temporary index
+        index_name = algolia_index_name(options)
         tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
         tmp_settings = settings.dup
-        tmp_index = algolia_ensure_init(tmp_options, tmp_settings, true)
+        tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
 
         algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(tmp_options)
@@ -439,19 +449,15 @@ module AlgoliaSearch
 
     protected
 
-    def algolia_ensure_init(options = nil, settings = nil, remove_slaves = false)
+    def algolia_ensure_init(options = nil, settings = nil, index_settings = nil)
       @algolia_indexes ||= {}
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
       return @algolia_indexes[settings] if @algolia_indexes[settings]
       @algolia_indexes[settings] = Algolia::Index.new(algolia_index_name(options))
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
-      if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, settings.to_settings)
-        index_settings = settings.to_settings
-        if remove_slaves
-          index_settings.delete :slaves
-          index_settings.delete 'slaves'
-        end
+      if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, settings.to_settings))
+        index_settings ||= settings.to_settings
         @algolia_indexes[settings].set_settings(index_settings)
       end
       @algolia_indexes[settings]
