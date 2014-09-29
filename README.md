@@ -221,9 +221,34 @@ class Contact < ActiveRecord::Base
     attribute :full_name do
       "#{first_name} #{last_name}"
     end
+    add_attribute :full_name2
+  end
+
+  def full_name2
+    "#{first_name} #{last_name}"
   end
 end
 ```
+
+***Notes:*** As soon as you use such code to define extra attributes, the gem is not anymore able to detect if the attribute has changed (the code uses Rails's `#{attribute}_changed?` method to detect that). As a consequence, your record will be pushed to the API even if its attributes didn't change. You can work-around this behavior creating a `_changed?` method:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    attribute :email
+    attribute :full_name do
+      "#{first_name} #{last_name}"
+    end
+  end
+
+  def full_name_changed?
+    first_name_changed? || last_name_changed?
+  end
+end
+```
+
 
 #### Custom ```objectID```
 
@@ -259,7 +284,25 @@ class Post < ActiveRecord::Base
 end
 ```
 
-**Notes:** As soon as you use those constraints, ```deleteObjects``` calls will be performed in order to keep the index synced with the DB (The state-less gem doesn't know if the object don't match your constraints anymore or never matched, so we force DELETE operations, even on never-indexed objects).
+**Notes:** As soon as you use those constraints, ```addObjects``` and ```deleteObjects``` calls will be performed in order to keep the index synced with the DB (The state-less gem doesn't know if the object don't match your constraints anymore or never matched, so we force ADD/DELETE operations to be sent). You can work-around this behavior creating a `_changed?` method:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch if: :published do
+  end
+
+  def published
+    # true or false
+  end
+
+  def published_changed?
+    # return true only if you know that the 'published' state changed
+  end
+end
+```
+
 
 You can index a subset of your records using either:
 
