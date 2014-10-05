@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-10-05 1.11.4
+
+      * Do not compute the 'slaves' index settings on slaves (breaking the diff between current & configured version)
+
 2014-09-16 1.11.3
 
       * While reindexing, fetch the master's settings to setup the temporary index
