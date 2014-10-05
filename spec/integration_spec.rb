@@ -623,8 +623,13 @@ describe 'Cities' do
   end
 
   it "should not include the slaves setting on slaves" do
-    expect(City.send(:algolia_configurations).to_a[0][1].to_settings[:slaves]).to eq(['City_slave1_development'])
-    expect(City.send(:algolia_configurations).to_a[1][1].to_settings[:slaves]).to be_nil
+    City.send(:algolia_configurations).to_a.each do |v|
+      if v[0][:slave]
+        expect(v[1].to_settings[:slaves]).to be_nil
+      else
+        expect(v[1].to_settings[:slaves]).to eq(["#{safe_index_name('City_slave1')}_#{Rails.env}"])
+      end
+    end
   end
 end
 
