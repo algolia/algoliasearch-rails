@@ -152,7 +152,7 @@ module AlgoliaSearch
         name = options[:index_name]
         name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
         name
-      end
+      end if !@options[:slave]
       settings
     end
 

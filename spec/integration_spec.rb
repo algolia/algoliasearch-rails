@@ -621,6 +621,11 @@ describe 'Cities' do
     City.reindex(1000, true)
     expect(City.index.get_settings['slaves'].length).to eq(1)
   end
+
+  it "should not include the slaves setting on slaves" do
+    expect(City.send(:algolia_configurations).to_a[0][1].to_settings[:slaves]).to eq(['City_slave1_development'])
+    expect(City.send(:algolia_configurations).to_a[1][1].to_settings[:slaves]).to be_nil
+  end
 end
 
 describe 'MongoObject' do
