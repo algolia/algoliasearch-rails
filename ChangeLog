@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-10-15 1.11.6
+
+      * Upgraded algoliasearch JavaScript client to 2.7.1
+
 2014-10-15 1.11.5
 
       * Upgraded algoliasearch JavaScript client from 2.5.3 to 2.7.0
