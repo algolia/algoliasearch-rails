@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-10-15 1.11.5
+
+      * Upgraded algoliasearch JavaScript client from 2.5.3 to 2.7.0
+
 2014-10-05 1.11.4
 
       * Do not compute the 'slaves' index settings on slaves (breaking the diff between current & configured version)
