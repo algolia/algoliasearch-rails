@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.5.3';
+var ALGOLIA_VERSION = '2.7.0';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -50,40 +50,77 @@ var ALGOLIA_VERSION = '2.5.3';
  * Algolia Search library initialization
  * @param applicationID the application ID you have in your admin interface
  * @param apiKey a valid API key for the service
- * @param method specify if the protocol used is http or https (http by default to make the first search query faster).
- *        You need to use https is you are doing something else than just search queries.
- * @param resolveDNS let you disable first empty query that is launch to warmup the service
- * @param hostsArray (optionnal) the list of hosts that you have received for the service
+ * @param methodOrOptions the hash of parameters for initialization. It can contains:
+ *        - method (optional) specify if the protocol used is http or https (http by default to make the first search query faster).
+ *          You need to use https is you are doing something else than just search queries.
+ *        - hosts (optional) the list of hosts that you have received for the service
+ *        - dsn (optional) set to true if your account has the Distributed Search Option
+ *        - dsnHost (optional) override the automatic computation of dsn hostname
  */
-var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArray) {
+var AlgoliaSearch = function(applicationID, apiKey, methodOrOptions, resolveDNS, hosts) {
     var self = this;
     this.applicationID = applicationID;
     this.apiKey = apiKey;
-
-    if (this._isUndefined(hostsArray)) {
-        hostsArray = [applicationID + '-1.algolia.io',
-                      applicationID + '-2.algolia.io',
-                      applicationID + '-3.algolia.io'];
-    }
+    this.dsn = false;
+    this.dsnHost = null;
     this.hosts = [];
+
+    var method;
+    if (typeof methodOrOptions === 'string') { // Old initialization
+        method = methodOrOptions;
+    } else {
+        // Take all option from the hash
+        var options = methodOrOptions;
+        if (!this._isUndefined(options.method)) {
+            method = options.method;
+        }
+        if (!this._isUndefined(options.dsn)) {
+            this.dsn = options.dsn;
+        }
+        if (!this._isUndefined(options.hosts)) {
+            hosts = options.hosts;
+        }
+        if (!this._isUndefined(options.dsnHost)) {
+            this.dsnHost = options.dsnHost;
+        }
+    }
+    // If hosts is undefined, initialize it with applicationID
+    if (this._isUndefined(hosts)) {
+        hosts = [
+            this.applicationID + '-1.algolia.io',
+            this.applicationID + '-2.algolia.io',
+            this.applicationID + '-3.algolia.io'
+        ];
+    }
+    // detect is we use http or https
+    this.host_protocol = 'http://';
+    if (this._isUndefined(method) || method === null) {
+        this.host_protocol = ('https:' == document.location.protocol ? 'https' : 'http') + '://';
+    } else if (method === 'https' || method === 'HTTPS') {
+        this.host_protocol = 'https://';
+    }
     // Add hosts in random order
-    for (var i = 0; i < hostsArray.length; ++i) {
+    for (var i = 0; i < hosts.length; ++i) {
         if (Math.random() > 0.5) {
             this.hosts.reverse();
         }
-        if (this._isUndefined(method) || method == null) {
-            this.hosts.push(('https:' == document.location.protocol ? 'https' : 'http') + '://' + hostsArray[i]);
-        } else if (method === 'https' || method === 'HTTPS') {
-            this.hosts.push('https://' + hostsArray[i]);
-        } else {
-            this.hosts.push('http://' + hostsArray[i]);
-        }
+        this.hosts.push(this.host_protocol + hosts[i]);
     }
     if (Math.random() > 0.5) {
         this.hosts.reverse();
     }
+    // then add Distributed Search Network host if there is one
+    if (this.dsn || this.dsnHost != null) {
+        if (this.dsnHost) {
+            this.hosts.unshift(this.host_protocol + this.dsnHost);
+        } else {
+            this.hosts.unshift(this.host_protocol + this.applicationID + '-dsn.algolia.io');
+        }
+    }
 
     // resolve DNS + check CORS support (JSONP fallback)
+    this.requestTimeoutInMs = 2000;
+    this.currentHostIndex = 0;
     this.jsonp = null;
     this.jsonpWait = 0;
     this._jsonRequest({
@@ -91,7 +128,8 @@ var AlgoliaSearch = function(applicationID, apiKey, method, resolveDNS, hostsArr
         url: '/1/isalive',
         callback: function(success, content) {
             self.jsonp = !success;
-        }
+        },
+        removeCustomHTTPHeaders: true
     });
     this.extraHeaders = [];
 };
@@ -408,7 +446,7 @@ AlgoliaSearch.prototype = {
      */
     addQueryInBatch: function(indexName, query, args) {
         var params = 'query=' + encodeURIComponent(query);
-        if (!this._isUndefined(args) && args != null) {
+        if (!this._isUndefined(args) && args !== null) {
             params = this._getSearchParams(args, params);
         }
         this.batch.push({ indexName: indexName, params: params });
@@ -439,7 +477,7 @@ AlgoliaSearch.prototype = {
             params.requests.push(as.batch[i]);
         }
         window.clearTimeout(as.onDelayTrigger);
-        if (!this._isUndefined(delay) && delay != null && delay > 0) {
+        if (!this._isUndefined(delay) && delay !== null && delay > 0) {
             var onDelayTrigger = window.setTimeout( function() {
                 as._sendQueriesBatch(params, callback);
             }, delay);
@@ -448,6 +486,19 @@ AlgoliaSearch.prototype = {
             this._sendQueriesBatch(params, callback);
         }
     },
+
+   /**
+     * Set the number of milliseconds a request can take before automatically being terminated.
+     * 
+     * @param {Number} milliseconds
+     */
+    setRequestTimeout: function(milliseconds)
+    {
+        if (milliseconds) {
+            this.requestTimeoutInMs = parseInt(milliseconds, 10);
+        }
+    },
+
     /*
      * Index class constructor.
      * You should not use this method directly but use initIndex() function
@@ -458,13 +509,18 @@ AlgoliaSearch.prototype = {
         this.typeAheadArgs = null;
         this.typeAheadValueOption = null;
     },
-
+   /**
+     * Add an extra field to the HTTP request
+     * 
+     * @param key the header field name
+     * @param value the header field value
+     */
     setExtraHeader: function(key, value) {
         this.extraHeaders.push({ key: key, value: value});
     },
 
     _sendQueriesBatch: function(params, callback) {
-        if (this.jsonp == null) {
+        if (this.jsonp === null) {
             var self = this;
             this._waitReady(function() { self._sendQueriesBatch(params, callback); });
             return;
@@ -485,13 +541,15 @@ AlgoliaSearch.prototype = {
                                    method: 'POST',
                                    url: '/1/indexes/*/queries',
                                    body: params,
-                                   callback: callback });
+       	                           callback: callback,
+                                   removeCustomHTTPHeaders: true});
         }
     },
     /*
      * Wrapper that try all hosts to maximize the quality of service
      */
     _jsonRequest: function(opts) {
+        var successiveRetryCount = 0;
         var self = this;
         var callback = opts.callback;
         var cache = null;
@@ -509,33 +567,33 @@ AlgoliaSearch.prototype = {
             }
         }
 
-        var impl = function(position) {
-            var idx = 0;
-            if (!self._isUndefined(position)) {
-                idx = position;
-            }
-            if (self.hosts.length <= idx) {
+        var impl = function() {
+            if (successiveRetryCount >= self.hosts.length) {
                 if (!self._isUndefined(callback)) {
-                    callback(false, { message: 'Cannot contact server'});
+                    successiveRetryCount = 0;
+                    callback(false, { message: 'Cannot connect the Algolia\'s Search API. Please send an email to support@algolia.com to report the issue.' });
                 }
                 return;
             }
             opts.callback = function(retry, success, res, body) {
                 if (!success && !self._isUndefined(body)) {
-                    if (window.console) { console.log('Error: ' + body.message); }
+                    console && console.log('Error: ' + body.message);
                 }
                 if (success && !self._isUndefined(opts.cache)) {
                     cache[cacheID] = body;
                 }
-                if (!success && retry && (idx + 1) < self.hosts.length) {
-                    impl(idx + 1);
+                if (!success && retry) {
+                    self.currentHostIndex = ++self.currentHostIndex % self.hosts.length;
+                    successiveRetryCount += 1;
+                    impl();
                 } else {
+                    successiveRetryCount = 0;
                     if (!self._isUndefined(callback)) {
                         callback(success, body);
                     }
                 }
             };
-            opts.hostname = self.hosts[idx];
+            opts.hostname = self.hosts[self.currentHostIndex];
             self._jsonRequestByHost(opts);
         };
         impl();
@@ -546,98 +604,191 @@ AlgoliaSearch.prototype = {
         var url = opts.hostname + opts.url;
 
         if (this.jsonp) {
-            if (!opts.jsonp) {
-                opts.callback(true, false, null, { 'message': 'Method ' + opts.method + ' ' + url + ' is not supported by JSONP.' });
-                return;
-            }
-            this.jsonpCounter = this.jsonpCounter || 0;
-            this.jsonpCounter += 1;
-            var cb = 'algoliaJSONP_' + this.jsonpCounter;
-            window[cb] = function(data) {
-                opts.callback(false, true, null, data);
-                try { delete window[cb]; } catch (e) { window[cb] = undefined; }
-            };
-            var script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = url + '?callback=' + cb + ',' + this.applicationID + ',' + this.apiKey;
-            if (opts['X-Algolia-TagFilters']) {
-                script.src += '&X-Algolia-TagFilters=' + opts['X-Algolia-TagFilters'];
-            }
-            if (opts['X-Algolia-UserToken']) {
-                script.src += '&X-Algolia-UserToken=' + opts['X-Algolia-UserToken'];
-            }
-            if (opts.body && opts.body.params) {
-                script.src += '&' + opts.body.params;
-            }
-            var head = document.getElementsByTagName('head')[0];
-            script.onerror = function() {
-                opts.callback(true, false, null, { 'message': 'Failed to load JSONP script.' });
-                head.removeChild(script);
-                try { delete window[cb]; } catch (e) { window[cb] = undefined; }
-            };
-            var done = false;
-            script.onload = script.onreadystatechange = function() {
-                if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
-                    done = true;
-                    if (typeof window[cb + '_loaded'] === 'undefined') {
-                        opts.callback(true, false, null, { 'message': 'Failed to load JSONP script.' });
-                        try { delete window[cb]; } catch (e) { window[cb] = undefined; }
-                    } else {
-                        try { delete window[cb + '_loaded']; } catch (e) { window[cb + '_loaded'] = undefined; }
-                    }
-                    script.onload = script.onreadystatechange = null; // Handle memory leak in IE
-                    head.removeChild(script);
-                }
-            };
-            head.appendChild(script);
+            this._makeJsonpRequestByHost(url, opts);
         } else {
-            var body = null;
-            if (!this._isUndefined(opts.body)) {
-                body = JSON.stringify(opts.body);
-            }
-            var xmlHttp = window.XMLHttpRequest ? new XMLHttpRequest() : {};
-            if ('withCredentials' in xmlHttp) {
-                xmlHttp.open(opts.method, url , true);
-                xmlHttp.setRequestHeader('X-Algolia-API-Key', this.apiKey);
-                xmlHttp.setRequestHeader('X-Algolia-Application-Id', this.applicationID);
-                for (var i = 0; i < this.extraHeaders.length; ++i) {
-                    xmlHttp.setRequestHeader(this.extraHeaders[i].key, this.extraHeaders[i].value);
-                }
-                if (body != null) {
-                    xmlHttp.setRequestHeader('Content-type', 'application/json');
-                }
-            } else if (typeof XDomainRequest != 'undefined') {
-                // Handle IE8/IE9
-                // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
-                xmlHttp = new XDomainRequest();
-                xmlHttp.open(opts.method, url);
-            } else {
-                // very old browser, not supported
-                if (window.console) { console.log('Your browser is too old to support CORS requests'); }
-                opts.callback(false, false, null, { 'message': 'CORS not supported' });
-                return;
-            }
-            xmlHttp.send(body);
-            xmlHttp.onload = function(event) {
-                if (!self._isUndefined(event) && event.target != null) {
-                    var retry = (event.target.status === 0 || event.target.status === 503);
-                    var success = (event.target.status === 200 || event.target.status === 201);
-                    opts.callback(retry, success, event.target, event.target.response != null ? JSON.parse(event.target.response) : null);
-                } else {
-                    opts.callback(false, true, event, JSON.parse(xmlHttp.responseText));
-                }
-            };
-            xmlHttp.onerror = function(event) {
-                opts.callback(true, false, null, { 'message': 'Could not connect to host', 'error': event } );
-            };
+            this._makeXmlHttpRequestByHost(url, opts);
         }
+    },
+
+    /**
+     * Make a JSONP request
+     *
+     * @param url request url (includes endpoint and path)
+     * @param opts all request options
+     */
+    _makeJsonpRequestByHost: function(url, opts) {
+        if (!opts.jsonp) {
+            opts.callback(true, false, null, { 'message': 'Method ' + opts.method + ' ' + url + ' is not supported by JSONP.' });
+            return;
+        }
+
+        this.jsonpCounter = this.jsonpCounter || 0;
+        this.jsonpCounter += 1;
+        var head = document.getElementsByTagName('head')[0];
+        var script = document.createElement('script');
+        var cb = 'algoliaJSONP_' + this.jsonpCounter;
+        var done = false;
+        var ontimeout = null;
+
+        window[cb] = function(data) {
+            opts.callback(false, true, null, data);
+            try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        };
+        
+        script.type = 'text/javascript';
+        script.src = url + '?callback=' + cb + ',' + this.applicationID + ',' + this.apiKey;
+        
+        if (opts.body['X-Algolia-TagFilters']) {
+            script.src += '&X-Algolia-TagFilters=' + encodeURIComponent(opts.body['X-Algolia-TagFilters']);
+        }
+        
+        if (opts.body['X-Algolia-UserToken']) {
+            script.src += '&X-Algolia-UserToken=' + encodeURIComponent(opts.body['X-Algolia-UserToken']);
+        }
+        
+        if (opts.body && opts.body.params) {
+            script.src += '&' + opts.body.params;
+        }
+        
+        ontimeout = setTimeout(function() {
+            script.onload = script.onreadystatechange = script.onerror = null;
+            window[cb] = function(data) {
+                try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+            };
+            
+            opts.callback(true, false, null, { 'message': 'Timeout - Failed to load JSONP script.' });
+            head.removeChild(script);
+            
+            clearTimeout(ontimeout);
+            ontimeout = null;
+
+        }, this.requestTimeoutInMs);
+
+        script.onload = script.onreadystatechange = function() {
+            clearTimeout(ontimeout);
+            ontimeout = null;
+
+            if (!done && (!this.readyState || this.readyState == 'loaded' || this.readyState == 'complete')) {
+                done = true;
+
+                if (typeof window[cb + '_loaded'] === 'undefined') {
+                    opts.callback(true, false, null, { 'message': 'Failed to load JSONP script.' });
+                    try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+                } else {
+                    try { delete window[cb + '_loaded']; } catch (e) { window[cb + '_loaded'] = undefined; }
+                }
+                script.onload = script.onreadystatechange = null; // Handle memory leak in IE
+                head.removeChild(script);
+            }
+        };
+
+        script.onerror = function() {
+            clearTimeout(ontimeout);
+            ontimeout = null;
+
+            opts.callback(true, false, null, { 'message': 'Failed to load JSONP script.' });
+            head.removeChild(script);
+            try { delete window[cb]; } catch (e) { window[cb] = undefined; }
+        };
+
+        head.appendChild(script);
+    },
+
+    /**
+     * Make a XmlHttpRequest
+     * 
+     * @param url request url (includes endpoint and path)
+     * @param opts all request opts
+     */
+    _makeXmlHttpRequestByHost: function(url, opts) {
+        var self = this;
+        var xmlHttp = window.XMLHttpRequest ? new XMLHttpRequest() : {};
+        var body = null;
+        var ontimeout = null;
+
+        if (!this._isUndefined(opts.body)) {
+            body = JSON.stringify(opts.body);
+        }
+        
+        if ('withCredentials' in xmlHttp) {
+            xmlHttp.open(opts.method, url , true);
+            if (this._isUndefined(opts.removeCustomHTTPHeaders) || !opts.removeCustomHTTPHeaders) {
+                      xmlHttp.setRequestHeader('X-Algolia-API-Key', this.apiKey);
+                      xmlHttp.setRequestHeader('X-Algolia-Application-Id', this.applicationID);
+            }
+            xmlHttp.timeout = this.requestTimeoutInMs;
+            for (var i = 0; i < this.extraHeaders.length; ++i) {
+                xmlHttp.setRequestHeader(this.extraHeaders[i].key, this.extraHeaders[i].value);
+            }
+            if (body !== null) {
+                xmlHttp.setRequestHeader('Content-type', 'application/json');
+            }
+        } else if (typeof XDomainRequest !== 'undefined') {
+            // Handle IE8/IE9
+            // XDomainRequest only exists in IE, and is IE's way of making CORS requests.
+            xmlHttp = new XDomainRequest();
+            xmlHttp.open(opts.method, url);
+        } else {
+            // very old browser, not supported
+            console && console.log('Your browser is too old to support CORS requests');
+            opts.callback(false, false, null, { 'message': 'CORS not supported' });
+            return;
+        }
+
+        ontimeout = setTimeout(function() {
+            xmlHttp.abort();
+            // Prevent Internet Explorer 9, JScript Error c00c023f
+            if (xmlHttp.aborted === true) {
+              stopLoadAnimation();
+              return;
+            }
+            opts.callback(true, false, null, { 'message': 'Timeout - Could not connect to endpoint ' + url } );
+
+            clearTimeout(ontimeout);
+            ontimeout = null;
+
+        }, this.requestTimeoutInMs);
+
+        xmlHttp.onload = function(event) {
+            clearTimeout(ontimeout);
+            ontimeout = null;
+
+            if (!self._isUndefined(event) && event.target !== null) {
+                var retry = (event.target.status === 0 || event.target.status === 503);
+                var success = false;
+                var response = null;
+
+                if (typeof XDomainRequest !== 'undefined') {
+                    // Handle CORS requests IE8/IE9
+                    response = event.target.responseText;
+                    success = (response && response.length > 0);
+                }
+                else {
+                    response = event.target.response;
+                    success = (event.target.status === 200 || event.target.status === 201);
+                }
+
+                opts.callback(retry, success, event.target, response ? JSON.parse(response) : null);
+            } else {
+                opts.callback(false, true, event, JSON.parse(xmlHttp.responseText));
+            }
+        };
+        xmlHttp.ontimeout = function(event) { // stop the network call but rely on ontimeout to call opt.callback
+        };
+        xmlHttp.onerror = function(event) {
+            clearTimeout(ontimeout);
+            ontimeout = null;
+            opts.callback(true, false, null, { 'message': 'Could not connect to host', 'error': event } );
+        };
+
+        xmlHttp.send(body);
     },
 
     /**
      * Wait until JSONP flag has been set to perform the first query
      */
     _waitReady: function(cb) {
-        if (this.jsonp == null) {
+        if (this.jsonp === null) {
             this.jsonpWait += 100;
             if (this.jsonpWait > 2000) {
                 this.jsonp = true;
@@ -650,11 +801,11 @@ AlgoliaSearch.prototype = {
      * Transform search param object in query string
      */
     _getSearchParams: function(args, params) {
-        if (this._isUndefined(args) || args == null) {
+        if (this._isUndefined(args) || args === null) {
             return params;
         }
         for (var key in args) {
-            if (key != null && args.hasOwnProperty(key)) {
+            if (key !== null && args.hasOwnProperty(key)) {
                 params += (params.length === 0) ? '?' : '&';
                 params += key + '=' + encodeURIComponent(Object.prototype.toString.call(args[key]) === '[object Array]' ? JSON.stringify(args[key]) : args[key]);
             }
@@ -742,7 +893,7 @@ AlgoliaSearch.prototype.Index.prototype = {
          * @param attributes (optional) if set, contains the array of attribute names to retrieve
          */
         getObject: function(objectID, callback, attributes) {
-            if (this.as.jsonp == null) {
+            if (this.as.jsonp === null) {
                 var self = this;
                 this.as._waitReady(function() { self.getObject(objectID, callback, attributes); });
                 return;
@@ -847,7 +998,7 @@ AlgoliaSearch.prototype.Index.prototype = {
          *  content: the server answer that contains 3 elements: createAt, taskId and objectID
          */
         deleteObject: function(objectID, callback) {
-            if (objectID == null || objectID.length === 0) {
+            if (objectID === null || objectID.length === 0) {
                 callback(false, { message: 'empty objectID'});
                 return;
             }
@@ -927,11 +1078,11 @@ AlgoliaSearch.prototype.Index.prototype = {
         search: function(query, callback, args, delay) {
             var indexObj = this;
             var params = 'query=' + encodeURIComponent(query);
-            if (!this.as._isUndefined(args) && args != null) {
+            if (!this.as._isUndefined(args) && args !== null) {
                 params = this.as._getSearchParams(args, params);
             }
             window.clearTimeout(indexObj.onDelayTrigger);
-            if (!this.as._isUndefined(delay) && delay != null && delay > 0) {
+            if (!this.as._isUndefined(delay) && delay !== null && delay > 0) {
                 var onDelayTrigger = window.setTimeout( function() {
                     indexObj._search(params, callback);
                 }, delay);
@@ -1185,7 +1336,7 @@ AlgoliaSearch.prototype.Index.prototype = {
         /// Internal methods only after this line
         ///
         _search: function(params, callback) {
-            if (this.as.jsonp == null) {
+            if (this.as.jsonp === null) {
                 var self = this;
                 this.as._waitReady(function() { self._search(params, callback); });
                 return;
@@ -1208,7 +1359,8 @@ AlgoliaSearch.prototype.Index.prototype = {
                                        method: 'POST',
                                        url: '/1/indexes/' + encodeURIComponent(this.indexName) + '/query',
                                        body: pObj,
-                                       callback: callback });
+                                       callback: callback,
+                                       removeCustomHTTPHeaders: true});
             }
         },
 
@@ -1530,6 +1682,9 @@ AlgoliaSearch.prototype.Index.prototype = {
       return extend({}, this.searchParams, {
         hitsPerPage: 1,
         page: 0,
+        attributesToRetrieve: [],
+        attributesToHighlight: [],
+        attributesToSnippet: [],
         facets: facet,
         facetFilters: this._getFacetFilters(facet)
       });
@@ -1561,6 +1716,75 @@ AlgoliaSearch.prototype.Index.prototype = {
         }
       }
       return facetFilters;
+    }
+  };
+})();
+
+/*
+ * Copyright (c) 2014 Algolia
+ * http://www.algolia.com/
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
+(function($) {
+  
+  /**
+   * Algolia Places API
+   * @param {string} Your application ID
+   * @param {string} Your API Key
+   */
+  window.AlgoliaPlaces = function(applicationID, apiKey) {
+     this.init(applicationID, apiKey);
+  };
+
+  AlgoliaPlaces.prototype = {
+    /**
+     * @param {string} Your application ID
+     * @param {string} Your API Key
+     */
+    init: function(applicationID, apiKey) {
+      this.client = new AlgoliaSearch(applicationID, apiKey, 'http', true, ['places-1.algolia.io', 'places-2.algolia.io', 'places-3.algolia.io']);
+      this.cache = {};
+    },
+
+    /**
+     * Perform a query
+     * @param  {string} q the user query
+     * @param  {function} searchCallback the result callback called with two arguments:
+     *  success: boolean set to true if the request was successfull
+     *  content: the query answer with an extra 'disjunctiveFacets' attribute
+     * @param {hash} the list of search parameters
+     */
+    search: function(q, searchCallback, searchParams) {
+      var indexObj = this;
+      var params = 'query=' + encodeURIComponent(q);
+      if (!this.client._isUndefined(searchParams) && searchParams != null) {
+          params = this.client._getSearchParams(searchParams, params);
+      }
+      var pObj = {params: params, apiKey: this.client.apiKey, appID: this.client.applicationID};
+      this.client._jsonRequest({ cache: this.cache,
+                                 method: 'POST',
+                                 url: '/1/places/query',
+                                 body: pObj,
+                                 callback: searchCallback,
+                                 removeCustomHTTPHeaders: true });
     }
   };
 })();
