@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-10-16 1.11.7
+
+      * Upgraded to algoliasearch-client-ruby>=1.2.12 to ensure we're not using SSLv3
+
 2014-10-15 1.11.6
 
       * Upgraded algoliasearch JavaScript client to 2.7.1
