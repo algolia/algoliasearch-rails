@@ -549,15 +549,17 @@ module AlgoliaSearch
     def algolia_indexing_disabled?(options = nil)
       options ||= algoliasearch_options
       constraint = options[:disable_indexing] || options['disable_indexing']
-      if constraint.nil?
-        false
-      elsif constraint == true || constraint == false
-        constraint
-      elsif constraint.respond_to?(:call) # Proc
-        constraint.call
+      case constraint
+      when nil
+        return false
+      when true, false
+        return constraint
+      when String, Symbol
+        return send(constraint)
       else
-        raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
+        return constraint.call if constraint.respond_to?(:call) # Proc
       end
+      raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
     end
 
     def algolia_find_in_batches(batch_size, &block)

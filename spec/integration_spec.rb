@@ -61,6 +61,9 @@ ActiveRecord::Schema.define do
   create_table :disabled_procs do |t|
     t.string :name
   end
+  create_table :disabled_symbols do |t|
+    t.string :name
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -118,6 +121,17 @@ class DisabledProc < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :disable_indexing => Proc.new { true } do
+  end
+end
+
+class DisabledSymbol < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :disable_indexing => :truth do
+  end
+
+  def self.truth
+    true
   end
 end
 
@@ -705,6 +719,7 @@ describe 'Disabled' do
   before(:all) do
     DisabledBoolean.index.clear_index!
     DisabledProc.index.clear_index!
+    DisabledSymbol.index.clear_index!
   end
 
   it "should disable the indexing using a boolean" do
@@ -715,5 +730,10 @@ describe 'Disabled' do
   it "should disable the indexing using a proc" do
     DisabledProc.create :name => 'foo'
     expect(DisabledProc.search('').size).to eq(0)
+  end
+
+  it "should disable the indexing using a symbol" do
+    DisabledSymbol.create :name => 'foo'
+    expect(DisabledSymbol.search('').size).to eq(0)
   end
 end
