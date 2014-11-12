@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-11-12 1.11.9
+
+      * Upgraded algoliasearch JavaScript client to 2.7.4 & algoliasearch-client-ruby to 1.2.14
+
 2014-10-29 1.11.8
 
       * Upgraded algoliasearch JavaScript client to 2.7.3
