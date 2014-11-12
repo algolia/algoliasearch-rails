@@ -35,8 +35,8 @@ GEM
       i18n (~> 0.6, >= 0.6.4)
       multi_json (~> 1.0)
     addressable (2.3.6)
-    algoliasearch (1.2.12)
-      httpclient (~> 2.3)
+    algoliasearch (1.2.14)
+      httpclient (~> 2.4)
       json (>= 1.5.1)
     arel (3.0.3)
     autotest (4.4.6)
@@ -67,7 +67,7 @@ GEM
       net-http-pipeline
     highline (1.6.21)
     hike (1.2.3)
-    httpclient (2.4.0)
+    httpclient (2.5.3.2)
     i18n (0.6.11)
     jdbc-sqlite3 (3.7.2.1)
     journey (1.0.4)
@@ -379,7 +379,7 @@ PLATFORMS
 DEPENDENCIES
   activerecord-jdbc-adapter
   activerecord-jdbcsqlite3-adapter
-  algoliasearch (~> 1.2.12)
+  algoliasearch (~> 1.2.14)
   autotest
   autotest-fsevent
   autotest-growl
