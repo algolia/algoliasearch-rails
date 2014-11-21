@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-11-21 1.11.10
+
+      * Ability to force the UTF-8 encoding of the underlying attributes before sending them to our API
+
 2014-11-12 1.11.9
 
       * Upgraded algoliasearch JavaScript client to 2.7.4 & algoliasearch-client-ruby to 1.2.14
