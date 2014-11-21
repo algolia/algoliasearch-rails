@@ -107,6 +107,10 @@ module AlgoliaSearch
         attributes = sanitize_attributes(attributes, sanitizer)
       end
 
+      if @options[:force_utf8_encoding]
+        attributes = encode_attributes(attributes)
+      end
+
       attributes
     end
 
@@ -118,6 +122,19 @@ module AlgoliaSearch
         v.each { |key, value| v[key] = sanitize_attributes(value, sanitizer) }
       when Array
         v.map { |x| sanitize_attributes(x, sanitizer) }
+      else
+        v
+      end
+    end
+
+    def encode_attributes(v)
+      case v
+      when String
+        v.force_encoding('utf-8')
+      when Hash
+        v.each { |key, value| v[key] = encode_attributes(value) }
+      when Array
+        v.map { |x| encode_attributes(x) }
       else
         v
       end

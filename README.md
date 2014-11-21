@@ -332,6 +332,21 @@ end
 
 ```
 
+#### UTF-8 Encoding
+
+You can force the UTF-8 encoding of all your attributes using the ```force_utf8_encoding``` option:
+
+```ruby
+class User < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch force_utf8_encoding: true do
+    attributes :name, :email, :company
+  end
+end
+
+```
+
 
 Configuration example
 ---------------------

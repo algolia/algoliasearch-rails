@@ -64,6 +64,8 @@ ActiveRecord::Schema.define do
   create_table :disabled_symbols do |t|
     t.string :name
   end
+  create_table :encoded_strings do |t|
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -229,6 +231,30 @@ class Book < ActiveRecord::Base
   def public?
     released && !premium
   end
+end
+
+class EncodedString < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :force_utf8_encoding => true do
+    attribute :value do
+      "\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('ascii-8bit')
+    end
+  end
+end
+
+describe 'Encoding' do
+  before(:all) do
+    EncodedString.clear_index!(true)
+  end
+
+  it "should convert to utf-8" do
+    EncodedString.create!
+    results = EncodedString.raw_search ''
+    expect(results['hits'].size).to eq(1)
+    expect(results['hits'].first['value']).to eq("\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('utf-8'))
+  end
+
 end
 
 describe 'Settings' do
