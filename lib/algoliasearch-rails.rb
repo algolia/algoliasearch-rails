@@ -107,7 +107,7 @@ module AlgoliaSearch
         attributes = sanitize_attributes(attributes, sanitizer)
       end
 
-      if @options[:force_utf8_encoding]
+      if @options[:force_utf8_encoding] && Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f > 1.8
         attributes = encode_attributes(attributes)
       end
 

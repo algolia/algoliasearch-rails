@@ -347,6 +347,8 @@ end
 
 ```
 
+***Notes:*** This option is not compatible with Ruby 1.8
+
 
 Configuration example
 ---------------------
