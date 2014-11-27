@@ -1,5 +1,9 @@
 CHANGELOG
 
+2014-11-27 1.11.11
+
+      * Upgraded algoliasearch JavaScript client to 2.7.5 to prepare TLD migration
+
 2014-11-21 1.11.10
 
       * Ability to force the UTF-8 encoding of the underlying attributes before sending them to our API
