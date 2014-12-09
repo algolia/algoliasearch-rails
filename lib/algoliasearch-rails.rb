@@ -591,7 +591,7 @@ module AlgoliaSearch
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
 
-        per_batch = 100
+        per_batch = 1000
         count = all.count
 
         0.step(count, per_batch) do |offset|
