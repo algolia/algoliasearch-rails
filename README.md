@@ -249,6 +249,32 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+#### Nested objects/relations
+
+You can easily embed nested objects defining an extra attribute returning any JSON-compliant object (an array or a hash or a combination of both).
+
+```ruby
+class Profile < ActiveRecord::Base
+  include AlgoliaSearch
+
+  belongs_to :user
+  has_many :specializations
+
+  algoliasearch do
+    attribute :user do
+      # restrict the nested "user" object to its `name` + `email`
+      { name: user.name, email: user.email }
+    end
+    attribute :public_specializations do
+      # build an array of public specialization (include only `title` and `another_attr`)
+      specializations.select { |s| s.public? }.map do |s|
+        { title: s.title, another_attr: s.another_attr }
+      end
+    end
+  end
+
+end
+```
 
 #### Custom ```objectID```
 
