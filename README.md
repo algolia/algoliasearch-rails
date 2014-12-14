@@ -1,12 +1,11 @@
 Algolia Search for Rails
 ==================
 
-This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem.
+This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Both Rails 3.x and Rails 4.x are supported.
 
 You might be interested in the sample Ruby on Rails application providing a ```typeahead.js```-based auto-completion and ```Google```-like instant search: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.png?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.png)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.png)](https://codeclimate.com/github/algolia/algoliasearch-rails)
-
 
 Table of Content
 -------------
@@ -35,7 +34,7 @@ Install
 gem install algoliasearch-rails
 ```
 
-If you are using Rails 3, add the gem to your <code>Gemfile</code>:
+Add the gem to your <code>Gemfile</code>:
 
 ```ruby
 gem "algoliasearch-rails"
