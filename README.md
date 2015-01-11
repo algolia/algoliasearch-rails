@@ -181,7 +181,7 @@ end
 
 #### Custom index name
 
-You can force the index name using the following option:
+By default, the index name will be the class name, e.g. "Contact". You can customize the index name by using the `index_name` option:
 
 ```ruby
 class Contact < ActiveRecord::Base
