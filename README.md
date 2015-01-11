@@ -162,7 +162,7 @@ You can temporary disable auto-indexing using the <code>without_auto_index</code
 ```ruby
 Contact.delete_all
 Contact.without_auto_index do
-  1.upto(10000) { Contact.create! attributes } # inside the block, auto indexing task will noop
+  1.upto(10000) { Contact.create! attributes } # inside this block, auto indexing task will not run.
 end
 Contact.reindex! # will use batch operations
 ```
