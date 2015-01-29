@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-01-29 1.11.12
+
+      * Fixed potential namespace issue while trying to load the HTML sanitizer
+
 2014-11-27 1.11.11
 
       * Upgraded algoliasearch JavaScript client to 2.7.5 to prepare TLD migration
