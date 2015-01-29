@@ -357,6 +357,13 @@ end
 
 ```
 
+If you're using Rails 4.2+, you also need to depend on `rails-html-sanitizer`:
+
+```ruby
+gem 'rails-html-sanitizer'
+```
+
+
 #### UTF-8 Encoding
 
 You can force the UTF-8 encoding of all your attributes using the ```force_utf8_encoding``` option:
