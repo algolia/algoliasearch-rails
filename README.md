@@ -615,6 +615,12 @@ p hits
 p hits.raw_answer # to get the original JSON raw answer
 ```
 
+A `highlight_result` attribute is added to each ORM object:
+
+```ruby
+hits[0].highlight_result['first_name']['value']
+```
+
 If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
 
 ```ruby
