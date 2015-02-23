@@ -1,5 +1,13 @@
 CHANGELOG
 
+2015-02-23 1.11.15
+
+      * Algoliasearch-client-js: embed jQuery & angular based builds as well
+
+2015-02-23 1.11.14
+
+      * Upgrade to algoliasearch-client-js 2.9.2
+
 2015-02-03 1.11.13
 
       * Upgrade to algoliasearch-client-js 2.8.6
