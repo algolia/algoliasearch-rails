@@ -4,7 +4,7 @@ gem 'json', '>= 1.5.1'
 gem 'algoliasearch', '~> 1.2.14'
 gem 'rubysl', '~> 2.0', :platform => :rbx
 
-group :test do 
+group :test do
   gem 'rspec', '>= 2.5.0', '< 3.0'
   gem 'rails', '>= 3.2.0', '< 4.0'
   gem 'sqlite3', :platform => [:rbx, :ruby]
@@ -12,7 +12,7 @@ group :test do
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
   gem 'autotest'
-  gem 'autotest-fsevent'
+  gem 'autotest-fsevent', '~> 0.2.10'
   gem 'redgreen'
   gem 'autotest-growl'
 end

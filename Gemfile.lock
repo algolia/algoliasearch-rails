@@ -41,7 +41,7 @@ GEM
     arel (3.0.3)
     autotest (4.4.6)
       ZenTest (>= 4.4.1)
-    autotest-fsevent (0.2.9)
+    autotest-fsevent (0.2.10)
       sys-uname
     autotest-growl (0.2.16)
     backports (3.6.3)
@@ -381,7 +381,7 @@ DEPENDENCIES
   activerecord-jdbcsqlite3-adapter
   algoliasearch (~> 1.2.14)
   autotest
-  autotest-fsevent
+  autotest-fsevent (~> 0.2.10)
   autotest-growl
   jdbc-sqlite3
   json (>= 1.5.1)
