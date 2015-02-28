@@ -419,6 +419,13 @@ describe 'Colors' do
     results.should include(@blue)
   end
 
+  it "should include the _highlightResult and _snippetResults" do
+    results = Color.search("gre", attributesToSnippet: ['name'], attributesToHighlight: ['name'])
+    expect(results.size).to eq(1)
+    expect(results[0].highlight_result).to_not be_nil
+    expect(results[0].snippet_result).to_not be_nil
+  end
+
   it "should index an array of objects" do
     json = Color.raw_search('')
     Color.index_objects Color.limit(1), true # reindex last color, `limit` is incompatible with the reindex! method

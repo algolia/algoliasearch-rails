@@ -224,7 +224,7 @@ module AlgoliaSearch
       self.algoliasearch_settings = IndexSettings.new(options, block_given? ? Proc.new : nil)
       self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
-      attr_accessor :highlight_result
+      attr_accessor :highlight_result, :snippet_result
 
       if options[:synchronous] == true
         after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
@@ -422,6 +422,7 @@ module AlgoliaSearch
         o = results_by_id[hit['objectID']]
         if o
           o.highlight_result = hit['_highlightResult']
+          o.snippet_result = hit['_snippetResult']
           o
         end
       end.compact
