@@ -115,21 +115,21 @@ end
 class DisabledBoolean < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :disable_indexing => true do
+  algoliasearch :synchronous => true, :disable_indexing => true, :index_name => safe_index_name("DisabledBoolean") do
   end
 end
 
 class DisabledProc < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :disable_indexing => Proc.new { true } do
+  algoliasearch :synchronous => true, :disable_indexing => Proc.new { true }, :index_name => safe_index_name("DisabledProc") do
   end
 end
 
 class DisabledSymbol < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :disable_indexing => :truth do
+  algoliasearch :synchronous => true, :disable_indexing => :truth, :index_name => safe_index_name("DisabledSymbol") do
   end
 
   def self.truth
@@ -145,7 +145,7 @@ end
 class Namespaced::Model < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("Namespaced_Model") do
     attribute :customAttr do
       40 + another_private_value
     end
@@ -197,7 +197,7 @@ end
 class MongoObject < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch do
+  algoliasearch :index_name => safe_index_name("MongoObject") do
   end
 
   def self.reindex!
@@ -236,7 +236,7 @@ end
 class EncodedString < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :force_utf8_encoding => true do
+  algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("EncodedString") do
     attribute :value do
       "\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('ascii-8bit')
     end
