@@ -53,7 +53,9 @@ module AlgoliaSearch
       :highlightPreTag, :highlightPostTag,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
-      :synonyms, :placeholders]
+      :synonyms, :placeholders, :removeWordsIfNoResults, :replaceSynonymsInHighlight,
+      :unretrievableAttributes, :disableTypoToleranceOn, :altCorrections,
+      :ignorePlurals, :maxValuesPerFacet, :distinct]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
