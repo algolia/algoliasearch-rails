@@ -752,6 +752,20 @@ describe 'Kaminari' do
   end
 end
 
+describe 'Will_paginate' do
+  before(:all) do
+    require 'Will_paginate'
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :will_paginate }
+  end
+
+  it "should paginate" do
+    p1 = City.search '', :hitsPerPage => 2
+    p1.length.should eq(2)
+    p1.per_page.should eq(2)
+    p1.total_entries.should eq(City.raw_search('')['nbHits'])
+  end
+end
+
 describe 'Disabled' do
   before(:all) do
     DisabledBoolean.index.clear_index!
