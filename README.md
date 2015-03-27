@@ -134,11 +134,24 @@ end
 
 #### Frontend Search (realtime experience)
 
+Traditional search implementations tend to have search logic and functionality on the backend. This made sense when the search experience consisted of a user entering a search query, executing that search, and then being redirected to a search result page.
 
-We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries. The JS API client is part of the gem, just require ```algolia/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+Implementing search on the backend is no longer necessary. In fact, in most cases it is harmful to performance because of added network and processing latency. We highly recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) issuing all search requests directly from the end user's browser, mobile device, or client. It will reduce the overall search latency while offloading your servers at the same time.
+
+The JS API client is part of the gem, just require ```algolia/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
 ```javascript
 //= require algolia/algoliasearch.min
+```
+
+Then in your JavaScript code you can do:
+
+```js
+var client = new AlgoliaSearch('ApplicationID', 'Search-Only-API-Key');
+var index = client.initIndex('YourIndexName');
+index.search('something', function(success, hits) {
+  console.log(success, hits)
+}, { hitsPerPage: 10, page: 0 });
 ```
 
 #### Backend Search
