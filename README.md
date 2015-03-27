@@ -14,6 +14,7 @@ Table of Content
 1. [Install](#install)
 1. [Setup](#setup)
 1. [Quick Start](#quick-start)
+1. [Ranking & Relevance](#ranking--relevance)
 1. [Options](#options)
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
@@ -102,6 +103,32 @@ class Product < ActiveRecord::Base
   def extra_attr
     "extra_val"
   end
+end
+```
+
+#### Ranking & Relevance
+
+We provide many ways to configure your index allowing you to tune your overall index relevancy. The most important ones are the **searchable attributes** and the attributes reflecting **record popularity**.
+
+```ruby
+class Product < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # list of attribute used to build an Algolia record
+    attributes :title, :subtitle, :description, :likes_count, :seller_name
+
+    # the attributesToIndex` setting desfined the attributes
+    # you want to search in: here `title`, `subtitle` & `description`.
+    # You need to list them by order of importance. `description` is tagged as
+    # `unordered` to avoid taking the position of a match into account in that attribute.
+    attributesToIndex ['title', 'subtitle', 'unordered(description)']
+
+    # the `customRanking` setting defines the ranking criteria use to compare two matching
+    # records in case their text-relevance is equal. It should reflect your record popularity.
+    customRanking ['desc(likes_count)']
+  end
+
 end
 ```
 
