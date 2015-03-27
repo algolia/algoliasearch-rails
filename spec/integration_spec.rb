@@ -754,7 +754,7 @@ end
 
 describe 'Will_paginate' do
   before(:all) do
-    require 'Will_paginate'
+    require 'will_paginate'
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :will_paginate }
   end
 
