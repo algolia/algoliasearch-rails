@@ -118,7 +118,7 @@ class Product < ActiveRecord::Base
     # list of attribute used to build an Algolia record
     attributes :title, :subtitle, :description, :likes_count, :seller_name
 
-    # the attributesToIndex` setting desfined the attributes
+    # the attributesToIndex` setting defines the attributes
     # you want to search in: here `title`, `subtitle` & `description`.
     # You need to list them by order of importance. `description` is tagged as
     # `unordered` to avoid taking the position of a match into account in that attribute.
