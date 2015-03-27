@@ -71,7 +71,7 @@ class Contact < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch do
-    attribute :first_name, :last_name, :email
+    attribute :first_name, :last_name, :email # In order of most important to least important.
   end
 end
 ```
