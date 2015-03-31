@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-03-31 1.11.18
+
+      * Embed AlgoliaSearch JS API client v3 as well. Default is still the v2 to keep the backward compatibility.
+
 2015-03-08 1.11.17
 
       * Add missing index settings (including removeWordsIfNoResults, unretrievableAttributes and ignorePlurals)

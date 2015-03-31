@@ -138,10 +138,10 @@ Traditional search implementations tend to have search logic and functionality o
 
 Implementing search on the backend is no longer necessary. In fact, in most cases it is harmful to performance because of added network and processing latency. We highly recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) issuing all search requests directly from the end user's browser, mobile device, or client. It will reduce the overall search latency while offloading your servers at the same time.
 
-The JS API client is part of the gem, just require ```algolia/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+The JS API client is part of the gem, just require ```algolia/v3/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
 ```javascript
-//= require algolia/algoliasearch.min
+//= require algolia/v3/algoliasearch.min
 ```
 
 Then in your JavaScript code you can do:
@@ -153,6 +153,8 @@ index.search('something', function(success, hits) {
   console.log(success, hits)
 }, { hitsPerPage: 10, page: 0 });
 ```
+
+**We recently (March 2015) released a new version (V3) of our JavaScript client, if you were using our previous version (V2), [read the migration guide](https://github.com/algolia/algoliasearch-client-js/wiki/Migration-guide-from-2.x.x-to-3.x.x)**
 
 #### Backend Search
 
@@ -743,10 +745,10 @@ At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 500
 Typeahead UI
 -------------
 
-Require ```algolia/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.jquery.js``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+Require ```algolia/v3/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.jquery.js``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
 ```javascript
-//= require algolia/algoliasearch.min
+//= require algolia/v3/algoliasearch.min
 //= require algolia/typeahead.jquery
 ```
 
@@ -763,7 +765,7 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
 
 <script type="text/javascript">
   $(document).ready(function() {
-    var client = new AlgoliaSearch('YourApplicationID', 'SearchOnlyApplicationKey');
+    var client = algoliasearch('YourApplicationID', 'SearchOnlyApplicationKey');
     var template = Hogan.compile('{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})');
     $('input#user_email').typeahead(null, {
       source: client.initIndex('<%= Contact.index_name %>').ttAdapter(),
