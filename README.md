@@ -158,16 +158,16 @@ index.search('something', function(success, hits) {
 
 #### Backend Search
 
-A search returns ORM-compliant objects reloading them from your database.
-
-```ruby
-p Contact.search("jon doe")
-```
-
-If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
+If you want to search from your backend you can use the `raw_search` method. It retrieves the raw JSON answer from the API:
 
 ```ruby
 p Contact.raw_search("jon doe")
+```
+
+You could also use `search` but it's not recommended. This method will fetch the matching `objectIDs` from the API and perform a database query to retrieve an array of matching models:
+
+```ruby
+p Contact.search("jon doe") # we recommend to use `raw_search` to avoid the database lookup
 ```
 
 #### Notes
@@ -691,7 +691,7 @@ end
 
 ```ruby
 # dynamical search parameters
-p Contact.search("jon doe", { :hitsPerPage => 5, :page => 2 })
+p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
 ```
 
 Faceting
