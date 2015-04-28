@@ -339,6 +339,7 @@ GEM
     rubysl-xmlrpc (2.0.0)
     rubysl-yaml (2.0.4)
     rubysl-zlib (2.0.1)
+    sequel (4.21.0)
     slop (3.6.0)
     spoon (0.0.4)
       ffi
@@ -392,6 +393,7 @@ DEPENDENCIES
   redgreen
   rspec (>= 2.5.0, < 3.0)
   rubysl (~> 2.0)
+  sequel
   sqlite3
   travis
   will_paginate (>= 2.3.15)

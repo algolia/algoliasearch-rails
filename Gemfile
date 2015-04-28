@@ -15,6 +15,7 @@ group :test do
   gem 'autotest-fsevent', '~> 0.2.10'
   gem 'redgreen'
   gem 'autotest-growl'
+  gem 'sequel'
 end
 
 group :development do

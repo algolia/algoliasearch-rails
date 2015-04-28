@@ -71,7 +71,7 @@ module AlgoliaSearch
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       @attributes ||= {}
-      names.each do |name|
+      names.flatten.each do |name|
         @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
       end
     end
@@ -95,6 +95,13 @@ module AlgoliaSearch
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
+      elsif defined?(::Sequel::Model) && clazz < ::Sequel::Model
+        object.class.unfiltered do
+          res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+            Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+          @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
+          res
+        end
       else
         object.class.unscoped do
           res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
@@ -263,10 +270,16 @@ module AlgoliaSearch
             # delete non-indexable objects
             objects = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
             index.delete_objects(objects)
-            # select only indexable objects  
+            # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, options) }
           end
-          objects = group.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) }
+          objects = group.map do |o|
+            attributes = settings.get_attributes(o)
+            unless attributes.class == Hash
+              attributes = attributes.to_hash
+            end
+            attributes.merge 'objectID' => algolia_object_id_of(o, options)
+          end
           last_task = index.save_objects(objects)
         end
 
