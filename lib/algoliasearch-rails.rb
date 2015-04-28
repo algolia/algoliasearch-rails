@@ -95,13 +95,11 @@ module AlgoliaSearch
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
-      elsif defined?(::Sequel::Model) && clazz < ::Sequel::Model
-        object.class.unfiltered do
-          res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
-            Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
-          @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
-          res
-        end
+      elsif defined?(::Sequel) && clazz < ::Sequel::Model
+        res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+          Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+        @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
+        res
       else
         object.class.unscoped do
           res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
