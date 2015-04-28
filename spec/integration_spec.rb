@@ -728,6 +728,24 @@ describe 'Book' do
       expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('&quot;&gt; <em>hack</em>0r')
     end
   end
+
+  it "should handle removal in an extra index" do
+    # add a new public book which (not premium but released)
+    book = Book.create! :name => 'Public book', :author => 'me', :premium => false, :released => true
+
+    # should be searchable in the 'Book' index
+    index = Book.index(safe_index_name('Book'))
+    results = index.search('Public book')
+    expect(results['hits'].size).to eq(1)
+
+    # update the book and make it non-public anymore (not premium, not released)
+    book.update_attributes released: false
+
+    # should be removed from the index
+    results = index.search('Public book')
+    expect(results['hits'].size).to eq(0)
+  end
+
 end
 
 describe 'Kaminari' do
