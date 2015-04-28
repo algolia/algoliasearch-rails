@@ -739,7 +739,7 @@ describe 'Book' do
     expect(results['hits'].size).to eq(1)
 
     # update the book and make it non-public anymore (not premium, not released)
-    book.update_attributes released: false
+    book.update_attributes :released => false
 
     # should be removed from the index
     results = index.search('Public book')
