@@ -282,7 +282,6 @@ module AlgoliaSearch
           end
           last_task = index.save_objects(objects)
         end
-
         index.wait_task(last_task["taskID"]) if last_task and synchronous == true
       end
       nil
@@ -603,6 +602,8 @@ module AlgoliaSearch
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
         find_in_batches(:batch_size => batch_size, &block)
+      elsif defined?(::Sequel) && self < Sequel::Model
+        each_page(batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
