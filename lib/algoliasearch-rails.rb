@@ -236,10 +236,12 @@ module AlgoliaSearch
       if options[:synchronous] == true
         if defined?(::Sequel) && self < Sequel::Model
           class_eval do
-            define_method(:after_validation) {
-              super
+            copy_after_validation = instance_method(:after_validation)
+            define_method(:after_validation) do |*args|
+              super(*args)
+              copy_after_validation.bind(self).()
               algolia_mark_synchronous
-            }
+            end
           end
         else
           after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
@@ -248,16 +250,25 @@ module AlgoliaSearch
       unless options[:auto_index] == false
         if defined?(::Sequel) && self < Sequel::Model
           class_eval do
+            copy_after_validation = instance_method(:after_validation)
+            copy_before_save = instance_method(:before_save)
+            copy_after_save = instance_method(:after_save)
+
             define_method(:after_validation) do |*args|
               super(*args)
+              copy_after_validation.bind(self).()
               algolia_mark_must_reindex
             end
+
             define_method(:before_save) do |*args|
+              copy_before_save.bind(self).()
               algolia_mark_for_auto_indexing
               super(*args)
             end
+
             define_method(:after_save) do |*args|
               super(*args)
+              copy_after_save.bind(self).()
               algolia_perform_index_tasks
             end
           end

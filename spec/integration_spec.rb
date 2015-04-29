@@ -229,6 +229,10 @@ class SequelBook < Sequel::Model
     end
   end
 
+  def after_create
+    SequelBook.new
+  end
+
   private
   def public?
     released && !premium
@@ -243,9 +247,14 @@ describe 'SequelBook' do
     SequelBook.index(safe_index_name('SecuredSequelBook')).clear
   end
 
+  it "should not override after hooks" do
+    expect(SequelBook).to receive(:new).twice.and_call_original
+    @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
+  end
+
   it "should index the book in 2 indexes of 3" do
     @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
-    results = SequelBook.algolia_search('steve')
+    results = SequelBook.search('steve')
     expect(results.size).to eq(1)
     results.should include(@steve_jobs)
 
