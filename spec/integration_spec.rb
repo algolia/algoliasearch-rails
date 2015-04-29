@@ -3,6 +3,7 @@ require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 require 'active_record'
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
+require 'sequel'
 
 AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
 
@@ -15,6 +16,20 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
+
+SEQUEL_DB = Sequel.connect(
+  'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite',
+  'database' => 'sequel_data.sqlite3'
+)
+unless SEQUEL_DB.table_exists?(:sequel_books)
+  SEQUEL_DB.create_table(:sequel_books) do
+    primary_key :id
+    String :name
+    String :author
+    FalseClass :released
+    FalseClass :premium
+  end
+end
 
 ActiveRecord::Schema.define do
   create_table :products do |t|
@@ -194,6 +209,45 @@ class City < ActiveRecord::Base
   end
 end
 
+class SequelBook < Sequel::Model
+  plugin :active_model
+
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true do
+    attributesToIndex [:name]
+  end
+
+  def after_create
+    SequelBook.new
+  end
+
+  private
+  def public?
+    released && !premium
+  end
+end
+SequelBook.db = SEQUEL_DB
+
+describe 'SequelBook' do
+  before(:all) do
+    SequelBook.clear_index!(true)
+  end
+
+  it "should index the book" do
+    @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
+    results = SequelBook.search('steve')
+    expect(results.size).to eq(1)
+    results.should include(@steve_jobs)
+  end
+
+  it "should not override after hooks" do
+    expect(SequelBook).to receive(:new).twice.and_call_original
+    SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
+  end
+
+end
+
 class MongoObject < ActiveRecord::Base
   include AlgoliaSearch
 
@@ -220,7 +274,7 @@ class Book < ActiveRecord::Base
 
     add_index safe_index_name('BookAuthor'), :per_environment => true do
       attributesToIndex [:author]
-    end    
+    end
 
     add_index safe_index_name('Book'), :per_environment => true, :if => :public? do
       attributesToIndex [:name]
@@ -295,7 +349,7 @@ describe 'UniqUsers' do
   end
 
   it "should not use the id field" do
-    u = UniqUser.create :name => 'fooBar'
+    UniqUser.create :name => 'fooBar'
     results = UniqUser.search('foo')
     expect(results.size).to eq(1)
   end
@@ -461,7 +515,7 @@ describe 'An imaginary store' do
     @ericson = Product.create!(:name => 'ericson', :href => "yahoo", :tags => ['decent'])
 
     # Apple products
-    @iphone = Product.create!(:name => 'iphone', :href => "apple", :tags => ['awesome', 'poor reception'], 
+    @iphone = Product.create!(:name => 'iphone', :href => "apple", :tags => ['awesome', 'poor reception'],
       :description => 'Puts even more features at your fingertips')
 
     # Unindexed products
@@ -745,7 +799,6 @@ describe 'Book' do
     results = index.search('Public book')
     expect(results['hits'].size).to eq(0)
   end
-
 end
 
 describe 'Kaminari' do

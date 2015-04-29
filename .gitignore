@@ -21,3 +21,4 @@ pkg
 
 ## PROJECT::SPECIFIC
 data.sqlite3
+sequel_data.sqlite3

@@ -71,7 +71,7 @@ module AlgoliaSearch
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
       @attributes ||= {}
-      names.each do |name|
+      names.flatten.each do |name|
         @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
       end
     end
@@ -92,6 +92,11 @@ module AlgoliaSearch
       attributes = if defined?(::Mongoid::Document) && clazz.include?(::Mongoid::Document)
         # work-around mongoid 2.4's unscoped method, not accepting a block
         res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+          Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+        @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
+        res
+      elsif defined?(::Sequel) && clazz < ::Sequel::Model
+        res = @attributes.nil? || @attributes.length == 0 ? object.to_hash :
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
@@ -229,12 +234,49 @@ module AlgoliaSearch
       attr_accessor :highlight_result, :snippet_result
 
       if options[:synchronous] == true
-        after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
+        if defined?(::Sequel) && self < Sequel::Model
+          class_eval do
+            copy_after_validation = instance_method(:after_validation)
+            define_method(:after_validation) do |*args|
+              super(*args)
+              copy_after_validation.bind(self).()
+              algolia_mark_synchronous
+            end
+          end
+        else
+          after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
+        end
       end
       unless options[:auto_index] == false
-        after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
-        before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
-        after_save :algolia_perform_index_tasks if respond_to?(:after_save)
+        if defined?(::Sequel) && self < Sequel::Model
+          class_eval do
+            copy_after_validation = instance_method(:after_validation)
+            copy_before_save = instance_method(:before_save)
+            copy_after_save = instance_method(:after_save)
+
+            define_method(:after_validation) do |*args|
+              super(*args)
+              copy_after_validation.bind(self).()
+              algolia_mark_must_reindex
+            end
+
+            define_method(:before_save) do |*args|
+              copy_before_save.bind(self).()
+              algolia_mark_for_auto_indexing
+              super(*args)
+            end
+
+            define_method(:after_save) do |*args|
+              super(*args)
+              copy_after_save.bind(self).()
+              algolia_perform_index_tasks
+            end
+          end
+        else
+          after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
+          before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
+          after_save :algolia_perform_index_tasks if respond_to?(:after_save)
+        end
       end
       unless options[:auto_remove] == false
         after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
@@ -263,13 +305,18 @@ module AlgoliaSearch
             # delete non-indexable objects
             objects = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
             index.delete_objects(objects)
-            # select only indexable objects  
+            # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, options) }
           end
-          objects = group.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) }
+          objects = group.map do |o|
+            attributes = settings.get_attributes(o)
+            unless attributes.class == Hash
+              attributes = attributes.to_hash
+            end
+            attributes.merge 'objectID' => algolia_object_id_of(o, options)
+          end
           last_task = index.save_objects(objects)
         end
-
         index.wait_task(last_task["taskID"]) if last_task and synchronous == true
       end
       nil
@@ -590,6 +637,8 @@ module AlgoliaSearch
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
         find_in_batches(:batch_size => batch_size, &block)
+      elsif defined?(::Sequel) && self < Sequel::Model
+        each_page(batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
@@ -638,7 +687,12 @@ module AlgoliaSearch
     end
 
     def algolia_mark_must_reindex
-      @algolia_must_reindex = new_record? || self.class.algolia_must_reindex?(self)
+      @algolia_must_reindex =
+       if defined?(::Sequel) && is_a?(Sequel::Model)
+         new? || self.class.algolia_must_reindex?(self)
+       else
+         new_record? || self.class.algolia_must_reindex?(self)
+       end
       true
     end
 
