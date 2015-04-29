@@ -96,7 +96,7 @@ module AlgoliaSearch
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
       elsif defined?(::Sequel) && clazz < ::Sequel::Model
-        res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
+        res = @attributes.nil? || @attributes.length == 0 ? object.to_hash :
           Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
         @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
         res
@@ -234,12 +234,38 @@ module AlgoliaSearch
       attr_accessor :highlight_result, :snippet_result
 
       if options[:synchronous] == true
-        after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
+        if defined?(::Sequel) && self < Sequel::Model
+          class_eval do
+            define_method(:after_validation) {
+              super
+              algolia_mark_synchronous
+            }
+          end
+        else
+          after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
+        end
       end
       unless options[:auto_index] == false
-        after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
-        before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
-        after_save :algolia_perform_index_tasks if respond_to?(:after_save)
+        if defined?(::Sequel) && self < Sequel::Model
+          class_eval do
+            define_method(:after_validation) do |*args|
+              super(*args)
+              algolia_mark_must_reindex
+            end
+            define_method(:before_save) do |*args|
+              algolia_mark_for_auto_indexing
+              super(*args)
+            end
+            define_method(:after_save) do |*args|
+              super(*args)
+              algolia_perform_index_tasks
+            end
+          end
+        else
+          after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
+          before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
+          after_save :algolia_perform_index_tasks if respond_to?(:after_save)
+        end
       end
       unless options[:auto_remove] == false
         after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
@@ -650,7 +676,12 @@ module AlgoliaSearch
     end
 
     def algolia_mark_must_reindex
-      @algolia_must_reindex = new_record? || self.class.algolia_must_reindex?(self)
+      @algolia_must_reindex =
+       if defined?(::Sequel) && is_a?(Sequel::Model)
+         new? || self.class.algolia_must_reindex?(self)
+       else
+         new_record? || self.class.algolia_must_reindex?(self)
+       end
       true
     end
 

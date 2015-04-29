@@ -220,11 +220,11 @@ class SequelBook < Sequel::Model
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
     end
 
-    add_index safe_index_name('SequelBookAuthor'), :per_environment => true do
+    add_index safe_index_name('SecuredSequelBookAuthor'), :per_environment => true do
       attributesToIndex [:author]
     end
 
-    add_index safe_index_name('SequelBook'), :per_environment => true, :if => :public? do
+    add_index safe_index_name('SecuredSequelBook'), :per_environment => true, :if => :public? do
       attributesToIndex [:name]
     end
   end
@@ -239,8 +239,8 @@ SequelBook.db = SEQUEL_DB
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)
-    SequelBook.index(safe_index_name('SequelBookAuthor')).clear
-    SequelBook.index(safe_index_name('SequelBook')).clear
+    SequelBook.index(safe_index_name('SecuredSequelBookAuthor')).clear
+    SequelBook.index(safe_index_name('SecuredSequelBook')).clear
   end
 
   it "should index the book in 2 indexes of 3" do
@@ -249,17 +249,17 @@ describe 'SequelBook' do
     expect(results.size).to eq(1)
     results.should include(@steve_jobs)
 
-    index_author = SequelBook.index(safe_index_name('BookAuthor'))
+    index_author = SequelBook.index(safe_index_name('SecuredSequelBookAuthor'))
     index_author.should_not be_nil
-    results = index_author.algolia_search('steve')
+    results = index_author.search('steve')
     results['hits'].length.should eq(0)
-    results = index_author.algolia_search('walter')
+    results = index_author.search('walter')
     results['hits'].length.should eq(1)
 
     # premium -> not part of the public index
-    index_book = SequelBook.index(safe_index_name('Book'))
+    index_book = SequelBook.index(safe_index_name('SecuredSequelBook'))
     index_book.should_not be_nil
-    results = index_book.algolia_search('steve')
+    results = index_book.search('steve')
     results['hits'].length.should eq(0)
   end
 
@@ -284,15 +284,15 @@ describe 'SequelBook' do
     book = SequelBook.create(:name => 'Public book', :author => 'me', :premium => false, :released => true)
 
     # should be searchable in the 'Book' index
-    index = SequelBook.index(safe_index_name('SequelBook'))
+    index = SequelBook.index(safe_index_name('SecuredSequelBook'))
     results = index.search('Public book')
     expect(results['hits'].size).to eq(1)
 
     # update the book and make it non-public anymore (not premium, not released)
-    book.update_attributes :released => false
+    book.update :released => false
 
     # should be removed from the index
-    results = index.algolia_search('Public book')
+    results = index.search('Public book')
     expect(results['hits'].size).to eq(0)
   end
 end
@@ -398,7 +398,7 @@ describe 'UniqUsers' do
   end
 
   it "should not use the id field" do
-    u = UniqUser.create :name => 'fooBar'
+    UniqUser.create :name => 'fooBar'
     results = UniqUser.search('foo')
     expect(results.size).to eq(1)
   end
