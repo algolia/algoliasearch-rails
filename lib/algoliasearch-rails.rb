@@ -239,7 +239,7 @@ module AlgoliaSearch
             copy_after_validation = instance_method(:after_validation)
             define_method(:after_validation) do |*args|
               super(*args)
-              copy_after_validation.bind(self).()
+              copy_after_validation.bind(self).call
               algolia_mark_synchronous
             end
           end
@@ -256,19 +256,19 @@ module AlgoliaSearch
 
             define_method(:after_validation) do |*args|
               super(*args)
-              copy_after_validation.bind(self).()
+              copy_after_validation.bind(self).call
               algolia_mark_must_reindex
             end
 
             define_method(:before_save) do |*args|
-              copy_before_save.bind(self).()
+              copy_before_save.bind(self).call
               algolia_mark_for_auto_indexing
               super(*args)
             end
 
             define_method(:after_save) do |*args|
               super(*args)
-              copy_after_save.bind(self).()
+              copy_after_save.bind(self).call
               algolia_perform_index_tasks
             end
           end
