@@ -17,10 +17,8 @@ ActiveRecord::Base.establish_connection(
     'timeout' => 5000
 )
 
-SEQUEL_DB = Sequel.connect(
-  'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite',
-  'database' => 'sequel_data.sqlite3'
-)
+SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
+
 unless SEQUEL_DB.table_exists?(:sequel_books)
   SEQUEL_DB.create_table(:sequel_books) do
     primary_key :id
