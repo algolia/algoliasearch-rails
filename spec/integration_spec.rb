@@ -214,19 +214,8 @@ class SequelBook < Sequel::Model
 
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredSequelBook"), :per_environment => true, :sanitize => true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true do
     attributesToIndex [:name]
-    tags do
-      [premium ? 'premium' : 'standard', released ? 'public' : 'private']
-    end
-
-    add_index safe_index_name('SecuredSequelBookAuthor'), :per_environment => true do
-      attributesToIndex [:author]
-    end
-
-    add_index safe_index_name('SecuredSequelBook'), :per_environment => true, :if => :public? do
-      attributesToIndex [:name]
-    end
   end
 
   def after_create
@@ -243,67 +232,20 @@ SequelBook.db = SEQUEL_DB
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)
-    SequelBook.index(safe_index_name('SecuredSequelBookAuthor')).clear
-    SequelBook.index(safe_index_name('SecuredSequelBook')).clear
   end
 
-  it "should not override after hooks" do
-    expect(SequelBook).to receive(:new).twice.and_call_original
-    @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
-  end
-
-  it "should index the book in 2 indexes of 3" do
+  it "should index the book" do
     @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
     results = SequelBook.search('steve')
     expect(results.size).to eq(1)
     results.should include(@steve_jobs)
-
-    index_author = SequelBook.index(safe_index_name('SecuredSequelBookAuthor'))
-    index_author.should_not be_nil
-    results = index_author.search('steve')
-    results['hits'].length.should eq(0)
-    results = index_author.search('walter')
-    results['hits'].length.should eq(1)
-
-    # premium -> not part of the public index
-    index_book = SequelBook.index(safe_index_name('SecuredSequelBook'))
-    index_book.should_not be_nil
-    results = index_book.search('steve')
-    results['hits'].length.should eq(0)
   end
 
-  it "should sanitize attributes" do
-    @hack = SequelBook.create :name => "\"><img src=x onerror=alert(1)> hack0r", :author => "<script type=\"text/javascript\">alert(1)</script>", :premium => true, :released => true
-    b = SequelBook.raw_search('hack')
-    expect(b['hits'].length).to eq(1)
-    begin
-      expect(b['hits'][0]['name']).to eq('"> hack0r')
-      expect(b['hits'][0]['author']).to eq('alert(1)')
-      expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('"> <em>hack</em>0r')
-    rescue
-      # rails 4.2's sanitizer
-      expect(b['hits'][0]['name']).to eq('&quot;&gt; hack0r')
-      expect(b['hits'][0]['author']).to eq('')
-      expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('&quot;&gt; <em>hack</em>0r')
-    end
+  it "should not override after hooks" do
+    expect(SequelBook).to receive(:new).twice.and_call_original
+    SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
   end
 
-  it "should handle removal in an extra index" do
-    # add a new public book which (not premium but released)
-    book = SequelBook.create(:name => 'Public book', :author => 'me', :premium => false, :released => true)
-
-    # should be searchable in the 'Book' index
-    index = SequelBook.index(safe_index_name('SecuredSequelBook'))
-    results = index.search('Public book')
-    expect(results['hits'].size).to eq(1)
-
-    # update the book and make it non-public anymore (not premium, not released)
-    book.update :released => false
-
-    # should be removed from the index
-    results = index.search('Public book')
-    expect(results['hits'].size).to eq(0)
-  end
 end
 
 class MongoObject < ActiveRecord::Base
