@@ -18,7 +18,7 @@ ActiveRecord::Base.establish_connection(
 )
 
 SEQUEL_DB = Sequel.connect(
-  adapter: defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite',
+  'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite',
   'database' => 'sequel_data.sqlite3'
 )
 unless SEQUEL_DB.table_exists?(:sequel_books)
