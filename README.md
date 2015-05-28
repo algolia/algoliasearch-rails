@@ -211,7 +211,7 @@ end
 Contact.reindex! # will use batch operations
 ```
 
-You can force indexing and removing to be synchronous by setting the following option:
+You can force indexing and removing to be synchronous (in that case the gem will call the `wait_task` method to ensure the operation has been taken into account once the method returns) by setting the following option: (this is **NOT** recommended, except for testing purpose)
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -222,6 +222,22 @@ class Contact < ActiveRecord::Base
   end
 end
 ```
+
+#### Exceptions
+
+You can disable exceptions that could be raised while trying to reach Algolia's API by using the `raise_on_failure` option:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  # only raise exceptions in development env
+  algoliasearch raise_on_failure: Rails.env.development? do
+    attribute :first_name, :last_name, :email
+  end
+end
+```
+
 
 #### Custom index name
 

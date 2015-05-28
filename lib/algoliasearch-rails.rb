@@ -17,6 +17,8 @@ if defined? Rails
   end
 end
 
+require 'logger'
+
 module AlgoliaSearch
 
   class NotConfigured < StandardError; end
@@ -205,6 +207,58 @@ module AlgoliaSearch
     end
   end
 
+  # this class wraps an Algolia::Index object ensuring all raised exceptions
+  # are correctly logged or thrown depending on the `raise_on_failure` option
+  class SafeIndex
+    def initialize(name, raise_on_failure)
+      @index = ::Algolia::Index.new(name)
+      @raise_on_failure = raise_on_failure.nil? || raise_on_failure
+    end
+
+    ::Algolia::Index.instance_methods(false).each do |m|
+      define_method(m) do |*args|
+        SafeIndex.log_or_throw(m) do
+          @index.send(m, *args)
+        end
+      end
+    end
+
+    # special handling of wait_task to handle null task_id
+    def wait_task(task_id)
+      return if task_id.nil? && !@raise_on_failure # ok
+      SafeIndex.log_or_throw(:wait_task) do
+        @index.wait_task(task_id)
+      end
+    end
+
+    # expose move as well
+    def self.move_index(old_name, new_name)
+      SafeIndex.log_or_throw(:move_index) do
+        ::Algolia.move_index(old_name, new_name)
+      end
+    end
+
+    private
+    def self.log_or_throw(method, &block)
+      begin
+        yield
+      rescue Algolia::AlgoliaError => e
+        raise e if @raise_on_failure
+        # log the error
+        (Rails.logger || Logger.new(STDOUT)).error("[algoliasearch-rails] #{e.message}")
+        # return something
+        case method.to_s
+        when 'search'
+          # some attributes are required
+          { 'hits' => [], 'hitsPerPage' => 0, 'page' => 0, 'facets' => {}, 'error' => e }
+        else
+          # empty answer
+          { 'error' => e }
+        end
+      end
+    end
+  end
+
   # these are the class methods added when AlgoliaSearch is included
   module ClassMethods
 
@@ -353,7 +407,7 @@ module AlgoliaSearch
           tmp_index.save_objects(objects)
         end
 
-        move_task = ::Algolia.move_index(tmp_index.name, index_name)
+        move_task = SafeIndex.move_index(tmp_index.name, index_name)
         tmp_index.wait_task(move_task["taskID"]) if synchronous == true
       end
       nil
@@ -526,7 +580,7 @@ module AlgoliaSearch
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
       return @algolia_indexes[settings] if @algolia_indexes[settings]
-      @algolia_indexes[settings] = Algolia::Index.new(algolia_index_name(options))
+      @algolia_indexes[settings] = SafeIndex.new(algolia_index_name(options), algoliasearch_options[:raise_on_failure])
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
       if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, settings.to_settings))
         index_settings ||= settings.to_settings
