@@ -201,6 +201,8 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+##### Temporary disable auto-indexing
+
 You can temporary disable auto-indexing using the <code>without_auto_index</code> scope. This is often used for performance reason.
 
 ```ruby
@@ -210,6 +212,8 @@ Contact.without_auto_index do
 end
 Contact.reindex! # will use batch operations
 ```
+
+##### Queues & background jobs
 
 You can configure the auto-indexing & auto-removal process to use a queue to perform those operations in background. ActiveJob (Rails >=4.2) queues are used by default but you can define your own queuing mechanism:
 
@@ -222,6 +226,8 @@ class Contact < ActiveRecord::Base
   end
 end
 ```
+
+##### With Sidekiq
 
 If you're using [Sidekiq](https://github.com/mperham/sidekiq):
 
@@ -245,6 +251,8 @@ class MySidekiqWorker
 end
 ```
 
+##### With DelayedJob
+
 If you're using [delayed_job](https://github.com/collectiveidea/delayed_job):
 
 ```ruby
@@ -266,6 +274,7 @@ end
 
 ```
 
+##### Synchronism & testing
 
 You can force indexing and removing to be synchronous (in that case the gem will call the `wait_task` method to ensure the operation has been taken into account once the method returns) by setting the following option: (this is **NOT** recommended, except for testing purpose)
 
