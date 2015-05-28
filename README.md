@@ -526,10 +526,7 @@ class Item < ActiveRecord::Base
 
     # `title` is more important than `{story,comment}_text`, `{story,comment}_text` more than `url`, `url` more than `author`
     # btw, do not take into account position in most fields to avoid first word match boost
-    attributesToIndex ['unordered(title)', 'unordered(story_text)', 'unordered(comment_text)', 'unordered(url)', 'author', 'created_at_i']
-
-    # list of attributes to highlight
-    attributesToHighlight ['title', 'story_text', 'comment_text', 'url', 'story_url', 'author', 'story_title']
+    attributesToIndex ['unordered(title)', 'unordered(story_text)', 'unordered(comment_text)', 'unordered(url)', 'author']
 
     # tags used for filtering
     tags do
@@ -538,10 +535,6 @@ class Item < ActiveRecord::Base
 
     # use associated number of HN points to sort results (last sort criteria)
     customRanking ['desc(points)', 'desc(num_comments)']
-
-    # controls the way results are sorted sorting on the following 4 criteria (one after another)
-    # I removed the 'exact' match critera (improve 1-words query relevance, doesn't fit HNSearch needs)
-    ranking ['typo', 'proximity', 'attribute', 'custom']
 
     # google+, $1.5M raises, C#: we love you
     separatorsToIndex '+#$'
