@@ -1,5 +1,10 @@
 CHANGELOG
 
+2015-05-28 1.13.0
+
+      * Ability to use a background queue to handle all automatic indexing operations
+      * Fix a bug avoiding the gem to remove records when using the Sequel ORM
+
 2015-05-28 1.12.2
 
       * Add a new `raise_on_failure` option, controlling whereas exceptions are raised while trying to reach Algolia's API.
