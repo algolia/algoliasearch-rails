@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-05-28 1.12.2
+
+      * Add a new `raise_on_failure` option, controlling whereas exceptions are raised while trying to reach Algolia's API.
+
 2015-05-12 1.12.1
 
       * Upgrade to algoliasearch-client-js 3.3.0
