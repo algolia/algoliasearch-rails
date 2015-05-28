@@ -1,6 +1,7 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
 require 'active_record'
+require 'active_job/test_helper'
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 require 'sequel'
@@ -16,6 +17,8 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
+
+ActiveJob::Base.queue_adapter = :test
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
@@ -480,8 +483,8 @@ describe 'Colors' do
   end
 
   it "should not index non-saved object" do
-    expect { Color.new(:name => 'purple').index! }.to raise_error(ArgumentError)
-    expect { Color.new(:name => 'purple').remove_from_index! }.to raise_error(ArgumentError)
+    expect { Color.new(:name => 'purple').index!(true) }.to raise_error(ArgumentError)
+    expect { Color.new(:name => 'purple').remove_from_index!(true) }.to raise_error(ArgumentError)
   end
 
 end

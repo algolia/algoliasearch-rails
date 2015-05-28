@@ -211,6 +211,62 @@ end
 Contact.reindex! # will use batch operations
 ```
 
+You can configure the auto-indexing & auto-removal process to use a queue to perform those operations in background. ActiveJob (Rails >=4.2) queues are used by default but you can define your own queuing mechanism:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch enqueue: true do # ActiveJob will be triggered using a `algoliasearch` queue
+    attribute :first_name, :last_name, :email
+  end
+end
+```
+
+If you're using [Sidekiq](https://github.com/mperham/sidekiq):
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch enqueue: :trigger_sidekiq_worker do
+    attribute :first_name, :last_name, :email
+  end
+
+  def self.trigger_sidekiq_worker(record, remove)
+    MySidekiqWorker.perform_async(record, remove)
+  end
+end
+
+class MySidekiqWorker
+  def perform(record, remove)
+    remove ? record.remove_from_index! : record.index!
+  end
+end
+```
+
+If you're using [delayed_job](https://github.com/collectiveidea/delayed_job):
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch enqueue: :trigger_delayed_job do
+    attribute :first_name, :last_name, :email
+  end
+
+  def self.trigger_delayed_job(record, remove)
+    if remove
+      record.delay.remove_from_index!
+    else
+      record.delay.index!
+    end
+  end
+end
+
+```
+
+
 You can force indexing and removing to be synchronous (in that case the gem will call the `wait_task` method to ensure the operation has been taken into account once the method returns) by setting the following option: (this is **NOT** recommended, except for testing purpose)
 
 ```ruby
@@ -237,7 +293,6 @@ class Contact < ActiveRecord::Base
   end
 end
 ```
-
 
 #### Custom index name
 

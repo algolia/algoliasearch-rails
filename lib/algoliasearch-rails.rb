@@ -17,6 +17,12 @@ if defined? Rails
   end
 end
 
+begin
+  require 'active_job'
+rescue LoadError
+  # no queue support, fine
+end
+
 require 'logger'
 
 module AlgoliaSearch
@@ -207,6 +213,17 @@ module AlgoliaSearch
     end
   end
 
+  # Default queueing system
+  if defined?(::ActiveJob::Base)
+    class AlgoliaJob < ::ActiveJob::Base
+      queue_as :algoliasearch
+
+      def perform(record, method)
+        record.send(method)
+      end
+    end
+  end
+
   # this class wraps an Algolia::Index object ensuring all raised exceptions
   # are correctly logged or thrown depending on the `raise_on_failure` option
   class SafeIndex
@@ -301,6 +318,20 @@ module AlgoliaSearch
           after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
         end
       end
+      if options[:enqueue]
+        raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
+        algoliasearch_options[:enqueue] = if options[:enqueue] == true
+          Proc.new do |record, remove|
+            AlgoliaJob.perform_later(record, remove ? 'algolia_remove_from_index!' : 'algolia_index!')
+          end
+        elsif options[:enqueue].respond_to?(:call)
+          options[:enqueue]
+        elsif options[:enqueue].is_a?(Symbol)
+          Proc.new { |record, remove| self.send(options[:enqueue], record, remove) }
+        else
+          raise ArgumentError.new("Invalid `enqueue` option: #{options[:enqueue]}")
+        end
+      end
       unless options[:auto_index] == false
         if defined?(::Sequel) && self < Sequel::Model
           class_eval do
@@ -339,12 +370,12 @@ module AlgoliaSearch
 
             define_method(:after_destroy) do |*args|
               copy_after_destroy.bind(self).call
-              algolia_remove_from_index!
+              algolia_enqueue_remove_from_index!(algolia_synchronous?)
               super(*args)
             end
           end
         else
-          after_destroy { |searchable| searchable.algolia_remove_from_index! } if respond_to?(:after_destroy)
+          after_destroy { |searchable| searchable.algolia_enqueue_remove_from_index!(algolia_synchronous?) } if respond_to?(:after_destroy)
         end
       end
     end
@@ -738,6 +769,22 @@ module AlgoliaSearch
       self.class.algolia_remove_from_index!(self, synchronous || algolia_synchronous?)
     end
 
+    def algolia_enqueue_remove_from_index!(synchronous)
+      if algoliasearch_options[:enqueue]
+        algoliasearch_options[:enqueue].call(self, true)
+      else
+        algolia_remove_from_index!(synchronous)
+      end
+    end
+
+    def algolia_enqueue_index!(synchronous)
+      if algoliasearch_options[:enqueue]
+        algoliasearch_options[:enqueue].call(self, false)
+      else
+        algolia_index!(synchronous)
+      end
+    end
+
     private
 
     def algolia_synchronous?
@@ -764,7 +811,7 @@ module AlgoliaSearch
 
     def algolia_perform_index_tasks
       return if !@algolia_auto_indexing || @algolia_must_reindex == false
-      algolia_index!
+      algolia_enqueue_index!(algolia_synchronous?)
       remove_instance_variable(:@algolia_auto_indexing) if instance_variable_defined?(:@algolia_auto_indexing)
       remove_instance_variable(:@algolia_synchronous) if instance_variable_defined?(:@algolia_synchronous)
       remove_instance_variable(:@algolia_must_reindex) if instance_variable_defined?(:@algolia_must_reindex)
