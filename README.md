@@ -860,6 +860,23 @@ Caveats
 
 This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing ```after_validation```, ```before_save``` or ```after_save``` callbacks, it will not index your changes. For example: ```update_attribute``` doesn't perform validations checks, to perform validations when updating use ```update_attributes```.
 
+Timeouts
+---------
+
+You can configure a bunch of timeout threshold by setting the following options at initialization time:
+
+```ruby
+AlgoliaSearch.configuration = {
+  application_id: 'YourApplicationID',
+  api_key: 'YourAPIKey'
+  connect_timeout: 2,
+  receive_timeout: 30,
+  send_timeout: 30,
+  batch_timeout: 120,
+  search_timeout: 5
+}
+```
+
 Note on testing
 -----------------
 
