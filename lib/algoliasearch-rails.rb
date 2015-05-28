@@ -333,7 +333,19 @@ module AlgoliaSearch
         end
       end
       unless options[:auto_remove] == false
-        after_destroy { |searchable| searchable.remove_from_index! } if respond_to?(:after_destroy)
+        if defined?(::Sequel) && self < Sequel::Model
+          class_eval do
+            copy_after_destroy = instance_method(:after_destroy)
+
+            define_method(:after_destroy) do |*args|
+              copy_after_destroy.bind(self).call
+              algolia_remove_from_index!
+              super(*args)
+            end
+          end
+        else
+          after_destroy { |searchable| searchable.algolia_remove_from_index! } if respond_to?(:after_destroy)
+        end
       end
     end
 
