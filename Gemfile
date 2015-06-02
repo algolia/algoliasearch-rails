@@ -10,6 +10,7 @@ group :test do
     gem 'rails', '>= 3.2.0', '< 4.0'
     gem 'i18n', '< 0.7'
     gem 'highline', '< 1.7'
+    gem 'addressable', '< 2.4.0'
   else
     gem 'rails', '>= 3.2.0'
   end
