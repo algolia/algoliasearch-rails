@@ -1,7 +1,10 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
 require 'active_record'
-require 'active_job/test_helper'
+unless defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
+  require 'active_job/test_helper'
+  ActiveJob::Base.queue_adapter = :test
+end
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 require 'sequel'
@@ -17,8 +20,6 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
-
-ActiveJob::Base.queue_adapter = :test
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
