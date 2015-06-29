@@ -149,7 +149,7 @@ The JS API client is part of the gem, just require ```algolia/v3/algoliasearch.m
 Then in your JavaScript code you can do:
 
 ```js
-var client = new AlgoliaSearch('ApplicationID', 'Search-Only-API-Key');
+var client = algoliasearch(ApplicationID, Search-Only-API-Key);
 var index = client.initIndex('YourIndexName');
 index.search('something', function(success, hits) {
   console.log(success, hits)
