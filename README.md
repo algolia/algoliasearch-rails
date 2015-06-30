@@ -607,6 +607,15 @@ To clear an index, use the <code>clear_index!</code> class method:
 Contact.clear_index!
 ```
 
+#### Using the underlying index
+
+You can access the underlying `index` object by calling the `index` class method:
+
+```ruby
+index = Contact.index
+# index.get_settings, index.partial_update_object, ...
+```
+
 Master/slave
 ---------
 
