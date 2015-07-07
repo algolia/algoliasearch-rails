@@ -20,6 +20,7 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
+ActiveRecord::Base.raise_in_transactional_callbacks = true
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 

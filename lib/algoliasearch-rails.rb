@@ -337,7 +337,7 @@ module AlgoliaSearch
           class_eval do
             copy_after_validation = instance_method(:after_validation)
             copy_before_save = instance_method(:before_save)
-            copy_after_save = instance_method(:after_save)
+            copy_after_commit = instance_method(:after_commit)
 
             define_method(:after_validation) do |*args|
               super(*args)
@@ -351,16 +351,16 @@ module AlgoliaSearch
               super(*args)
             end
 
-            define_method(:after_save) do |*args|
+            define_method(:after_commit) do |*args|
               super(*args)
-              copy_after_save.bind(self).call
+              copy_after_commit.bind(self).call
               algolia_perform_index_tasks
             end
           end
         else
           after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
           before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
-          after_save :algolia_perform_index_tasks if respond_to?(:after_save)
+          after_commit :algolia_perform_index_tasks if respond_to?(:after_commit)
         end
       end
       unless options[:auto_remove] == false
