@@ -240,13 +240,14 @@ class Contact < ActiveRecord::Base
   end
 
   def self.trigger_sidekiq_worker(record, remove)
-    MySidekiqWorker.perform_async(record, remove)
+    MySidekiqWorker.perform_async(record.id, remove)
   end
 end
 
 class MySidekiqWorker
-  def perform(record, remove)
-    remove ? record.remove_from_index! : record.index!
+  def perform(id, remove)
+    c = Contact.find(id)
+    remove ? c.remove_from_index! : c.index!
   end
 end
 ```
