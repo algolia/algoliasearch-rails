@@ -360,7 +360,11 @@ module AlgoliaSearch
         else
           after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
           before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
-          after_commit :algolia_perform_index_tasks if respond_to?(:after_commit)
+          if respond_to?(:after_commit)
+            after_commit :algolia_perform_index_tasks
+          elsif respond_to?(:after_save)
+            after_save :algolia_perform_index_tasks
+          end
         end
       end
       unless options[:auto_remove] == false
