@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-07-20 1.13.1
+
+      * Use `after_commit` instead of `after_save` to ensure we index once in the DB
+
 2015-06-21 1.13.0
 
       * Ability to use a background queue to handle all automatic indexing operations
