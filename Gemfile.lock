@@ -412,3 +412,6 @@ DEPENDENCIES
   sqlite3
   travis
   will_paginate (>= 2.3.15)
+
+BUNDLED WITH
+   1.10.4
