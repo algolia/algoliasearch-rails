@@ -215,12 +215,10 @@ module AlgoliaSearch
 
   # Default queueing system
   if defined?(::ActiveJob::Base)
-    extend ActiveSupport::Autoload
-
     # lazy load the ActiveJob class to ensure the
     # queue is initialized before using it
     # see https://github.com/algolia/algoliasearch-rails/issues/69
-    autoload :AlgoliaJob
+    autoload :AlgoliaJob, 'algoliasearch/algolia_job'
   end
 
   # this class wraps an Algolia::Index object ensuring all raised exceptions
