@@ -29,6 +29,7 @@ Gem::Specification.new do |s|
     "VERSION",
     "algoliasearch-rails.gemspec",
     "lib/algoliasearch-rails.rb",
+    "lib/algoliasearch/algolia_job.rb",
     "lib/algoliasearch/configuration.rb",
     "lib/algoliasearch/pagination.rb",
     "lib/algoliasearch/pagination/kaminari.rb",
