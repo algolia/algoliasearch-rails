@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-08-05 1.13.3
+
+      * The `active_job.rb` file was not included in the gem
+
 2015-08-01 1.13.2
 
       * Lazy load the `ActiveJob` class to ensure the underlying queuing system is initialized when we actually use it.
