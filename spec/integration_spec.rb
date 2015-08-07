@@ -489,6 +489,10 @@ describe 'Colors' do
     expect { Color.new(:name => 'purple').remove_from_index!(true) }.to raise_error(ArgumentError)
   end
 
+  it "should reindex with a temporary index name based on custom index name & per_environment" do
+    Color.reindex
+  end
+
 end
 
 describe 'An imaginary store' do

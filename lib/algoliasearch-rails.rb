@@ -439,6 +439,7 @@ module AlgoliaSearch
         # init temporary index
         index_name = algolia_index_name(options)
         tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
+        tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
         tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
 
