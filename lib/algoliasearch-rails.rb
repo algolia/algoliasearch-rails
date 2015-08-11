@@ -63,7 +63,7 @@ module AlgoliaSearch
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
       :synonyms, :placeholders, :removeWordsIfNoResults, :replaceSynonymsInHighlight,
       :unretrievableAttributes, :disableTypoToleranceOn, :altCorrections,
-      :ignorePlurals, :maxValuesPerFacet, :distinct]
+      :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
