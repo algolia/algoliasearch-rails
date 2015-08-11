@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-08-11 1.14.0
+
+      * Add numericAttributesToIndex index setting
+
 2015-08-07 1.13.4
 
       * Do not consider the per_environment option while initializing the temporary index.
