@@ -1,5 +1,9 @@
 CHANGELOG
 
+2015-08-19 1.14.1
+
+      * Upgrade to AlgoliaSearch JS API client 3.7.5
+
 2015-08-11 1.14.0
 
       * Add numericAttributesToIndex index setting
