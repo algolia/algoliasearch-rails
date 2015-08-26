@@ -19,6 +19,7 @@ Table of Content
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
 1. [Master/Slave](#masterslave)
+1. [Share a single index](#share-a-single-index)
 1. [Target multiple indexes](#target-multiple-indexes)
 1. [Tags](#tags)
 1. [Search](#search)
@@ -652,6 +653,45 @@ Book.raw_search 'foo bar', slave: 'Book_by_editor'
 # or
 Book.search 'foo bar', slave: 'Book_by_editor'
 ```
+
+Share a single index
+---------
+
+It can make sense to share an index between several models. In order to implement that, you'll need to ensure you don't have any conflict with the `objectID` of the underlying models.
+
+```ruby
+class Student < ActiveRecord::Base
+  attr_protected
+
+  include AlgoliaSearch
+
+  algoliasearch index_name: 'people', id: :algolia_id do
+    # [...]
+  end
+
+  private
+  def algolia_id
+    "student_#{id}" # ensure the teacher & student IDs are not conflicting
+  end
+end
+
+class Teacher < ActiveRecord::Base
+  attr_protected
+
+  include AlgoliaSearch
+
+  algoliasearch index_name: 'people', id: :algolia_id do
+    # [...]
+  end
+
+  private
+  def algolia_id
+    "teacher_#{id}" # ensure the teacher & student IDs are not conflicting
+  end
+end
+```
+
+***Notes:*** If you target a single index from several models, you must never use `MyModel.reindex` and only use `MyModel.reindex!`. The `reindex` method uses a temporary index to perform an atomic reindexing: if you use it, the resulting index will only contain records for the current model because it will not reindex the others.
 
 Target multiple indexes
 ---------
