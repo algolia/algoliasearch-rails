@@ -418,6 +418,8 @@ end
 
 You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
 
+It allows you to do conditional indexing on a per document basis. 
+
 ```ruby
 class Post < ActiveRecord::Base
   include AlgoliaSearch
