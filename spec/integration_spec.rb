@@ -54,6 +54,8 @@ ActiveRecord::Schema.define do
   create_table :uniq_users, :id => false do |t|
     t.string :name
   end
+  create_table :nullable_ids do |t|
+  end
   create_table :nested_items do |t|
     t.integer :parent_id
     t.boolean :hidden
@@ -183,6 +185,21 @@ class UniqUser < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("UniqUser"), :per_environment => true, :id => :name do
+  end
+end
+
+class NullableId < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("NullableId"), :per_environment => true, :id => :custom_id, if: :never do
+  end
+
+  def custom_id
+    nil
+  end
+
+  def never
+    false
   end
 end
 
@@ -873,3 +890,13 @@ describe 'Disabled' do
     expect(DisabledSymbol.search('').size).to eq(0)
   end
 end
+
+describe 'NullableId' do
+  before(:all) do
+  end
+
+  it "should not delete a null objectID" do
+    NullableId.create!
+  end
+end
+

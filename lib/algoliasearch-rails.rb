@@ -401,8 +401,8 @@ module AlgoliaSearch
         algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(options)
             # delete non-indexable objects
-            objects = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
-            index.delete_objects(objects)
+            ids = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
+            index.delete_objects(ids.select { |id| !id.blank? })
             # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, options) }
           end
@@ -473,16 +473,16 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
-        raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         if algolia_indexable?(object, options)
+          raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
           if synchronous
             index.add_object!(settings.get_attributes(object), object_id)
           else
             index.add_object(settings.get_attributes(object), object_id)
           end
-        elsif algolia_conditional_index?(options)
+        elsif algolia_conditional_index?(options) && !object_id.blank?
           # remove non-indexable objects
           if synchronous
             index.delete_object!(object_id)
@@ -497,7 +497,7 @@ module AlgoliaSearch
     def algolia_remove_from_index!(object, synchronous = false)
       return if @algolia_without_auto_index_scope
       object_id = algolia_object_id_of(object)
-      raise ArgumentError.new("Cannot index a blank objectID") if object_id.blank?
+      raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
