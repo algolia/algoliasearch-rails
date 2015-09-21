@@ -830,6 +830,11 @@ describe 'Book' do
     results = index.search('Public book')
     expect(results['hits'].size).to eq(0)
   end
+
+  it "should use the per_environment option in the additional index as well" do
+    index = Book.index(safe_index_name('Book'))
+    expect(index.name).to eq("#{safe_index_name('Book')}_#{Rails.env}")
+  end
 end
 
 describe 'Kaminari' do
