@@ -228,6 +228,30 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+##### Things to Consider
+
+If you are performing updates & deletions in the background then a record deletion can be committed to your database prior
+to the job actually executing. Thus if you were to load the record to remove it from the database than your ActiveRecord#find will fail with a RecordNotFound. 
+
+In this case you can bypass loading the record from ActiveRecord and just communicate with the index directly:
+
+```ruby
+class MySidekiqWorker
+  def perform(id, remove)
+    if remove
+      # the record has likely already been removed from your database so we cannot
+      # use ActiveRecord#find to load it
+      index = Algolia::Index.new("index_name")
+      index.delete_object(id)
+    else
+      # the record should be present
+      c = Contact.find(id)
+      c.index!
+    end
+  end
+end
+```
+
 ##### With Sidekiq
 
 If you're using [Sidekiq](https://github.com/mperham/sidekiq):
