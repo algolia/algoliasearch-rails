@@ -773,7 +773,7 @@ module AlgoliaSearch
     end
 
     def algolia_enqueue_remove_from_index!(synchronous)
-      if algoliasearch_options[:enqueue]
+      if algoliasearch_options[:enqueue] && !@algolia_without_auto_index_scope
         algoliasearch_options[:enqueue].call(self, true)
       else
         algolia_remove_from_index!(synchronous)
@@ -781,7 +781,7 @@ module AlgoliaSearch
     end
 
     def algolia_enqueue_index!(synchronous)
-      if algoliasearch_options[:enqueue]
+      if algoliasearch_options[:enqueue] && !@algolia_without_auto_index_scope
         algoliasearch_options[:enqueue].call(self, false)
       else
         algolia_index!(synchronous)
