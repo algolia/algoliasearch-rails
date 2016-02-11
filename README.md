@@ -59,12 +59,6 @@ AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'Y
 
 The gem is compatible with [ActiveRecord](https://github.com/rails/rails/tree/master/activerecord), [Mongoid](https://github.com/mongoid/mongoid) and [Sequel](https://github.com/jeremyevans/sequel).
 
-We support both [will_paginate](https://github.com/mislav/will_paginate) and [kaminari](https://github.com/amatsuda/kaminari) as pagination backend. For example to use <code>:will_paginate</code>, specify the <code>:pagination_backend</code> as follow:
-
-```ruby
-AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'YourAPIKey', pagination_backend: :will_paginate }
-```
-
 Quick Start
 -------------
 
@@ -171,6 +165,30 @@ You could also use `search` but it's not recommended. This method will fetch the
 
 ```ruby
 p Contact.search("jon doe") # we recommend to use `raw_search` to avoid the database lookup
+```
+
+#### Backend Pagination
+
+Even if we **highly recommend to perform all search (and therefore pagination) operations from your frontend using JavaScript**, we support both [will_paginate](https://github.com/mislav/will_paginate) and [kaminari](https://github.com/amatsuda/kaminari) as pagination backend.
+
+To use <code>:will_paginate</code>, specify the <code>:pagination_backend</code> as follow:
+
+```ruby
+AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'YourAPIKey', pagination_backend: :will_paginate }
+```
+
+Then, as soon as you use the `search` method, the returning results will be a paginated set:
+
+```ruby
+# in your controller
+@results = MyModel.search('foo', hitsPerPage: 10)
+
+# in your views
+## if using will_paginate
+<%= will_paginate @results %>
+
+## if using kaminari
+<%= paginate @results %>
 ```
 
 #### Notes
