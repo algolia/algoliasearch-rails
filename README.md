@@ -67,6 +67,8 @@ The gem is compatible with [ActiveRecord](https://github.com/rails/rails/tree/ma
 Quick Start
 =============
 
+## Schema
+
 The following code will create a <code>Contact</code> index and add search capabilities to your <code>Contact</code> model:
 
 ```ruby
@@ -108,6 +110,8 @@ class Product < ActiveRecord::Base
 end
 ```
 
+## Relevancy
+
 We provide many ways to configure your index allowing you to tune your overall index relevancy. The most important ones are the **searchable attributes** and the attributes reflecting **record popularity**.
 
 ```ruby
@@ -131,10 +135,6 @@ class Product < ActiveRecord::Base
 
 end
 ```
-
-
-Search
-==========
 
 ## Frontend Search (realtime experience)
 
