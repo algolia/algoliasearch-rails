@@ -153,9 +153,13 @@ Then in your JavaScript code you can do:
 ```js
 var client = algoliasearch(ApplicationID, Search-Only-API-Key);
 var index = client.initIndex('YourIndexName');
-index.search('something', function(success, hits) {
-  console.log(success, hits)
-}, { hitsPerPage: 10, page: 0 });
+index.search('something', { hitsPerPage: 10, page: 0 })
+  .then(function searchDone(content) {
+    console.log(content)
+  })
+  .catch(function searchFailure(err) {
+    console.error(err);
+  });
 ```
 
 **We recently (March 2015) released a new version (V3) of our JavaScript client, if you were using our previous version (V2), [read the migration guide](https://github.com/algolia/algoliasearch-client-js/wiki/Migration-guide-from-2.x.x-to-3.x.x)**
