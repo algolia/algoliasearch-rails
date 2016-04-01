@@ -29,7 +29,6 @@ Table of Content
 1. [Search](#search)
 1. [Faceting](#faceting)
 1. [Geo-search](#geo-search)
-1. [Typeahead UI](#typeahead-ui)
 1. [Caveats](#caveats)
 1. [Note on testing](#note-on-testing)
 
@@ -918,44 +917,6 @@ end
 ```
 
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
-
-Typeahead UI
-=============
-
-Require ```algolia/v3/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.jquery.js``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
-
-```javascript
-//= require algolia/v3/algoliasearch.min
-//= require algolia/typeahead.jquery
-```
-
-We recommend the usage of [hogan](http://twitter.github.io/hogan.js/), a JavaScript templating engine from Twitter.
-
-```javascript
-//= require hogan
-```
-
-Turns any ```input[type="text"]``` element into a typeahead, for example:
-
-```javascript
-<input name="email" placeholder="test@example.org" id="user_email" />
-
-<script type="text/javascript">
-  $(document).ready(function() {
-    var client = algoliasearch('YourApplicationID', 'SearchOnlyApplicationKey');
-    var template = Hogan.compile('{{{_highlightResult.email.value}}} ({{{_highlightResult.first_name.value}}} {{{_highlightResult.last_name.value}}})');
-    $('input#user_email').typeahead(null, {
-      source: client.initIndex('<%= Contact.index_name %>').ttAdapter(),
-      displayKey: 'email',
-      templates: {
-        suggestion: function(hit) {
-          return template.render(hit);
-        }
-      }
-    });
-  });
-</script>
-```
 
 Caveats
 ==========
