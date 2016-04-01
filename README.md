@@ -1,20 +1,24 @@
+<!--NO_HTML-->
+
 Algolia Search for Rails
 ==================
 
+<!--/NO_HTML-->
+
 This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Both Rails 3.x and Rails 4.x are supported.
 
-You might be interested in the sample Ruby on Rails application providing a ```typeahead.js```-based auto-completion and ```Google```-like instant search: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
+You might be interested in the sample Ruby on Rails application providing a ```autocomplete.js```-based auto-completion and ```instantsearch.js```-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.png?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.png)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.png)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
+<!--NO_HTML-->
+
 Table of Content
--------------
-**Get started**
+=============
 
 1. [Install](#install)
 1. [Setup](#setup)
 1. [Quick Start](#quick-start)
-1. [Ranking & Relevance](#ranking--relevance)
 1. [Options](#options)
 1. [Configuration example](#configuration-example)
 1. [Indexing](#indexing)
@@ -29,8 +33,10 @@ Table of Content
 1. [Caveats](#caveats)
 1. [Note on testing](#note-on-testing)
 
+<!--/NO_HTML-->
+
 Install
--------------
+=============
 
 ```sh
 gem install algoliasearch-rails
@@ -49,7 +55,7 @@ bundle install
 ```
 
 Setup
--------------
+=============
 Create a new file <code>config/initializers/algoliasearch.rb</code> to setup your <code>APPLICATION_ID</code> and <code>API_KEY</code>.
 
 
@@ -60,7 +66,7 @@ AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'Y
 The gem is compatible with [ActiveRecord](https://github.com/rails/rails/tree/master/activerecord), [Mongoid](https://github.com/mongoid/mongoid) and [Sequel](https://github.com/jeremyevans/sequel).
 
 Quick Start
--------------
+=============
 
 The following code will create a <code>Contact</code> index and add search capabilities to your <code>Contact</code> model:
 
@@ -103,8 +109,6 @@ class Product < ActiveRecord::Base
 end
 ```
 
-#### Ranking & Relevance
-
 We provide many ways to configure your index allowing you to tune your overall index relevancy. The most important ones are the **searchable attributes** and the attributes reflecting **record popularity**.
 
 ```ruby
@@ -129,7 +133,11 @@ class Product < ActiveRecord::Base
 end
 ```
 
-#### Frontend Search (realtime experience)
+
+Search
+==========
+
+## Frontend Search (realtime experience)
 
 Traditional search implementations tend to have search logic and functionality on the backend. This made sense when the search experience consisted of a user entering a search query, executing that search, and then being redirected to a search result page.
 
@@ -153,7 +161,7 @@ index.search('something', function(success, hits) {
 
 **We recently (March 2015) released a new version (V3) of our JavaScript client, if you were using our previous version (V2), [read the migration guide](https://github.com/algolia/algoliasearch-client-js/wiki/Migration-guide-from-2.x.x-to-3.x.x)**
 
-#### Backend Search
+## Backend Search
 
 If you want to search from your backend you can use the `raw_search` method. It retrieves the raw JSON answer from the API:
 
@@ -167,7 +175,7 @@ You could also use `search` but it's not recommended. This method will fetch the
 p Contact.search("jon doe") # we recommend to use `raw_search` to avoid the database lookup
 ```
 
-#### Backend Pagination
+## Backend Pagination
 
 Even if we **highly recommend to perform all search (and therefore pagination) operations from your frontend using JavaScript**, we support both [will_paginate](https://github.com/mislav/will_paginate) and [kaminari](https://github.com/amatsuda/kaminari) as pagination backend.
 
@@ -184,14 +192,14 @@ Then, as soon as you use the `search` method, the returning results will be a pa
 @results = MyModel.search('foo', hitsPerPage: 10)
 
 # in your views
-## if using will_paginate
+# if using will_paginate
 <%= will_paginate @results %>
 
-## if using kaminari
+# if using kaminari
 <%= paginate @results %>
 ```
 
-#### Notes
+## Notes
 
 All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
 
@@ -202,9 +210,9 @@ Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
 ```
 
 Options
-----------
+==========
 
-#### Auto-indexing & asynchronism
+## Auto-indexing & asynchronism
 
 Each time a record is saved; it will be - asynchronously - indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index. That means that a network call with the ADD/DELETE operation is sent **synchronously** to the Algolia API but then the engine will **asynchronously** process the operation (so if you do a search just after, the results may not reflect it yet).
 
@@ -220,7 +228,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-##### Temporary disable auto-indexing
+### Temporary disable auto-indexing
 
 You can temporary disable auto-indexing using the <code>without_auto_index</code> scope. This is often used for performance reason.
 
@@ -232,7 +240,7 @@ end
 Contact.reindex! # will use batch operations
 ```
 
-##### Queues & background jobs
+### Queues & background jobs
 
 You can configure the auto-indexing & auto-removal process to use a queue to perform those operations in background. ActiveJob (Rails >=4.2) queues are used by default but you can define your own queuing mechanism:
 
@@ -246,7 +254,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-##### Things to Consider
+### Things to Consider
 
 If you are performing updates & deletions in the background then a record deletion can be committed to your database prior
 to the job actually executing. Thus if you were to load the record to remove it from the database than your ActiveRecord#find will fail with a RecordNotFound. 
@@ -270,7 +278,7 @@ class MySidekiqWorker
 end
 ```
 
-##### With Sidekiq
+### With Sidekiq
 
 If you're using [Sidekiq](https://github.com/mperham/sidekiq):
 
@@ -295,7 +303,7 @@ class MySidekiqWorker
 end
 ```
 
-##### With DelayedJob
+### With DelayedJob
 
 If you're using [delayed_job](https://github.com/collectiveidea/delayed_job):
 
@@ -318,7 +326,7 @@ end
 
 ```
 
-##### Synchronism & testing
+### Synchronism & testing
 
 You can force indexing and removing to be synchronous (in that case the gem will call the `wait_task` method to ensure the operation has been taken into account once the method returns) by setting the following option: (this is **NOT** recommended, except for testing purpose)
 
@@ -332,7 +340,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-#### Exceptions
+## Exceptions
 
 You can disable exceptions that could be raised while trying to reach Algolia's API by using the `raise_on_failure` option:
 
@@ -347,7 +355,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-#### Custom index name
+## Custom index name
 
 By default, the index name will be the class name, e.g. "Contact". You can customize the index name by using the `index_name` option:
 
@@ -361,7 +369,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-#### Per-environment indexes
+## Per-environment indexes
 
 You can suffix the index name with the current Rails environment using the following option:
 
@@ -375,7 +383,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-#### Custom attribute definition
+## Custom attribute definition
 
 You can use a block to specify a complex attribute value
 
@@ -416,7 +424,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-#### Nested objects/relations
+## Nested objects/relations
 
 You can easily embed nested objects defining an extra attribute returning any JSON-compliant object (an array or a hash or a combination of both).
 
@@ -443,7 +451,7 @@ class Profile < ActiveRecord::Base
 end
 ```
 
-#### Custom ```objectID```
+## Custom ```objectID```
 
 By default, the `objectID` is based on your record's `id`. You can change this behavior specifying the `:id` option (be sure to use a uniq field).
 
@@ -456,7 +464,7 @@ class UniqUser < ActiveRecord::Base
 end
 ```
 
-#### Restrict indexing to a subset of your data
+## Restrict indexing to a subset of your data
 
 You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
 
@@ -512,7 +520,7 @@ or
 MyModel.index_objects MyModel.limit(5)
 ```
 
-#### Sanitizer
+## Sanitizer
 
 You can sanitize all your attributes using the ```sanitize``` option. It will strip all HTML tags from your attributes.
 
@@ -534,7 +542,7 @@ gem 'rails-html-sanitizer'
 ```
 
 
-#### UTF-8 Encoding
+## UTF-8 Encoding
 
 You can force the UTF-8 encoding of all your attributes using the ```force_utf8_encoding``` option:
 
@@ -553,7 +561,7 @@ end
 
 
 Configuration example
----------------------
+=======================
 
 Here is a real-word configuration example (from [HN Search](https://github.com/algolia/hn-search)):
 
@@ -611,9 +619,9 @@ end
 ```
 
 Indexing
----------
+==========
 
-#### Manual indexing
+## Manual indexing
 
 You can trigger indexing using the <code>index!</code> instance method.
 
@@ -622,7 +630,7 @@ c = Contact.create!(params[:contact])
 c.index!
 ```
 
-#### Manual removal
+## Manual removal
 
 And trigger index removing using the <code>remove_from_index!</code> instance method.
 
@@ -631,7 +639,7 @@ c.remove_from_index!
 c.destroy
 ```
 
-#### Reindexing
+## Reindexing
 
 To *safely* reindex all your records (index to a temporary index + move the temporary index to the current one atomically), use the <code>reindex</code> class method:
 
@@ -645,7 +653,7 @@ To reindex all your records (in place, without deleting out-dated records), use 
 Contact.reindex!
 ```
 
-#### Clearing an index
+## Clearing an index
 
 To clear an index, use the <code>clear_index!</code> class method:
 
@@ -653,7 +661,7 @@ To clear an index, use the <code>clear_index!</code> class method:
 Contact.clear_index!
 ```
 
-#### Using the underlying index
+## Using the underlying index
 
 You can access the underlying `index` object by calling the `index` class method:
 
@@ -663,7 +671,7 @@ index = Contact.index
 ```
 
 Master/slave
----------
+==========
 
 You can define slave indexes using the <code>add_slave</code> method:
 
@@ -699,7 +707,7 @@ Book.search 'foo bar', slave: 'Book_by_editor'
 ```
 
 Share a single index
----------
+==========
 
 It can make sense to share an index between several models. In order to implement that, you'll need to ensure you don't have any conflict with the `objectID` of the underlying models.
 
@@ -738,7 +746,7 @@ end
 ***Notes:*** If you target a single index from several models, you must never use `MyModel.reindex` and only use `MyModel.reindex!`. The `reindex` method uses a temporary index to perform an atomic reindexing: if you use it, the resulting index will only contain records for the current model because it will not reindex the others.
 
 Target multiple indexes
----------
+==========
 
 You can index a record in several indexes using the <code>add_index</code> method:
 
@@ -782,7 +790,7 @@ Book.search 'foo bar', index: 'Book_by_editor'
 ```
 
 Tags
------
+==========
 
 Use the <code>tags</code> method to add tags to your record:
 
@@ -813,7 +821,7 @@ end
 At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
 
 Search
-----------
+==========
 
 ***Notes:*** We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries directly from the end-user browser without going through your server.
 
@@ -864,7 +872,7 @@ p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
 ```
 
 Faceting
----------
+==========
 
 Facets can be retrieved calling the extra ```facets``` method of the search answer.
 
@@ -895,7 +903,7 @@ p raw_json['facets']
 ```
 
 Geo-Search
------------
+==========
 
 Use the <code>geoloc</code> method to localize your record:
 
@@ -912,7 +920,7 @@ end
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
 
 Typeahead UI
--------------
+=============
 
 Require ```algolia/v3/algoliasearch.min``` (see [algoliasearch-client-js](https://github.com/algolia/algoliasearch-client-js)) and ```algolia/typeahead.jquery.js``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
 
@@ -950,12 +958,12 @@ Turns any ```input[type="text"]``` element into a typeahead, for example:
 ```
 
 Caveats
---------
+==========
 
 This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing ```after_validation```, ```before_save``` or ```after_commit``` callbacks, it will not index your changes. For example: ```update_attribute``` doesn't perform validations checks, to perform validations when updating use ```update_attributes```.
 
 Timeouts
----------
+==========
 
 You can configure a bunch of timeout threshold by setting the following options at initialization time:
 
@@ -972,7 +980,7 @@ AlgoliaSearch.configuration = {
 ```
 
 Note on testing
------------------
+=======================
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
 
