@@ -42,8 +42,8 @@ GEM
       thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
     addressable (2.3.8)
-    algoliasearch (1.2.14)
-      httpclient (~> 2.4)
+    algoliasearch (1.8.1)
+      httpclient (~> 2.7.1)
       json (>= 1.5.1)
     arel (6.0.0)
     backports (3.6.4)
@@ -70,7 +70,7 @@ GEM
     globalid (0.3.5)
       activesupport (>= 4.1.0)
     highline (1.7.2)
-    httpclient (2.6.0.1)
+    httpclient (2.7.2)
     i18n (0.7.0)
     jdbc-sqlite3 (3.8.10.1)
     json (1.8.3)
@@ -387,7 +387,7 @@ PLATFORMS
 DEPENDENCIES
   activerecord-jdbc-adapter
   activerecord-jdbcsqlite3-adapter
-  algoliasearch (~> 1.2.14)
+  algoliasearch (~> 1.8.1)
   jdbc-sqlite3
   json (>= 1.5.1)
   kaminari

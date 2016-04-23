@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
 gem 'json', '>= 1.5.1'
-gem 'algoliasearch', '~> 1.2.14'
+gem 'algoliasearch', '~> 1.8.1'
 gem 'rubysl', '~> 2.0', :platform => :rbx
 
 group :test do
