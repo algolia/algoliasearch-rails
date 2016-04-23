@@ -775,6 +775,16 @@ describe 'Cities' do
       end
     end
   end
+
+  it "should browse" do
+    total = City.index.search('')['nbHits']
+    n = 0
+    City.index.browse do |hit|
+      n += 1
+    end
+    expect(n).to eq(total)
+  end
+
 end
 
 describe "SubSlaves" do

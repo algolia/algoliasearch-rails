@@ -231,9 +231,9 @@ module AlgoliaSearch
     end
 
     ::Algolia::Index.instance_methods(false).each do |m|
-      define_method(m) do |*args|
+      define_method(m) do |*args, &block|
         SafeIndex.log_or_throw(m) do
-          @index.send(m, *args)
+          @index.send(m, *args, &block)
         end
       end
     end
