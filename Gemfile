@@ -18,10 +18,7 @@ group :test do
   gem 'jdbc-sqlite3', :platform => :jruby
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
-  gem 'autotest'
-  gem 'autotest-fsevent', '~> 0.2.10'
   gem 'redgreen'
-  gem 'autotest-growl'
   gem 'sequel'
 end
 
