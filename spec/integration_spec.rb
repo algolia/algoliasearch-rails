@@ -820,7 +820,7 @@ describe "SubSlaves" do
     SubSlaves.clear_index!(true)
   end
 
-  let(:expected_indicies) { %w(SubSlaves Additional_Index Slave_Index) }
+  let(:expected_indicies) { %w(SubSlaves Additional_Index Slave_Index).map { |name| safe_index_name(name) } }
 
   it "contains all levels in algolia_configurations" do
     configured_indicies = SubSlaves.send(:algolia_configurations)
