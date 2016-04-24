@@ -136,6 +136,24 @@ class Product < ActiveRecord::Base
 end
 ```
 
+## Indexing
+
+To index a model, simple call `reindex` on the class:
+
+```ruby
+Product.reindex
+```
+
+To index all of your models, you can do something like this:
+
+```ruby
+Rails.application.eager_load! # Ensure all models are loaded (required in development).
+
+algolia_models = ActiveRecord::Base.descendants.select{ |model| model.respond_to?(:reindex) }
+
+algolia_models.each(&:reindex)
+```
+
 ## Frontend Search (realtime experience)
 
 Traditional search implementations tend to have search logic and functionality on the backend. This made sense when the search experience consisted of a user entering a search query, executing that search, and then being redirected to a search result page.
