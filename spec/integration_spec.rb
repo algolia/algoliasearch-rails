@@ -1,7 +1,9 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
+QUEUE_DISABLED = defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
+
 require 'active_record'
-unless defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
+unless QUEUE_DISABLED
   require 'active_job/test_helper'
   ActiveJob::Base.queue_adapter = :test
 end
@@ -88,6 +90,11 @@ ActiveRecord::Schema.define do
   end
   create_table :sub_slaves do |t|
     t.string :name
+  end
+  unless QUEUE_DISABLED
+    create_table :enqueued_objects do |t|
+      t.string :name
+    end
   end
 end
 
@@ -335,6 +342,27 @@ class SubSlaves < ActiveRecord::Base
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
+    end
+  end
+end
+
+unless QUEUE_DISABLED
+  class EnqueuedObject < ActiveRecord::Base
+    include AlgoliaSearch
+
+    include GlobalID::Identification
+
+    def id
+      read_attribute(:id)
+    end
+
+    def self.find(id)
+      EnqueuedObject.first
+    end
+
+    algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
+      :index_name => safe_index_name('EnqueuedObject') do
+      attributes [:name]
     end
   end
 end
@@ -956,3 +984,20 @@ describe 'NullableId' do
   end
 end
 
+unless QUEUE_DISABLED
+  describe 'EnqueuedObject' do
+    it "should enqueue a job" do
+      expect {
+        EnqueuedObject.create! :name => 'test'
+      }.to raise_error("enqueued 1")
+    end
+
+    it "should not enqueue a job inside no index block" do
+      expect {
+        EnqueuedObject.without_auto_index do
+          EnqueuedObject.create! :name => 'test'
+        end
+      }.not_to raise_error
+    end
+  end
+end

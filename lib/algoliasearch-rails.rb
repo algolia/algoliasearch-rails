@@ -318,7 +318,7 @@ module AlgoliaSearch
       end
       if options[:enqueue]
         raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
-        algoliasearch_options[:enqueue] = if options[:enqueue] == true
+        proc = if options[:enqueue] == true
           Proc.new do |record, remove|
             AlgoliaJob.perform_later(record, remove ? 'algolia_remove_from_index!' : 'algolia_index!')
           end
@@ -328,6 +328,9 @@ module AlgoliaSearch
           Proc.new { |record, remove| self.send(options[:enqueue], record, remove) }
         else
           raise ArgumentError.new("Invalid `enqueue` option: #{options[:enqueue]}")
+        end
+        algoliasearch_options[:enqueue] = Proc.new do |record, remove|
+          proc.call(record, remove) unless @algolia_without_auto_index_scope
         end
       end
       unless options[:auto_index] == false
@@ -779,7 +782,7 @@ module AlgoliaSearch
     end
 
     def algolia_enqueue_remove_from_index!(synchronous)
-      if algoliasearch_options[:enqueue] && !@algolia_without_auto_index_scope
+      if algoliasearch_options[:enqueue]
         algoliasearch_options[:enqueue].call(self, true)
       else
         algolia_remove_from_index!(synchronous)
@@ -787,7 +790,7 @@ module AlgoliaSearch
     end
 
     def algolia_enqueue_index!(synchronous)
-      if algoliasearch_options[:enqueue] && !@algolia_without_auto_index_scope
+      if algoliasearch_options[:enqueue]
         algoliasearch_options[:enqueue].call(self, false)
       else
         algolia_index!(synchronous)
