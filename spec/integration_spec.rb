@@ -327,11 +327,11 @@ class SubSlaves < ActiveRecord::Base
     attributesToIndex [:name]
     customRanking ["asc(name)"]
 
-    add_index "Additional_Index", per_environment: true do
+    add_index safe_index_name("Additional_Index"), per_environment: true do
       attributesToIndex [:name]
       customRanking ["asc(name)"]
 
-      add_slave "Slave_Index", per_environment: true do
+      add_slave safe_index_name("Slave_Index"), per_environment: true do
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
@@ -787,9 +787,9 @@ describe "SubSlaves" do
   it "contains all levels in algolia_configurations" do
     configured_indicies = SubSlaves.send(:algolia_configurations)
     configured_indicies.each_pair do |opts, _|
-      expect(expected_indicies).to include(opts[:index_name])
+      expect(expected_indicies).to include(safe_index_name(opts[:index_name]))
 
-      expect(opts[:slave]).to be true if opts[:index_name] == 'Slave_Index'
+      expect(opts[:slave]).to be true if opts[:index_name] == safe_index_name('Slave_Index')
     end
   end
 
@@ -798,11 +798,11 @@ describe "SubSlaves" do
   end
 
   it "should be searchable through added index" do
-    expect { SubSlaves.raw_search('something', index: 'Additional_Index') }.not_to raise_error
+    expect { SubSlaves.raw_search('something', index: safe_index_name('Additional_Index')) }.not_to raise_error
   end
 
   it "should be searchable through added indexes slave" do
-    expect { SubSlaves.raw_search('something', index: 'Slave_Index') }.not_to raise_error
+    expect { SubSlaves.raw_search('something', index: safe_index_name('Slave_Index')) }.not_to raise_error
   end
 end
 
