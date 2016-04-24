@@ -662,13 +662,21 @@ c.destroy
 
 ## Reindexing
 
-To *safely* reindex all your records (index to a temporary index + move the temporary index to the current one atomically), use the <code>reindex</code> class method:
+The gem provides 2 ways to reindex all your objects:
+
+### Atomical reindexing
+
+To reindex all your records (taking into account the deleted objects), the `reindex` class method indexes all your objects to a temporary index called `<INDEX_NAME>.tmp` and moves the temporary index to the final one once everything is indexed (atomically). This is the safest way to reindex all your content.
 
 ```ruby
 Contact.reindex
 ```
 
-To reindex all your records (in place, without deleting out-dated records), use the <code>reindex!</code> class method:
+**Notes**: if you're using an index-specific API key, ensure you're allowing both `<INDEX_NAME>` and `<INDEX_NAME>.tmp`.
+
+### Regular reindexing
+
+To reindex all your objects in place (without temporary index and therefore without deleting removed objects), use the `reindex!` class method:
 
 ```ruby
 Contact.reindex!
