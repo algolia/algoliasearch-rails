@@ -334,11 +334,11 @@ class SubSlaves < ActiveRecord::Base
     attributesToIndex [:name]
     customRanking ["asc(name)"]
 
-    add_index safe_index_name("Additional_Index"), per_environment: true do
+    add_index safe_index_name("Additional_Index"), :per_environment => true do
       attributesToIndex [:name]
       customRanking ["asc(name)"]
 
-      add_slave safe_index_name("Slave_Index"), per_environment: true do
+      add_slave safe_index_name("Slave_Index"), :per_environment => true do
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
