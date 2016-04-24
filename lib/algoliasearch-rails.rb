@@ -643,6 +643,12 @@ module AlgoliaSearch
         @configurations[algoliasearch_options] = algoliasearch_settings
         algoliasearch_settings.additional_indexes.each do |k,v|
           @configurations[k] = v
+
+          if v.additional_indexes.any?
+            v.additional_indexes.each do |options, index|
+              @configurations[options] = index
+            end
+          end
         end
       end
       @configurations

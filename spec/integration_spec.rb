@@ -86,6 +86,9 @@ ActiveRecord::Schema.define do
   end
   create_table :encoded_strings do |t|
   end
+  create_table :sub_slaves do |t|
+    t.string :name
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -313,6 +316,25 @@ class EncodedString < ActiveRecord::Base
   algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("EncodedString") do
     attribute :value do
       "\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('ascii-8bit')
+    end
+  end
+end
+
+class SubSlaves < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SubSlaves") do
+    attributesToIndex [:name]
+    customRanking ["asc(name)"]
+
+    add_index "Additional_Index", per_environment: true do
+      attributesToIndex [:name]
+      customRanking ["asc(name)"]
+
+      add_slave "Slave_Index", per_environment: true do
+        attributesToIndex [:name]
+        customRanking ["desc(name)"]
+      end
     end
   end
 end
@@ -752,6 +774,35 @@ describe 'Cities' do
         expect(v[1].to_settings[:slaves]).to eq(["#{safe_index_name('City_slave1')}_#{Rails.env}"])
       end
     end
+  end
+end
+
+describe "SubSlaves" do
+  before(:all) do
+    SubSlaves.clear_index!(true)
+  end
+
+  let(:expected_indicies) { %w(SubSlaves Additional_Index Slave_Index) }
+
+  it "contains all levels in algolia_configurations" do
+    configured_indicies = SubSlaves.send(:algolia_configurations)
+    configured_indicies.each_pair do |opts, _|
+      expect(expected_indicies).to include(opts[:index_name])
+
+      expect(opts[:slave]).to be true if opts[:index_name] == 'Slave_Index'
+    end
+  end
+
+  it "should be searchable through default index" do
+    expect { SubSlaves.raw_search('something') }.not_to raise_error
+  end
+
+  it "should be searchable through added index" do
+    expect { SubSlaves.raw_search('something', index: 'Additional_Index') }.not_to raise_error
+  end
+
+  it "should be searchable through added indexes slave" do
+    expect { SubSlaves.raw_search('something', index: 'Slave_Index') }.not_to raise_error
   end
 end
 
