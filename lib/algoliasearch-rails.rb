@@ -575,7 +575,10 @@ module AlgoliaSearch
           o
         end
       end.compact
-      res = AlgoliaSearch::Pagination.create(results, json['nbHits'].to_i, algoliasearch_options.merge({ :page => json['page'] + 1, :per_page => json['hitsPerPage'] }))
+      # Algolia has a default limit of 1000 retrievable hits
+      total_hits = json['nbHits'] < json['nbPages'] * json['hitsPerPage'] ?
+        json['nbHits'] : json['nbPages'] * json['hitsPerPage']
+      res = AlgoliaSearch::Pagination.create(results, total_hits, algoliasearch_options.merge({ :page => json['page'] + 1, :per_page => json['hitsPerPage'] }))
       res.extend(AdditionalMethods)
       res.send(:algolia_init_raw_answer, json)
       res
