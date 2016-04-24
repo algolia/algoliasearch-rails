@@ -11,6 +11,10 @@ group :test do
     gem 'i18n', '< 0.7'
     gem 'highline', '< 1.7'
     gem 'addressable', '< 2.4.0'
+    gem 'rack-cache', '< 1.3'
+  elsif defined?(RUBY_VERSION) && RUBY_VERSION == "1.9.3"
+    gem 'rails', '>= 3.2.0'
+    gem 'mime-types', '< 2.6'
   else
     gem 'rails', '>= 3.2.0'
   end
