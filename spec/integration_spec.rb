@@ -201,7 +201,7 @@ end
 class NullableId < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("NullableId"), :per_environment => true, :id => :custom_id, if: :never do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("NullableId"), :per_environment => true, :id => :custom_id, :if => :never do
   end
 
   def custom_id
