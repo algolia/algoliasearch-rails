@@ -825,7 +825,7 @@ describe "SubSlaves" do
   it "contains all levels in algolia_configurations" do
     configured_indicies = SubSlaves.send(:algolia_configurations)
     configured_indicies.each_pair do |opts, _|
-      expect(expected_indicies).to include(safe_index_name(opts[:index_name]))
+      expect(expected_indicies).to include(opts[:index_name])
 
       expect(opts[:slave]).to be true if opts[:index_name] == safe_index_name('Slave_Index')
     end
