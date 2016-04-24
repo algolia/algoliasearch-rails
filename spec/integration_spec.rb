@@ -836,11 +836,11 @@ describe "SubSlaves" do
   end
 
   it "should be searchable through added index" do
-    expect { SubSlaves.raw_search('something', index: safe_index_name('Additional_Index')) }.not_to raise_error
+    expect { SubSlaves.raw_search('something', :index => safe_index_name('Additional_Index')) }.not_to raise_error
   end
 
   it "should be searchable through added indexes slave" do
-    expect { SubSlaves.raw_search('something', index: safe_index_name('Slave_Index')) }.not_to raise_error
+    expect { SubSlaves.raw_search('something', :index => safe_index_name('Slave_Index')) }.not_to raise_error
   end
 end
 
