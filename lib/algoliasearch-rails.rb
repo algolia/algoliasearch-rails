@@ -750,7 +750,7 @@ module AlgoliaSearch
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
         find_in_batches(:batch_size => batch_size, &block)
       elsif defined?(::Sequel) && self < Sequel::Model
-        each_page(batch_size, &block)
+        dataset.extension(:pagination).each_page(batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
