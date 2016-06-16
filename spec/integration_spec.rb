@@ -233,9 +233,19 @@ class City < ActiveRecord::Base
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
     geoloc :lat, :lng
 
+    add_attribute :a_null_lat, :a_lng
+
     add_slave safe_index_name('City_slave1'), :per_environment => true do
       attributesToIndex [:country]
     end
+  end
+
+  def a_null_lat
+    nil
+  end
+
+  def a_lng
+    1.2345678
   end
 end
 
@@ -245,11 +255,22 @@ class SequelBook < Sequel::Model
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true do
+    add_attribute :test
+    add_attribute :test2
+
     attributesToIndex [:name]
   end
 
   def after_create
     SequelBook.new
+  end
+
+  def test
+    'test'
+  end
+
+  def test2
+    'test2'
   end
 
   private
@@ -268,7 +289,7 @@ describe 'SequelBook' do
     @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
     results = SequelBook.search('steve')
     expect(results.size).to eq(1)
-    results.should include(@steve_jobs)
+    expect(results[0].id).to eq(@steve_jobs.id)
   end
 
   it "should not override after hooks" do
@@ -604,6 +625,7 @@ describe 'An imaginary store' do
     @products_in_database = Product.all
 
     Product.reindex(1000, true)
+    sleep 5
   end
 
   it "should not be synchronous" do
