@@ -246,6 +246,18 @@ module AlgoliaSearch
       end
     end
 
+    # special handling of get_settings to avoid raising errors on 404
+    def get_settings(*args)
+      SafeIndex.log_or_throw(:move_index) do
+        begin
+          @index.get_settings(*args)
+        rescue Algolia::AlgoliaError => e
+          return {} if e.status == 404 # not fatal
+          raise e
+        end
+      end
+    end
+
     # expose move as well
     def self.move_index(old_name, new_name)
       SafeIndex.log_or_throw(:move_index) do
