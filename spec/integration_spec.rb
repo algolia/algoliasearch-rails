@@ -227,16 +227,25 @@ class NestedItem < ActiveRecord::Base
   end
 end
 
+# create this index before the class actually loads, to ensure the customRanking is updated
+index = Algolia::Index.new(safe_index_name('City_slave2'))
+index.wait_task index.set_settings({'customRanking' => ['desc(d)']})['taskID']
+
 class City < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
     geoloc :lat, :lng
-
     add_attribute :a_null_lat, :a_lng
+    customRanking ['desc(b)']
 
     add_slave safe_index_name('City_slave1'), :per_environment => true do
       attributesToIndex [:country]
+      customRanking ['asc(a)']
+    end
+
+    add_slave safe_index_name('City_slave2'), :per_environment => true do
+      customRanking ['asc(a)', 'desc(c)']
     end
   end
 
@@ -808,12 +817,12 @@ describe 'Cities' do
 
   it "should reindex with slaves in place" do
     City.reindex!(1000, true)
-    expect(City.index.get_settings['slaves'].length).to eq(1)
+    expect(City.index.get_settings['slaves'].length).to eq(2)
   end
 
   it "should reindex with slaves using a temporary index" do
     City.reindex(1000, true)
-    expect(City.index.get_settings['slaves'].length).to eq(1)
+    expect(City.index.get_settings['slaves'].length).to eq(2)
   end
 
   it "should not include the slaves setting on slaves" do
@@ -821,7 +830,7 @@ describe 'Cities' do
       if v[0][:slave]
         expect(v[1].to_settings[:slaves]).to be_nil
       else
-        expect(v[1].to_settings[:slaves]).to eq(["#{safe_index_name('City_slave1')}_#{Rails.env}"])
+        expect(v[1].to_settings[:slaves]).to eq(["#{safe_index_name('City_slave1')}_#{Rails.env}", "#{safe_index_name('City_slave2')}_#{Rails.env}"])
       end
     end
   end
@@ -833,6 +842,12 @@ describe 'Cities' do
       n += 1
     end
     expect(n).to eq(total)
+  end
+
+  it "should have set the custom ranking on all indices" do
+    expect(City.index.get_settings['customRanking']).to eq(['desc(b)'])
+    expect(City.index(safe_index_name('City_slave1')).get_settings['customRanking']).to eq(['asc(a)'])
+    expect(City.index(safe_index_name('City_slave2')).get_settings['customRanking']).to eq(['asc(a)', 'desc(c)'])
   end
 
 end
