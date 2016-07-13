@@ -34,7 +34,9 @@ Table of Content
 
 <!--/NO_HTML-->
 
-## Install
+## Setup
+
+### Install
 
 ```sh
 gem install algoliasearch-rails
@@ -52,7 +54,7 @@ And run:
 bundle install
 ```
 
-## Setup
+### Configuration
 
 Create a new file <code>config/initializers/algoliasearch.rb</code> to setup your <code>APPLICATION_ID</code> and <code>API_KEY</code>.
 
@@ -218,7 +220,7 @@ Then, as soon as you use the `search` method, the returning results will be a pa
 <%= paginate @results %>
 ```
 
-## Notes
+### Notes
 
 All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
 
@@ -578,7 +580,7 @@ end
 ***Notes:*** This option is not compatible with Ruby 1.8
 
 
-## Configuration example
+### Configuration example
 
 Here is a real-word configuration example (from [HN Search](https://github.com/algolia/hn-search)):
 
@@ -694,7 +696,9 @@ index = Contact.index
 # index.get_settings, index.partial_update_object, ...
 ```
 
-## Master/slave
+## Indexes
+
+### Master/slave
 
 You can define slave indexes using the <code>add_slave</code> method:
 
@@ -729,7 +733,7 @@ Book.raw_search 'foo bar', slave: 'Book_by_editor'
 Book.search 'foo bar', slave: 'Book_by_editor'
 ```
 
-## Share a single index
+### Share a single index
 
 It can make sense to share an index between several models. In order to implement that, you'll need to ensure you don't have any conflict with the `objectID` of the underlying models.
 
@@ -767,7 +771,7 @@ end
 
 ***Notes:*** If you target a single index from several models, you must never use `MyModel.reindex` and only use `MyModel.reindex!`. The `reindex` method uses a temporary index to perform an atomic reindexing: if you use it, the resulting index will only contain records for the current model because it will not reindex the others.
 
-## Target multiple indexes
+### Target multiple indexes
 
 You can index a record in several indexes using the <code>add_index</code> method:
 
@@ -810,7 +814,9 @@ Book.raw_search 'foo bar', index: 'Book_by_editor'
 Book.search 'foo bar', index: 'Book_by_editor'
 ```
 
-## Tags
+## Features
+
+### Tags
 
 Use the <code>tags</code> method to add tags to your record:
 
@@ -840,7 +846,7 @@ end
 
 At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
 
-## Search
+### Search
 
 ***Notes:*** We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) to perform queries directly from the end-user browser without going through your server.
 
@@ -890,7 +896,7 @@ end
 p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
 ```
 
-## Faceting
+### Faceting
 
 Facets can be retrieved calling the extra ```facets``` method of the search answer.
 
@@ -920,7 +926,7 @@ raw_json = Contact.raw_search("jon doe", { :facets => '*' })
 p raw_json['facets']
 ```
 
-## Geo-Search
+### Geo-Search
 
 Use the <code>geoloc</code> method to localize your record:
 
@@ -936,11 +942,11 @@ end
 
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
 
-## Caveats
+### Caveats
 
 This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing ```after_validation```, ```before_save``` or ```after_commit``` callbacks, it will not index your changes. For example: ```update_attribute``` doesn't perform validations checks, to perform validations when updating use ```update_attributes```.
 
-## Timeouts
+### Timeouts
 
 You can configure a bunch of timeout threshold by setting the following options at initialization time:
 
@@ -956,7 +962,7 @@ AlgoliaSearch.configuration = {
 }
 ```
 
-## Note on testing
+### Note on testing
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
 
