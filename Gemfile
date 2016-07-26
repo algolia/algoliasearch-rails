@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem 'json', '>= 1.5.1'
+gem 'json', '~> 1.5', '>= 1.5.1'
 gem 'algoliasearch', '~> 1.8.1'
 gem 'rubysl', '~> 2.0', :platform => :rbx
 
@@ -13,6 +13,8 @@ group :test do
     gem 'addressable', '<= 2.2.7'
     gem 'rack-cache', '< 1.3'
     gem 'mime-types', '< 2.6'
+  elsif defined?(RUBY_VERSION) && RUBY_VERSION == "1.9.3"
+    gem 'mime-types', '~> 2.6'
   end
   gem 'rspec', '>= 2.5.0', '< 3.0'
   gem 'sqlite3', :platform => [:rbx, :ruby]
