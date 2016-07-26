@@ -28,6 +28,7 @@ Table of Content
 1. [Tags](#tags)
 1. [Search](#search)
 1. [Faceting](#faceting)
+1. [Group by](#group-by)
 1. [Geo-search](#geo-search)
 1. [Caveats](#caveats)
 1. [Note on testing](#note-on-testing)
@@ -277,7 +278,7 @@ end
 #### Things to Consider
 
 If you are performing updates & deletions in the background then a record deletion can be committed to your database prior
-to the job actually executing. Thus if you were to load the record to remove it from the database than your ActiveRecord#find will fail with a RecordNotFound. 
+to the job actually executing. Thus if you were to load the record to remove it from the database than your ActiveRecord#find will fail with a RecordNotFound.
 
 In this case you can bypass loading the record from ActiveRecord and just communicate with the index directly:
 
@@ -488,7 +489,7 @@ end
 
 You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
 
-It allows you to do conditional indexing on a per document basis. 
+It allows you to do conditional indexing on a per document basis.
 
 ```ruby
 class Post < ActiveRecord::Base
@@ -784,7 +785,7 @@ class Book < ActiveRecord::Base
   PUBLIC_INDEX_NAME  = "Book_#{Rails.env}"
   SECURED_INDEX_NAME = "SecuredBook_#{Rails.env}"
 
-  # store all books in index 'SECURED_INDEX_NAME' 
+  # store all books in index 'SECURED_INDEX_NAME'
   algoliasearch index_name: SECURED_INDEX_NAME do
     attributesToIndex [:name, :author]
     # convert security to tags
@@ -882,7 +883,7 @@ class Contact < ActiveRecord::Base
 
   algoliasearch do
     attribute :first_name, :last_name, :email
-    
+
     # default search parameters stored in the index settings
     minWordSizeForApprox1 4
     minWordSizeForApprox2 8
@@ -924,6 +925,25 @@ p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
 ```ruby
 raw_json = Contact.raw_search("jon doe", { :facets => '*' })
 p raw_json['facets']
+```
+
+### Group by
+
+More info on distinct for grouping can be found
+[here](https://www.algolia.com/doc/guides/search/distinct#distinct-for-grouping).
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # [...]
+
+    # specify the attribute to be used for distinguishing the records
+    # in this case the records will be grouped by company
+    attributeForDistinct "company"
+  end
+end
 ```
 
 ### Geo-Search
