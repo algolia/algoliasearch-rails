@@ -2,15 +2,39 @@ language: ruby
 branches:
   only:
   - master
-rvm:
-- 1.8.7
-- 1.9.3
-- 2.0.0
-- 2.1
-- 2.2
-- 2.3.0
-- jruby
-- rbx-2
+matrix:
+  include:
+  - rvm: 1.8.7
+    env: RAILS_VERSION=3.2.0
+  - rvm: 1.9.3
+    env: RAILS_VERSION=3.2.0
+  - rvm: 1.9.3
+    env: RAILS_VERSION=4.0
+  - rvm: 2.2
+    env: RAILS_VERSION=3.2.0
+  - rvm: 2.2
+    env: RAILS_VERSION=4.2
+  - rvm: 2.2
+    env: RAILS_VERSION=5.0
+  - rvm: 2.3
+    env: RAILS_VERSION=3.2.0
+  - rvm: 2.3
+    env: RAILS_VERSION=4.2
+  - rvm: 2.3
+    env: RAILS_VERSION=5.0
+  - rvm: jruby
+    env: RAILS_VERSION=3.2.0
+  - rvm: jruby
+    env: RAILS_VERSION=4.2
+  - rvm: jruby
+    env: RAILS_VERSION=5.0
+  - rvm: rbx-2
+    env: RAILS_VERSION=3.2.0
+  - rvm: rbx-2
+    env: RAILS_VERSION=4.2
+  - rvm: rbx-2
+    env: RAILS_VERSION=5.0
+install: rm -f Gemfile.lock && bundle install
 env:
   global:
   - secure: kD+PX8ZNg+AAzyr6WYs1vp9teAkzMfEoYkIMI0hrRN0ml9ccJVsJR1pIGpaIwyCa5PmFtCZ1Xi2vFb4XzTTeaZoHHS/ll9LwuQH6mwvdgj3n6TmNRdq3b/oGRHBX4Z0HMobqaftuzY/V8iTpVk92jwIY8NPj00k055b2jrKqhdw=

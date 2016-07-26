@@ -1,9 +1,9 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
-QUEUE_DISABLED = defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
+OLD_RAILS = defined?(RUBY_VERSION) && (RUBY_VERSION =~ /^1\.8\.7/ || RUBY_VERSION =~ /^1\.9\.3/)
 
 require 'active_record'
-unless QUEUE_DISABLED
+unless OLD_RAILS
   require 'active_job/test_helper'
   ActiveJob::Base.queue_adapter = :test
 end
@@ -22,7 +22,7 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
-ActiveRecord::Base.raise_in_transactional_callbacks = true unless defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
+ActiveRecord::Base.raise_in_transactional_callbacks = true unless OLD_RAILS
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
@@ -91,7 +91,7 @@ ActiveRecord::Schema.define do
   create_table :sub_slaves do |t|
     t.string :name
   end
-  unless QUEUE_DISABLED
+  unless OLD_RAILS
     create_table :enqueued_objects do |t|
       t.string :name
     end
@@ -376,7 +376,7 @@ class SubSlaves < ActiveRecord::Base
   end
 end
 
-unless QUEUE_DISABLED
+unless OLD_RAILS
   class EnqueuedObject < ActiveRecord::Base
     include AlgoliaSearch
 
@@ -830,7 +830,7 @@ describe 'Cities' do
       if v[0][:slave]
         expect(v[1].to_settings[:slaves]).to be_nil
       else
-        expect(v[1].to_settings[:slaves]).to eq(["#{safe_index_name('City_slave1')}_#{Rails.env}", "#{safe_index_name('City_slave2')}_#{Rails.env}"])
+        expect(v[1].to_settings[:slaves]).to match_array(["#{safe_index_name('City_slave1')}_#{Rails.env}", "#{safe_index_name('City_slave2')}_#{Rails.env}"])
       end
     end
   end
@@ -1031,7 +1031,7 @@ describe 'NullableId' do
   end
 end
 
-unless QUEUE_DISABLED
+unless OLD_RAILS
   describe 'EnqueuedObject' do
     it "should enqueue a job" do
       expect {
