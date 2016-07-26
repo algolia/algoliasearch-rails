@@ -1,6 +1,6 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
-OLD_RAILS = defined?(RUBY_VERSION) && (RUBY_VERSION =~ /^1\.8\.7/ || RUBY_VERSION =~ /^1\.9\.3/)
+OLD_RAILS = Gem.loaded_specs['rails'].version < Gem::Version.new('4.0')
 
 require 'active_record'
 unless OLD_RAILS
