@@ -9,7 +9,7 @@ matrix:
   - rvm: 1.9.3
     env: RAILS_VERSION=3.2.0
   - rvm: 1.9.3
-    env: RAILS_VERSION=4.0
+    env: RAILS_VERSION=4.2
   - rvm: 2.2.5
     env: RAILS_VERSION=3.2.0
   - rvm: 2.2.5
@@ -32,7 +32,11 @@ matrix:
     env: RAILS_VERSION=3.2.0
   - rvm: rbx-2
     env: RAILS_VERSION=4.2
-  - rvm: rbx-2
+  - rvm: rbx-3
+    env: RAILS_VERSION=3.2.0
+  - rvm: rbx-3
+    env: RAILS_VERSION=4.2
+  - rvm: rbx-3
     env: RAILS_VERSION=5.0
 install: rm -f Gemfile.lock && bundle install
 env:
