@@ -14,7 +14,9 @@ group :test do
     gem 'rack-cache', '< 1.3'
     gem 'mime-types', '< 2.6'
   elsif defined?(RUBY_VERSION) && RUBY_VERSION == "1.9.3"
-    gem 'mime-types', '~> 2.6'
+    if Gem::Version.new(ENV['RAILS_VERSION'] || '3.2.0') >= Gem::Version.new('4.0')
+      gem 'mime-types', '~> 2.6'
+    end
   end
   gem 'rspec', '>= 2.5.0', '< 3.0'
   gem 'sqlite3', :platform => [:rbx, :ruby]
