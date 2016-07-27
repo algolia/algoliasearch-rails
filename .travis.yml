@@ -22,23 +22,24 @@ matrix:
     env: RAILS_VERSION=4.2
   - rvm: 2.3.1
     env: RAILS_VERSION=5.0
-  - rvm: jruby
+  - rvm: jruby-9.1.2.0
     env: RAILS_VERSION=3.2.0
-  - rvm: jruby
+  - rvm: jruby-9.1.2.0
     env: RAILS_VERSION=4.2
-  - rvm: jruby
+  - rvm: jruby-9.1.2.0
     env: RAILS_VERSION=5.0
   - rvm: rbx-2
     env: RAILS_VERSION=3.2.0
   - rvm: rbx-2
     env: RAILS_VERSION=4.2
-  - rvm: rbx-3
+  - rvm: rbx-3.50
     env: RAILS_VERSION=3.2.0
-  - rvm: rbx-3
+  - rvm: rbx-3.50
     env: RAILS_VERSION=4.2
-  - rvm: rbx-3
+  - rvm: rbx-3.50
     env: RAILS_VERSION=5.0
 install: rm -f Gemfile.lock && bundle install
+cache: bundler
 env:
   global:
   - secure: kD+PX8ZNg+AAzyr6WYs1vp9teAkzMfEoYkIMI0hrRN0ml9ccJVsJR1pIGpaIwyCa5PmFtCZ1Xi2vFb4XzTTeaZoHHS/ll9LwuQH6mwvdgj3n6TmNRdq3b/oGRHBX4Z0HMobqaftuzY/V8iTpVk92jwIY8NPj00k055b2jrKqhdw=
