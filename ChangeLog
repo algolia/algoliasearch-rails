@@ -1,5 +1,13 @@
 CHANGELOG
 
+2016-08-21 1.15.0
+
+      * Upgrade to AlgoliaSearch JS API client 3.18.0
+      * Upgrade to AlgoliaSearch Ruby API client 1.11.0
+      * Official support of Rails 5.x
+      * Reduce 404 logging if get_settings on a non-existing index
+      * Here and there fixes
+
 2015-08-19 1.14.1
 
       * Upgrade to AlgoliaSearch JS API client 3.7.5
