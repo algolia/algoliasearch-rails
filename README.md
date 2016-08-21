@@ -5,11 +5,11 @@ Algolia Search for Rails
 
 <!--/NO_HTML-->
 
-This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Both Rails 3.x and Rails 4.x are supported.
+This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Rails 3.x, 4.x and 5.x are all supported.
 
 You might be interested in the sample Ruby on Rails application providing a ```autocomplete.js```-based auto-completion and ```instantsearch.js```-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
-[![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.png?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.png)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.png)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
+[![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.svg?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.svg)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.svg)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
 <!--NO_HTML-->
 
