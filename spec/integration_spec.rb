@@ -96,6 +96,9 @@ ActiveRecord::Schema.define do
       t.string :name
     end
   end
+  create_table :misconfigured_blocks do |t|
+    t.string :name
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -395,6 +398,10 @@ unless OLD_RAILS
       attributes [:name]
     end
   end
+end
+
+class MisconfiguredBlock < ActiveRecord::Base
+  include AlgoliaSearch
 end
 
 describe 'Encoding' do
@@ -1046,5 +1053,13 @@ unless OLD_RAILS
         end
       }.not_to raise_error
     end
+  end
+end
+
+describe 'Misconfigured Block' do
+  it "should force the algoliasearch block" do
+    expect {
+      MisconfiguredBlock.reindex
+    }.to raise_error(ArgumentError)
   end
 end

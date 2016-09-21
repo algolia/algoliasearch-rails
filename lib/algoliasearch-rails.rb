@@ -640,6 +640,7 @@ module AlgoliaSearch
     protected
 
     def algolia_ensure_init(options = nil, settings = nil, index_settings = nil)
+      raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
       @algolia_indexes ||= {}
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
@@ -656,6 +657,7 @@ module AlgoliaSearch
     private
 
     def algolia_configurations
+      raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
       if @configurations.nil?
         @configurations = {}
         @configurations[algoliasearch_options] = algoliasearch_settings
