@@ -78,7 +78,7 @@ module AlgoliaSearch
 
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
-      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       @attributes ||= {}
       names.flatten.each do |name|
         @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -88,7 +88,7 @@ module AlgoliaSearch
 
     def add_attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
-      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       @additional_attributes ||= {}
       names.each do |name|
         @additional_attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -162,14 +162,14 @@ module AlgoliaSearch
     end
 
     def geoloc(lat_attr, lng_attr)
-      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       add_attribute :_geoloc do |o|
         { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 
     def tags(*args, &block)
-      raise ArgumentError.new('Cannot specify additional attributes on a slave index') if @options[:slave]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       add_attribute :_tags do |o|
         v = block_given? ? o.instance_eval(&block) : args
         v.is_a?(Array) ? v : [v]
@@ -186,16 +186,16 @@ module AlgoliaSearch
         v = get_setting(k)
         settings[k] = v if !v.nil?
       end
-      settings[:slaves] = additional_indexes.select { |options, s| options[:slave] }.map do |options, s|
+      settings[:replicas] = additional_indexes.select { |options, s| options[:replica] }.map do |options, s|
         name = options[:index_name]
         name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
         name
-      end if !@options[:slave]
+      end if !@options[:replica]
       settings
     end
 
     def add_index(index_name, options = {}, &block)
-      raise ArgumentError.new('Cannot specify additional index on a slave index') if @options[:slave]
+      raise ArgumentError.new('Cannot specify additional index on a replica index') if @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
       options[:index_name] = index_name
@@ -203,11 +203,12 @@ module AlgoliaSearch
       @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
 
-    def add_slave(index_name, options = {}, &block)
-      raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave]
+    def add_replica(index_name, options = {}, &block)
+      raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :slave => true }), &block)
+      add_index(index_name, options.merge({ :replica => true }), &block)
     end
+    alias_method :add_slave, :add_replica
 
     def additional_indexes
       @additional_indexes || {}
@@ -411,7 +412,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave]
+        next if options[:replica]
         last_task = nil
 
         algolia_find_in_batches(batch_size) do |group|
@@ -441,16 +442,18 @@ module AlgoliaSearch
       return if @algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        next if options[:slave]
+        next if options[:replica]
 
         # fetch the master settings
         master_index = algolia_ensure_init(options, settings)
         master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
         master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
 
-        # remove the slaves of the temporary index
+        # remove the replicas of the temporary index
         master_settings.delete :slaves
         master_settings.delete 'slaves'
+        master_settings.delete 'replicas'
+        master_settings.delete :replicas
 
         # init temporary index
         index_name = algolia_index_name(options)
@@ -478,7 +481,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave]
+        next if options[:replicas]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
         index.wait_task(task["taskID"]) if synchronous == true
       end
@@ -490,7 +493,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave]
+        next if options[:replica]
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
           if synchronous
@@ -517,7 +520,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave]
+        next if options[:replicas]
         if synchronous
           index.delete_object!(object_id)
         else
@@ -531,7 +534,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave]
+        next if options[:replicas]
         synchronous ? index.clear! : index.clear
         @algolia_indexes[settings] = nil
       end
@@ -539,7 +542,7 @@ module AlgoliaSearch
     end
 
     def algolia_raw_search(q, params = {})
-      index_name = params.delete(:index) || params.delete('index') || params.delete(:slave) || params.delete('slave')
+      index_name = params.delete(:index) || params.delete('index') || params.delete(:slave) || params.delete('slave') || params.delete(:replica) || params.delete('replica')
       index = algolia_index(index_name)
       index.search(q, Hash[params.map { |k,v| [k.to_s, v.to_s] }])
     end
@@ -604,7 +607,7 @@ module AlgoliaSearch
         algolia_configurations.each do |o, s|
           return algolia_ensure_init(o, s) if o[:index_name].to_s == name.to_s
         end
-        raise ArgumentError.new("Invalid index/slave name: #{name}")
+        raise ArgumentError.new("Invalid index/replica name: #{name}")
       end
       algolia_ensure_init
     end
@@ -618,7 +621,7 @@ module AlgoliaSearch
 
     def algolia_must_reindex?(object)
       algolia_configurations.each do |options, settings|
-        next if options[:slave]
+        next if options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attributes(object).each do |k, v|
           changed_method = "#{k}_changed?"
