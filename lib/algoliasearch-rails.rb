@@ -64,7 +64,8 @@ module AlgoliaSearch
       :synonyms, :placeholders, :removeWordsIfNoResults, :replaceSynonymsInHighlight,
       :unretrievableAttributes, :disableTypoToleranceOn, :altCorrections,
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex,
-      :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray]
+      :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray,
+      :advancedSyntax]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
