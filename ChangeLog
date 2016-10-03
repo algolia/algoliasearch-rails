@@ -1,5 +1,9 @@
 CHANGELOG
 
+2016-10-02 1.15.1
+
+      * Missing `advancedSyntax` index setting forward
+
 2016-08-21 1.15.0
 
       * Upgrade to AlgoliaSearch JS API client 3.18.0
