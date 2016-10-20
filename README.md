@@ -7,7 +7,7 @@ Algolia Search for Rails
 
 This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Rails 3.x, 4.x and 5.x are all supported.
 
-You might be interested in the sample Ruby on Rails application providing a ```autocomplete.js```-based auto-completion and ```instantsearch.js```-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
+You might be interested in the sample Ruby on Rails application providing a `autocomplete.js`-based auto-completion and `instantsearch.js`-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.svg?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.svg)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.svg)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
@@ -161,7 +161,7 @@ Traditional search implementations tend to have search logic and functionality o
 
 Implementing search on the backend is no longer necessary. In fact, in most cases it is harmful to performance because of added network and processing latency. We highly recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-js) issuing all search requests directly from the end user's browser, mobile device, or client. It will reduce the overall search latency while offloading your servers at the same time.
 
-The JS API client is part of the gem, just require ```algolia/v3/algoliasearch.min``` somewhere in your JavaScript manifest, for example in ```application.js``` if you are using Rails 3.1+:
+The JS API client is part of the gem, just require `algolia/v3/algoliasearch.min` somewhere in your JavaScript manifest, for example in `application.js` if you are using Rails 3.1+:
 
 ```javascript
 //= require algolia/v3/algoliasearch.min
@@ -223,7 +223,7 @@ Then, as soon as you use the `search` method, the returning results will be a pa
 
 ### Notes
 
-All methods injected by the ```AlgoliaSearch``` include are prefixed by ```algolia_``` and aliased to the associated short names if they aren't already defined.
+All methods injected by the `AlgoliaSearch` include are prefixed by `algolia_` and aliased to the associated short names if they aren't already defined.
 
 ```ruby
 Contact.algolia_reindex! # <=> Contact.reindex!
@@ -472,7 +472,7 @@ class Profile < ActiveRecord::Base
 end
 ```
 
-### Custom ```objectID```
+### Custom `objectID`
 
 By default, the `objectID` is based on your record's `id`. You can change this behavior specifying the `:id` option (be sure to use a uniq field).
 
@@ -487,7 +487,7 @@ end
 
 ### Restrict indexing to a subset of your data
 
-You can add constraints controlling if a record must be indexed by using options the ```:if``` or ```:unless``` options.
+You can add constraints controlling if a record must be indexed by using options the `:if` or `:unless` options.
 
 It allows you to do conditional indexing on a per document basis.
 
@@ -508,7 +508,7 @@ class Post < ActiveRecord::Base
 end
 ```
 
-**Notes:** As soon as you use those constraints, ```addObjects``` and ```deleteObjects``` calls will be performed in order to keep the index synced with the DB (The state-less gem doesn't know if the object don't match your constraints anymore or never matched, so we force ADD/DELETE operations to be sent). You can work-around this behavior creating a `_changed?` method:
+**Notes:** As soon as you use those constraints, `addObjects` and `deleteObjects` calls will be performed in order to keep the index synced with the DB (The state-less gem doesn't know if the object don't match your constraints anymore or never matched, so we force ADD/DELETE operations to be sent). You can work-around this behavior creating a `_changed?` method:
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -543,7 +543,7 @@ MyModel.index_objects MyModel.limit(5)
 
 ### Sanitizer
 
-You can sanitize all your attributes using the ```sanitize``` option. It will strip all HTML tags from your attributes.
+You can sanitize all your attributes using the `sanitize` option. It will strip all HTML tags from your attributes.
 
 ```ruby
 class User < ActiveRecord::Base
@@ -565,7 +565,7 @@ gem 'rails-html-sanitizer'
 
 ### UTF-8 Encoding
 
-You can force the UTF-8 encoding of all your attributes using the ```force_utf8_encoding``` option:
+You can force the UTF-8 encoding of all your attributes using the `force_utf8_encoding` option:
 
 ```ruby
 class User < ActiveRecord::Base
@@ -875,7 +875,7 @@ p json_answer['hits']
 p json_answer['facets']
 ```
 
-Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the ```search``` method:
+Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the `search` method:
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -892,6 +892,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+
 ```ruby
 # dynamical search parameters
 p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
@@ -899,7 +900,7 @@ p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
 
 ### Faceting
 
-Facets can be retrieved calling the extra ```facets``` method of the search answer.
+Facets can be retrieved calling the extra `facets` method of the search answer.
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -914,6 +915,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
+
 ```ruby
 hits = Contact.search("jon doe", { :facets => '*' })
 p hits                    # ORM-compliant array of objects
@@ -921,6 +923,7 @@ p hits.facets             # extra method added to retrieve facets
 p hits.facets['company']  # facet values+count of facet 'company'
 p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
 ```
+
 
 ```ruby
 raw_json = Contact.raw_search("jon doe", { :facets => '*' })
@@ -964,7 +967,7 @@ At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 500
 
 ### Caveats
 
-This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing ```after_validation```, ```before_save``` or ```after_commit``` callbacks, it will not index your changes. For example: ```update_attribute``` doesn't perform validations checks, to perform validations when updating use ```update_attributes```.
+This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing `after_validation`, `before_save` or `after_commit` callbacks, it will not index your changes. For example: `update_attribute` doesn't perform validations checks, to perform validations when updating use `update_attributes`.
 
 ### Timeouts
 
@@ -986,7 +989,7 @@ AlgoliaSearch.configuration = {
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
 
-You may want to disable all indexing (add, update & delete operations) API calls, you can set the ```disable_indexing``` option:
+You may want to disable all indexing (add, update & delete operations) API calls, you can set the `disable_indexing` option:
 
 ```ruby
 class User < ActiveRecord::Base
@@ -1026,3 +1029,4 @@ describe 'With a mocked client' do
 
 end
 ```
+
