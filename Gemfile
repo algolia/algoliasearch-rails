@@ -4,6 +4,9 @@ gem 'json', '~> 1.5', '>= 1.5.1'
 gem 'algoliasearch', '~> 1.11.0'
 gem 'rubysl', '~> 2.0', :platform => :rbx
 
+puts RUBY_VERSION
+puts RUBY_ENGINE
+
 group :test do
   rails_version = ENV["RAILS_VERSION"] ? "~> #{ENV["RAILS_VERSION"]}" : '>= 3.2.0'
   gem 'rails', rails_version
@@ -17,6 +20,13 @@ group :test do
     if Gem::Version.new(ENV['RAILS_VERSION'] || '3.2.0') >= Gem::Version.new('4.0')
       gem 'mime-types', '~> 2.6'
     end
+  end
+  if defined?(RUBY_VERSION) &&
+     defined?(RUBY_ENGINE) &&
+     RUBY_ENGINE == 'ruby' &&
+     Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.1')
+    puts 'in if'
+    gem 'net-http-persistent', '< 3.0'
   end
   gem 'rspec', '>= 2.5.0', '< 3.0'
   gem 'sqlite3', :platform => [:rbx, :ruby]
