@@ -28,6 +28,7 @@ Table of Content
 1. [Tags](#tags)
 1. [Search](#search)
 1. [Faceting](#faceting)
+1. [Facet search](#facet-search)
 1. [Group by](#group-by)
 1. [Geo-search](#geo-search)
 1. [Caveats](#caveats)
@@ -928,6 +929,25 @@ p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
 ```ruby
 raw_json = Contact.raw_search("jon doe", { :facets => '*' })
 p raw_json['facets']
+```
+
+### Facet search
+
+You can also search for facet values.
+
+```ruby
+Product.search_facet('category', 'Headphones') # Array of {value, highlighted, count}
+```
+
+This method can also take any parameter a query can take.
+This will adjust the search to only hits which would have matched the query.
+
+```ruby
+# Only sends back the categories containing red Apple products (and only counts those)
+Product.search_facet('category', 'phone', {
+  query: 'red',
+  filters: 'brand:Apple'
+}) # Array of phone categories linked to red Apple products
 ```
 
 ### Group by
