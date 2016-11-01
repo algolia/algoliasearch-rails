@@ -601,7 +601,7 @@ describe 'Colors' do
     @blue = Color.create!(:name => "blue", :short_name => "blu", :hex => 0x0000FF)
     @black = Color.create!(:name => "black", :short_name => "bla", :hex => 0x000000)
     @green = Color.create!(:name => "green", :short_name => "gre", :hex => 0x00FF00)
-    facets = Color.search_facet('short_name', 'bl', query: 'black')
+    facets = Color.search_facet('short_name', 'bl', :query => 'black')
     expect(facets.size).to eq(1)
     expect(facets.first['value']).to eq('bla')
     expect(facets.first['highlighted']).to eq('<em>bl</em>a')
