@@ -18,6 +18,7 @@ RSpec.configure do |c|
   c.mock_with :rspec
   c.filter_run :focus => true
   c.run_all_when_everything_filtered = true
+  c.formatter = 'documentation'
 end
 
 # avoid concurrent access to the same index
