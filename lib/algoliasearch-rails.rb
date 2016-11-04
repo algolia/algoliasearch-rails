@@ -97,27 +97,65 @@ module AlgoliaSearch
     end
     alias :add_attributes :add_attribute
 
-    def get_attributes(object)
-      clazz = object.class
-      attributes = if defined?(::Mongoid::Document) && clazz.include?(::Mongoid::Document)
+    def is_mongoid?(object)
+      defined?(::Mongoid::Document) && object.class.include?(::Mongoid::Document)
+    end
+
+    def is_sequel?(object)
+      defined?(::Sequel) && object.class < ::Sequel::Model
+    end
+
+    def is_active_record?(object)
+      !is_mongoid?(object) && !is_sequel?(object)
+    end
+
+    def get_default_attributes(object)
+      if is_mongoid?(object)
         # work-around mongoid 2.4's unscoped method, not accepting a block
-        res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
-          Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
-        @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
-        res
-      elsif defined?(::Sequel) && clazz < ::Sequel::Model
-        res = @attributes.nil? || @attributes.length == 0 ? object.to_hash :
-          Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
-        @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
-        res
+        object.attributes
+      elsif is_sequel?(object)
+        object.to_hash
       else
         object.class.unscoped do
-          res = @attributes.nil? || @attributes.length == 0 ? object.attributes :
-            Hash[@attributes.map { |name, value| [name.to_s, value.call(object) ] }]
-          @additional_attributes.each { |name, value| res[name.to_s] = value.call(object) } if @additional_attributes
-          res
+          object.attributes
         end
       end
+    end
+
+    def get_attribute_names(object)
+      res = if @attributes.nil? || @attributes.length == 0
+        get_default_attributes(object).keys
+      else
+        @attributes.keys
+      end
+
+      res += @additional_attributes.keys if @additional_attributes
+
+      res
+    end
+
+    def attributes_to_hash(attributes, object)
+      if attributes
+        Hash[attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+      else
+        {}
+      end
+    end
+
+    def get_attributes(object)
+      attributes = if @attributes.nil? || @attributes.length == 0
+        get_default_attributes(object)
+      else
+        if is_active_record?(object)
+          object.class.unscoped do
+            attributes_to_hash(@attributes, object)
+          end
+        else
+          attributes_to_hash(@attributes, object)
+        end
+      end
+
+      attributes.merge!(attributes_to_hash(@additional_attributes, object))
 
       if @options[:sanitize]
         sanitizer = begin
@@ -629,7 +667,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if options[:slave]
         return true if algolia_object_id_changed?(object, options)
-        settings.get_attributes(object).each do |k, v|
+        settings.get_attribute_names(object).each do |k|
           changed_method = "#{k}_changed?"
           return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
