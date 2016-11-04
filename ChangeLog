@@ -1,5 +1,11 @@
 CHANGELOG
 
+2016-11-04 1.16.1
+
+      * Added IndexSettings#get_attribute_names
+      * Refactored IndexSettings#get_attributes
+      * algolia_must_reindex? doesn't compute attribute values anymore
+
 2016-10-02 1.16.0
 
       * Upgrade `algoliasearch` to 1.12.0
