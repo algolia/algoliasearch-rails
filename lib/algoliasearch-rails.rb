@@ -62,7 +62,7 @@ module AlgoliaSearch
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
       :synonyms, :placeholders, :removeWordsIfNoResults, :replaceSynonymsInHighlight,
-      :unretrievableAttributes, :disableTypoToleranceOn, :altCorrections,
+      :unretrievableAttributes, :disableTypoToleranceOnWords, :disableTypoToleranceOnAttributes, :altCorrections,
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex,
       :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray,
       :advancedSyntax]
