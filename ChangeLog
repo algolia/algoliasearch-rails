@@ -1,5 +1,9 @@
 CHANGELOG
 
+2016-11-14 1.16.2
+
+      * Add missing disableTypoToleranceOnAttributes and disableTypoToleranceOnWords index settings
+
 2016-11-04 1.16.1
 
       * Added IndexSettings#get_attribute_names
