@@ -62,7 +62,7 @@ module AlgoliaSearch
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
       :synonyms, :placeholders, :removeWordsIfNoResults, :replaceSynonymsInHighlight,
-      :unretrievableAttributes, :disableTypoToleranceOnAttributes, :altCorrections,
+      :unretrievableAttributes, :disableTypoToleranceOnWords, :disableTypoToleranceOnAttributes, :altCorrections,
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex,
       :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray]
     OPTIONS.each do |k|
