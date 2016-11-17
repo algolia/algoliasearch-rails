@@ -876,7 +876,7 @@ p json_answer['hits']
 p json_answer['facets']
 ```
 
-Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the `search` method:
+Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings-parameters) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the `search` method:
 
 ```ruby
 class Contact < ActiveRecord::Base
