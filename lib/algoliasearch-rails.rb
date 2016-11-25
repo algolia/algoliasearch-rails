@@ -55,7 +55,7 @@ module AlgoliaSearch
   class IndexSettings
 
     # AlgoliaSearch settings
-    OPTIONS = [:minWordSizefor1Typo, :minWordSizefor2Typos,
+    OPTIONS = [:minWordSizefor1Typo, :minWordSizefor2Typos, :typoTolerance,
       :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
       :highlightPreTag, :highlightPostTag,
