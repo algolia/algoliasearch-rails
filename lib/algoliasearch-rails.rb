@@ -340,6 +340,7 @@ module AlgoliaSearch
         alias_method :search, :algolia_search unless method_defined? :search
         alias_method :raw_search, :algolia_raw_search unless method_defined? :raw_search
         alias_method :search_facet, :algolia_search_facet unless method_defined? :search_facet
+        alias_method :search_for_facet_values, :algolia_search_for_facet_values unless method_defined? :search_for_facet_values
         alias_method :index, :algolia_index unless method_defined? :index
         alias_method :index_name, :algolia_index_name unless method_defined? :index_name
         alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
@@ -639,12 +640,15 @@ module AlgoliaSearch
       res
     end
 
-    def algolia_search_facet(facet, text, params = {})
+    def algolia_search_for_facet_values(facet, text, params = {})
       index_name = params.delete(:index) || params.delete('index') || params.delete(:slave) || params.delete('slave')
       index = algolia_index(index_name)
       query = Hash[params.map { |k, v| [k.to_s, v.to_s] }]
       index.search_facet(facet, text, query)['facetHits']
     end
+
+    # deprecated (renaming)
+    alias :algolia_search_facet :algolia_search_for_facet_values
 
     def algolia_index(name = nil)
       if name
