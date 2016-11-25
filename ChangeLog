@@ -4,6 +4,7 @@ CHANGELOG
 
       * Propagate `search_facet` to `search_for_facet_values` renaming (backward compatible)
       * Upgrade `algoliasearch` dependency to ~> 1.12.1
+      * Add missing `typoTolerance` setting
 
 2016-11-14 1.16.2
 
