@@ -936,7 +936,7 @@ p raw_json['facets']
 You can also search for facet values.
 
 ```ruby
-Product.search_facet('category', 'Headphones') # Array of {value, highlighted, count}
+Product.search_for_facet_values('category', 'Headphones') # Array of {value, highlighted, count}
 ```
 
 This method can also take any parameter a query can take.
@@ -944,7 +944,7 @@ This will adjust the search to only hits which would have matched the query.
 
 ```ruby
 # Only sends back the categories containing red Apple products (and only counts those)
-Product.search_facet('category', 'phone', {
+Product.search_for_facet_values('category', 'phone', {
   query: 'red',
   filters: 'brand:Apple'
 }) # Array of phone categories linked to red Apple products
