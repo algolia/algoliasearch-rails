@@ -882,9 +882,9 @@ module AlgoliaSearch
     def algolia_mark_must_reindex
       @algolia_must_reindex =
        if defined?(::Sequel) && is_a?(Sequel::Model)
-         new? || self.class.algolia_must_reindex?(self)
+         new? || self.class.must_reindex?(self)
        else
-         new_record? || self.class.algolia_must_reindex?(self)
+         new_record? || self.class.must_reindex?(self)
        end
       true
     end
