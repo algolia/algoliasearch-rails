@@ -14,6 +14,7 @@ group :test do
     gem 'rack-cache', '< 1.3'
     gem 'mime-types', '< 2.6'
     gem 'net-http-persistent', '< 3.0'
+    gem 'faraday', '< 0.10'
   elsif defined?(RUBY_VERSION) && RUBY_VERSION == "1.9.3"
     if Gem::Version.new(ENV['RAILS_VERSION'] || '3.2.0') >= Gem::Version.new('4.0')
       gem 'mime-types', '~> 2.6'
