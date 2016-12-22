@@ -378,6 +378,11 @@ class SubReplicas < ActiveRecord::Base
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
+
+      add_slave safe_index_name("Slave_Index"), :per_environment => true do
+        attributesToIndex [:name]
+        customRanking ["desc(name)"]
+      end
     end
   end
 end
@@ -888,7 +893,7 @@ describe "SubReplicas" do
     SubReplicas.clear_index!(true)
   end
 
-  let(:expected_indicies) { %w(SubReplicas Additional_Index Replica_Index).map { |name| safe_index_name(name) } }
+  let(:expected_indicies) { %w(SubReplicas Additional_Index Replica_Index Slave_Index).map { |name| safe_index_name(name) } }
 
   it "contains all levels in algolia_configurations" do
     configured_indicies = SubReplicas.send(:algolia_configurations)
@@ -909,6 +914,10 @@ describe "SubReplicas" do
 
   it "should be searchable through added indexes replica" do
     expect { SubReplicas.raw_search('something', :index => safe_index_name('Replica_Index')) }.not_to raise_error
+  end
+
+  it "should be searchable through added indexes replica" do
+    expect { SubReplicas.raw_search('something', :index => safe_index_name('Slave_Index')) }.not_to raise_error
   end
 end
 
