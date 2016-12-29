@@ -51,7 +51,7 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 
 **Indexes**
 
-1. [Master/slave](#masterslave)
+1. [Primary/replica](#primaryreplica)
 1. [Share a single index](#share-a-single-index)
 1. [Target multiple indexes](#target-multiple-indexes)
 
@@ -760,9 +760,9 @@ index = Contact.index
 
 
 
-## Master/slave
+## Primary/replica
 
-You can define slave indexes using the <code>add_slave</code> method:
+You can define replica indices using the <code>add_slave</code> method:
 
 ```ruby
 class Book < ActiveRecord::Base
@@ -773,12 +773,12 @@ class Book < ActiveRecord::Base
   algoliasearch per_environment: true do
     attributesToIndex [:name, :author, :editor]
 
-    # define a slave index to search by `author` only
+    # define a replica index to search by `author` only
     add_slave 'Book_by_author', per_environment: true do
       attributesToIndex [:author]
     end
 
-    # define a slave index to search by `editor` only
+    # define a replica index to search by `editor` only
     add_slave 'Book_by_editor', per_environment: true do
       attributesToIndex [:editor]
     end
@@ -787,12 +787,12 @@ class Book < ActiveRecord::Base
 end
 ```
 
-To search using a slave, use the following code:
+To search using a replica, use the following code:
 
 ```ruby
-Book.raw_search 'foo bar', slave: 'Book_by_editor'
+Book.raw_search 'foo bar', replica: 'Book_by_editor'
 # or
-Book.search 'foo bar', slave: 'Book_by_editor'
+Book.search 'foo bar', replica: 'Book_by_editor'
 ```
 
 ## Share a single index
