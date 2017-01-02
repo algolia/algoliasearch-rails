@@ -13,6 +13,8 @@ require 'sequel'
 
 AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
 
+puts "Using APPLICATION_ID=#{ENV['ALGOLIA_APPLICATION_ID']}"
+
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 ActiveRecord::Base.logger.level = Logger::WARN
