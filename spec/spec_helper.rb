@@ -1,5 +1,6 @@
 require 'rubygems'
 require 'bundler'
+require 'timeout'
 
 Bundler.setup :test
 
@@ -19,6 +20,12 @@ RSpec.configure do |c|
   c.filter_run :focus => true
   c.run_all_when_everything_filtered = true
   c.formatter = 'documentation'
+
+  c.around(:each) do |example|
+    Timeout::timeout(120) {
+      example.run
+    }
+  end
 end
 
 # avoid concurrent access to the same index
