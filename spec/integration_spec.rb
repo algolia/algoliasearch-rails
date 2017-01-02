@@ -95,6 +95,9 @@ ActiveRecord::Schema.define do
     create_table :enqueued_objects do |t|
       t.string :name
     end
+    create_table :disabled_enqueued_objects do |t|
+      t.string :name
+    end
   end
   create_table :misconfigured_blocks do |t|
     t.string :name
@@ -395,6 +398,16 @@ unless OLD_RAILS
 
     algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
       :index_name => safe_index_name('EnqueuedObject') do
+      attributes [:name]
+    end
+  end
+
+  class DisabledEnqueuedObject < ActiveRecord::Base
+    include AlgoliaSearch
+
+    algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
+      :index_name => safe_index_name('EnqueuedObject'),
+      :disable_indexing => true) do
       attributes [:name]
     end
   end
@@ -1061,6 +1074,14 @@ unless OLD_RAILS
         EnqueuedObject.without_auto_index do
           EnqueuedObject.create! :name => 'test'
         end
+      }.not_to raise_error
+    end
+  end
+
+  describe 'DisabledEnqueuedObject' do
+    it "should not try to enqueue a job" do
+      expect {
+        DisabledEnqueuedObject.create! :name => 'test'
       }.not_to raise_error
     end
   end

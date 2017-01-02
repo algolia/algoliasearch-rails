@@ -682,6 +682,10 @@ module AlgoliaSearch
             changed_method = "#{condition}_changed?"
             return true if !object.respond_to?(changed_method) || object.send(changed_method)
           else
+            # if the :if, :unless condition is a anything else,
+            # we have no idea whether we should reindex or not
+            # let's always reindex then
+            return true
           end
         end
       end
@@ -851,7 +855,7 @@ module AlgoliaSearch
 
     def algolia_enqueue_remove_from_index!(synchronous)
       if algoliasearch_options[:enqueue]
-        algoliasearch_options[:enqueue].call(self, true)
+        algoliasearch_options[:enqueue].call(self, true) unless self.class.send(:algolia_indexing_disabled?, algoliasearch_options)
       else
         algolia_remove_from_index!(synchronous)
       end
@@ -859,7 +863,7 @@ module AlgoliaSearch
 
     def algolia_enqueue_index!(synchronous)
       if algoliasearch_options[:enqueue]
-        algoliasearch_options[:enqueue].call(self, false)
+        algoliasearch_options[:enqueue].call(self, false) unless self.class.send(:algolia_indexing_disabled?, algoliasearch_options)
       else
         algolia_index!(synchronous)
       end
