@@ -378,11 +378,15 @@ class SubReplicas < ActiveRecord::Base
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
+    end
+  end
+end
 
-      add_slave safe_index_name("Slave_Index"), :per_environment => true do
-        attributesToIndex [:name]
-        customRanking ["desc(name)"]
-      end
+class WithSlave < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :force_utf8_encoding => true, :index_name => safe_index_name("With slave") do
+    add_slave safe_index_name("WithSlave_slave") do
     end
   end
 end
@@ -893,7 +897,7 @@ describe "SubReplicas" do
     SubReplicas.clear_index!(true)
   end
 
-  let(:expected_indicies) { %w(SubReplicas Additional_Index Replica_Index Slave_Index).map { |name| safe_index_name(name) } }
+  let(:expected_indicies) { %w(SubReplicas Additional_Index Replica_Index).map { |name| safe_index_name(name) } }
 
   it "contains all levels in algolia_configurations" do
     configured_indicies = SubReplicas.send(:algolia_configurations)
@@ -915,9 +919,51 @@ describe "SubReplicas" do
   it "should be searchable through added indexes replica" do
     expect { SubReplicas.raw_search('something', :index => safe_index_name('Replica_Index')) }.not_to raise_error
   end
+end
 
-  it "should be searchable through added indexes replica" do
-    expect { SubReplicas.raw_search('something', :index => safe_index_name('Slave_Index')) }.not_to raise_error
+describe "WithSlave" do
+  before(:all) do
+    WithSlave.clear_index!(true)
+  end
+
+  let(:expected_indicies) { %w(WithSlave WithSlave_slave).map { |name| safe_index_name(name) } }
+
+  it "should be searchable through added indexes slaves" do
+    expect { WithSlave.raw_search('something', :index => safe_index_name('WithSlave_slave')) }.not_to raise_error
+  end
+end
+
+describe "SlaveThenReplica" do
+  it 'should throw with add_slave then add_replica' do
+    expect(-> {
+      class SlaveThenReplica
+        include AlgoliaSearch
+
+        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SlaveThenReplica") do
+          add_slave safe_index_name("SlaveThenReplica_slave") do
+          end
+          add_replica safe_index_name("SlaveThenReplica_replica") do
+          end
+        end
+      end
+    }).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
+  end
+end
+
+describe "ReplicaThenSlave" do
+  it 'should throw with add_replice then add_slave' do
+    expect(-> {
+      class ReplicaThenSlave
+        include AlgoliaSearch
+
+        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("ReplicaThenSlave") do
+          add_replica safe_index_name("ReplicaThenSlave_replica") do
+          end
+          add_slave safe_index_name("ReplicaThenSlave_slave") do
+          end
+        end
+      end
+    }).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
   end
 end
 

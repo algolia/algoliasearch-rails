@@ -30,6 +30,7 @@ module AlgoliaSearch
   class NotConfigured < StandardError; end
   class BadConfiguration < StandardError; end
   class NoBlockGiven < StandardError; end
+  class MixedSlavesAndReplicas < StandardError; end
 
   autoload :Configuration, 'algoliasearch/configuration'
   extend Configuration
@@ -237,8 +238,9 @@ module AlgoliaSearch
       raise ArgumentError.new('Cannot specify additional index on a replica index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
-      options[:index_name] = index_name
       @additional_indexes ||= {}
+      raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |options, _| options[:replica] }) || (options[:replica] && @additional_indexes.any? { |options, _| options[:slave] })
+      options[:index_name] = index_name
       @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
 
@@ -247,7 +249,12 @@ module AlgoliaSearch
       raise ArgumentError.new('No block given') if !block_given?
       add_index(index_name, options.merge({ :replica => true }), &block)
     end
-    alias :add_slave :add_replica
+
+    def add_slave(index_name, options = {}, &block)
+      raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('No block given') if !block_given?
+      add_index(index_name, options.merge({ :slave => true }), &block)
+    end
 
     def additional_indexes
       @additional_indexes || {}
