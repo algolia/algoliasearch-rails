@@ -57,7 +57,7 @@ module AlgoliaSearch
     # AlgoliaSearch settings
     OPTIONS = [:minWordSizefor1Typo, :minWordSizefor2Typos, :typoTolerance,
       :hitsPerPage, :attributesToRetrieve,
-      :attributesToHighlight, :attributesToSnippet, :attributesToIndex,
+      :attributesToHighlight, :attributesToSnippet, :attributesToIndex, :searchableAttributes,
       :highlightPreTag, :highlightPostTag,
       :ranking, :customRanking, :queryType, :attributesForFaceting,
       :separatorsToIndex, :optionalWords, :attributeForDistinct,
