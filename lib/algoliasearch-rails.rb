@@ -287,7 +287,7 @@ module AlgoliaSearch
 
     # special handling of get_settings to avoid raising errors on 404
     def get_settings(*args)
-      SafeIndex.log_or_throw(:move_index) do
+      SafeIndex.log_or_throw(:get_settings) do
         begin
           @index.get_settings(*args)
         rescue Algolia::AlgoliaError => e
@@ -306,7 +306,6 @@ module AlgoliaSearch
 
     private
     def self.log_or_throw(method, &block)
-      puts method.to_s
       begin
         yield
       rescue Algolia::AlgoliaError => e
@@ -473,7 +472,7 @@ module AlgoliaSearch
           end
           last_task = index.save_objects(objects)
         end
-        index.wait_task(last_task["taskID"]) if last_task and synchronous == true
+        index.wait_task(last_task["taskID"]) if last_task and (synchronous || options[:synchronous])
       end
       nil
     end
@@ -511,7 +510,7 @@ module AlgoliaSearch
         end
 
         move_task = SafeIndex.move_index(tmp_index.name, index_name)
-        tmp_index.wait_task(move_task["taskID"]) if synchronous == true
+        master_index.wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
       end
       nil
     end
@@ -522,7 +521,7 @@ module AlgoliaSearch
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
-        index.wait_task(task["taskID"]) if synchronous == true
+        index.wait_task(task["taskID"]) if synchronous || options[:synchronous]
       end
     end
 
@@ -535,14 +534,14 @@ module AlgoliaSearch
         next if options[:slave]
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
-          if synchronous
+          if synchronous || options[:synchronous]
             index.add_object!(settings.get_attributes(object), object_id)
           else
             index.add_object(settings.get_attributes(object), object_id)
           end
         elsif algolia_conditional_index?(options) && !object_id.blank?
           # remove non-indexable objects
-          if synchronous
+          if synchronous || options[:synchronous]
             index.delete_object!(object_id)
           else
             index.delete_object(object_id)
@@ -560,7 +559,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
-        if synchronous
+        if synchronous || options[:synchronous]
           index.delete_object!(object_id)
         else
           index.delete_object(object_id)
@@ -574,7 +573,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave]
-        synchronous ? index.clear! : index.clear
+        synchronous || options[:synchronous] ? index.clear! : index.clear
         @algolia_indexes[settings] = nil
       end
       nil
@@ -858,7 +857,7 @@ module AlgoliaSearch
       if algoliasearch_options[:enqueue]
         algoliasearch_options[:enqueue].call(self, true) unless self.class.send(:algolia_indexing_disabled?, algoliasearch_options)
       else
-        algolia_remove_from_index!(synchronous)
+        algolia_remove_from_index!(synchronous || algolia_synchronous?)
       end
     end
 

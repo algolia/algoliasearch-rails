@@ -13,8 +13,6 @@ require 'sequel'
 
 AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
 
-puts "Using APPLICATION_ID=#{ENV['ALGOLIA_APPLICATION_ID']}"
-
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
 ActiveRecord::Base.logger.level = Logger::WARN
@@ -27,15 +25,6 @@ ActiveRecord::Base.establish_connection(
 ActiveRecord::Base.raise_in_transactional_callbacks = true unless OLD_RAILS
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
-
-class Algolia::Index
-  alias_method :old_wait_task, :wait_task
-
-  def wait_task(id)
-    puts "wait #{id} on #{self.name}"
-    old_wait_task(id)
-  end
-end
 
 unless SEQUEL_DB.table_exists?(:sequel_books)
   SEQUEL_DB.create_table(:sequel_books) do
