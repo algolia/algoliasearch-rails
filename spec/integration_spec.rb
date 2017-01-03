@@ -28,6 +28,15 @@ ActiveRecord::Base.raise_in_transactional_callbacks = true unless OLD_RAILS
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
+class Algolia::Index
+  alias_method :old_wait_task, :wait_task
+
+  def wait_task(id)
+    puts "wait #{id} on #{self.name}"
+    old_wait_task(id)
+  end
+end
+
 unless SEQUEL_DB.table_exists?(:sequel_books)
   SEQUEL_DB.create_table(:sequel_books) do
     primary_key :id

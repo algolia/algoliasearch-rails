@@ -280,7 +280,6 @@ module AlgoliaSearch
     # special handling of wait_task to handle null task_id
     def wait_task(task_id)
       return if task_id.nil? && !@raise_on_failure # ok
-      puts "wait #{task_id} on #{@index.name}"
       SafeIndex.log_or_throw(:wait_task) do
         @index.wait_task(task_id)
       end
