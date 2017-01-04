@@ -239,7 +239,7 @@ module AlgoliaSearch
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
       @additional_indexes ||= {}
-      raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |options, _| options[:replica] }) || (options[:replica] && @additional_indexes.any? { |options, _| options[:slave] })
+      raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
       @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
