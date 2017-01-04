@@ -935,7 +935,7 @@ end
 
 describe "SlaveThenReplica" do
   it 'should throw with add_slave then add_replica' do
-    expect(-> {
+    test = lambda do
       class SlaveThenReplica
         include AlgoliaSearch
 
@@ -946,13 +946,14 @@ describe "SlaveThenReplica" do
           end
         end
       end
-    }).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
+    end
+    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
   end
 end
 
 describe "ReplicaThenSlave" do
   it 'should throw with add_replice then add_slave' do
-    expect(-> {
+    test = lambda do
       class ReplicaThenSlave
         include AlgoliaSearch
 
@@ -963,7 +964,8 @@ describe "ReplicaThenSlave" do
           end
         end
       end
-    }).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
+    end
+    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
   end
 end
 
