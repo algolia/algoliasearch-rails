@@ -68,6 +68,8 @@ ActiveRecord::Schema.define do
     t.float :lat
     t.float :lng
   end
+  create_table :with_slaves do |t|
+  end
   create_table :mongo_objects do |t|
     t.string :name
   end
@@ -930,6 +932,11 @@ describe "WithSlave" do
 
   it "should be searchable through added indexes slaves" do
     expect { WithSlave.raw_search('something', :index => safe_index_name('WithSlave_slave')) }.not_to raise_error
+  end
+
+  it "should reindex with slaves in place" do
+    WithSlave.reindex!
+    expect(WithSlave.index.get_settings['slaves'].length).to eq(1)
   end
 end
 
