@@ -733,6 +733,12 @@ module AlgoliaSearch
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
       if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, settings.to_settings))
         index_settings ||= settings.to_settings
+        used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
+        replicas = index_settings.delete(:replicas) ||
+                   index_settings.delete('replicas') ||
+                   index_settings.delete(:slaves) ||
+                   index_settings.delete('slaves')
+        index_settings[used_slaves ? :slaves : :replicas] = replicas
         @algolia_indexes[settings].set_settings(index_settings)
       end
       @algolia_indexes[settings]
