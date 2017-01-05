@@ -1,5 +1,13 @@
 CHANGELOG
 
+2017-01-05 1.17.0
+
+      * Do not enqueue indexing operations if the indexing is disabled
+      * Add `searchableAttributes` and `numericAttributesForFiltering` index settings
+      * Fixed here and there synchronous behaviors (mostly unit tests related)
+      * Rename `slave` to `replica`
+      * Upgraded `algoliasearch-client-{ruby,js}` deps
+
 2016-11-25 1.16.3
 
       * Propagate `search_facet` to `search_for_facet_values` renaming (backward compatible)
