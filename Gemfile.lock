@@ -39,7 +39,7 @@ GEM
       minitest (~> 5.1)
       tzinfo (~> 1.1)
     addressable (2.4.0)
-    algoliasearch (1.12.0)
+    algoliasearch (1.12.4)
       httpclient (~> 2.8.2.4)
       json (>= 1.5.1)
     arel (7.1.0)
@@ -372,7 +372,7 @@ PLATFORMS
 DEPENDENCIES
   activerecord-jdbc-adapter
   activerecord-jdbcsqlite3-adapter
-  algoliasearch (~> 1.12.0)
+  algoliasearch (~> 1.12.4)
   jdbc-sqlite3
   json (~> 1.5, >= 1.5.1)
   kaminari
@@ -388,4 +388,4 @@ DEPENDENCIES
   will_paginate (>= 2.3.15)
 
 BUNDLED WITH
-   1.12.5
+   1.13.6
