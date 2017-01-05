@@ -71,16 +71,18 @@ module.exports =
 	debug('loaded the Parse client');
 
 	function algoliasearch(applicationID, apiKey, opts) {
-	  var cloneDeep = __webpack_require__(18);
+	  var cloneDeep = __webpack_require__(15);
 	  opts = cloneDeep(opts || {});
 
 	  if (opts.protocol === undefined) {
 	    opts.protocol = 'https:';
 	  }
 
-	  if (opts.timeout === undefined) {
-	    opts.timeout = 7500;
-	  }
+	  opts.timeouts = opts.timeouts || {
+	    connect: 2 * 1000,
+	    read: 7 * 1000,
+	    write: 30 * 1000
+	  };
 
 	  opts._setTimeout = _setTimeout;
 
@@ -90,7 +92,7 @@ module.exports =
 	  return new AlgoliaSearchParse(applicationID, apiKey, opts);
 	}
 
-	algoliasearch.version = __webpack_require__(22);
+	algoliasearch.version = __webpack_require__(26);
 	algoliasearch.ua = 'Algolia for Parse ' + algoliasearch.version;
 
 	function AlgoliaSearchParse() {
@@ -102,7 +104,7 @@ module.exports =
 
 	AlgoliaSearchParse.prototype._request = function(rawUrl, opts) {
 	  /* global Parse */
-	  var clone = __webpack_require__(18);
+	  var clone = __webpack_require__(15);
 	  var promise = new Parse.Promise();
 
 	  debug('url: %s, opts: %j', rawUrl, opts);
@@ -226,7 +228,8 @@ module.exports =
 
 	function useColors() {
 	  // is webkit? http://stackoverflow.com/a/16459606/376773
-	  return ('WebkitAppearance' in document.documentElement.style) ||
+	  // document is undefined in react-native: https://github.com/facebook/react-native/pull/1632
+	  return (typeof document !== 'undefined' && 'WebkitAppearance' in document.documentElement.style) ||
 	    // is firebug? http://stackoverflow.com/a/398120/376773
 	    (window.console && (console.firebug || (console.exception && console.table))) ||
 	    // is firefox >= v31?
@@ -239,7 +242,11 @@ module.exports =
 	 */
 
 	exports.formatters.j = function(v) {
-	  return JSON.stringify(v);
+	  try {
+	    return JSON.stringify(v);
+	  } catch (err) {
+	    return '[UnexpectedJSONParseError]: ' + err.message;
+	  }
 	};
 
 
@@ -326,9 +333,13 @@ module.exports =
 	function load() {
 	  var r;
 	  try {
-	    r = exports.storage.debug;
+	    return exports.storage.debug;
 	  } catch(e) {}
-	  return r;
+
+	  // If debug isn't set in LS, and we're in Electron, try to load $DEBUG
+	  if (typeof process !== 'undefined' && 'env' in process) {
+	    return process.env.DEBUG;
+	  }
 	}
 
 	/**
@@ -367,7 +378,7 @@ module.exports =
 	 * Expose `debug()` as the module.
 	 */
 
-	exports = module.exports = debug;
+	exports = module.exports = debug.debug = debug;
 	exports.coerce = coerce;
 	exports.disable = disable;
 	exports.enable = enable;
@@ -444,7 +455,10 @@ module.exports =
 	    if (null == self.useColors) self.useColors = exports.useColors();
 	    if (null == self.color && self.useColors) self.color = selectColor();
 
-	    var args = Array.prototype.slice.call(arguments);
+	    var args = new Array(arguments.length);
+	    for (var i = 0; i < args.length; i++) {
+	      args[i] = arguments[i];
+	    }
 
 	    args[0] = exports.coerce(args[0]);
 
@@ -471,9 +485,9 @@ module.exports =
 	      return match;
 	    });
 
-	    if ('function' === typeof exports.formatArgs) {
-	      args = exports.formatArgs.apply(self, args);
-	    }
+	    // apply env-specific formatting
+	    args = exports.formatArgs.apply(self, args);
+
 	    var logFn = enabled.log || exports.log || console.log.bind(console);
 	    logFn.apply(self, args);
 	  }
@@ -502,7 +516,7 @@ module.exports =
 
 	  for (var i = 0; i < len; i++) {
 	    if (!split[i]) continue; // ignore empty strings
-	    namespaces = split[i].replace(/\*/g, '.*?');
+	    namespaces = split[i].replace(/[\\^$+?.()|[\]{}]/g, '\\$&').replace(/\*/g, '.*?');
 	    if (namespaces[0] === '-') {
 	      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
 	    } else {
@@ -566,11 +580,11 @@ module.exports =
 	 * Helpers.
 	 */
 
-	var s = 1000;
-	var m = s * 60;
-	var h = m * 60;
-	var d = h * 24;
-	var y = d * 365.25;
+	var s = 1000
+	var m = s * 60
+	var h = m * 60
+	var d = h * 24
+	var y = d * 365.25
 
 	/**
 	 * Parse or format the given `val`.
@@ -581,17 +595,23 @@ module.exports =
 	 *
 	 * @param {String|Number} val
 	 * @param {Object} options
+	 * @throws {Error} throw an error if val is not a non-empty string or a number
 	 * @return {String|Number}
 	 * @api public
 	 */
 
-	module.exports = function(val, options){
-	  options = options || {};
-	  if ('string' == typeof val) return parse(val);
-	  return options.long
-	    ? long(val)
-	    : short(val);
-	};
+	module.exports = function (val, options) {
+	  options = options || {}
+	  var type = typeof val
+	  if (type === 'string' && val.length > 0) {
+	    return parse(val)
+	  } else if (type === 'number' && isNaN(val) === false) {
+	    return options.long ?
+				fmtLong(val) :
+				fmtShort(val)
+	  }
+	  throw new Error('val is not a non-empty string or a valid number. val=' + JSON.stringify(val))
+	}
 
 	/**
 	 * Parse the given `str` and return milliseconds.
@@ -602,47 +622,53 @@ module.exports =
 	 */
 
 	function parse(str) {
-	  str = '' + str;
-	  if (str.length > 10000) return;
-	  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
-	  if (!match) return;
-	  var n = parseFloat(match[1]);
-	  var type = (match[2] || 'ms').toLowerCase();
+	  str = String(str)
+	  if (str.length > 10000) {
+	    return
+	  }
+	  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str)
+	  if (!match) {
+	    return
+	  }
+	  var n = parseFloat(match[1])
+	  var type = (match[2] || 'ms').toLowerCase()
 	  switch (type) {
 	    case 'years':
 	    case 'year':
 	    case 'yrs':
 	    case 'yr':
 	    case 'y':
-	      return n * y;
+	      return n * y
 	    case 'days':
 	    case 'day':
 	    case 'd':
-	      return n * d;
+	      return n * d
 	    case 'hours':
 	    case 'hour':
 	    case 'hrs':
 	    case 'hr':
 	    case 'h':
-	      return n * h;
+	      return n * h
 	    case 'minutes':
 	    case 'minute':
 	    case 'mins':
 	    case 'min':
 	    case 'm':
-	      return n * m;
+	      return n * m
 	    case 'seconds':
 	    case 'second':
 	    case 'secs':
 	    case 'sec':
 	    case 's':
-	      return n * s;
+	      return n * s
 	    case 'milliseconds':
 	    case 'millisecond':
 	    case 'msecs':
 	    case 'msec':
 	    case 'ms':
-	      return n;
+	      return n
+	    default:
+	      return undefined
 	  }
 	}
 
@@ -654,12 +680,20 @@ module.exports =
 	 * @api private
 	 */
 
-	function short(ms) {
-	  if (ms >= d) return Math.round(ms / d) + 'd';
-	  if (ms >= h) return Math.round(ms / h) + 'h';
-	  if (ms >= m) return Math.round(ms / m) + 'm';
-	  if (ms >= s) return Math.round(ms / s) + 's';
-	  return ms + 'ms';
+	function fmtShort(ms) {
+	  if (ms >= d) {
+	    return Math.round(ms / d) + 'd'
+	  }
+	  if (ms >= h) {
+	    return Math.round(ms / h) + 'h'
+	  }
+	  if (ms >= m) {
+	    return Math.round(ms / m) + 'm'
+	  }
+	  if (ms >= s) {
+	    return Math.round(ms / s) + 's'
+	  }
+	  return ms + 'ms'
 	}
 
 	/**
@@ -670,12 +704,12 @@ module.exports =
 	 * @api private
 	 */
 
-	function long(ms) {
-	  return plural(ms, d, 'day')
-	    || plural(ms, h, 'hour')
-	    || plural(ms, m, 'minute')
-	    || plural(ms, s, 'second')
-	    || ms + ' ms';
+	function fmtLong(ms) {
+	  return plural(ms, d, 'day') ||
+	    plural(ms, h, 'hour') ||
+	    plural(ms, m, 'minute') ||
+	    plural(ms, s, 'second') ||
+	    ms + ' ms'
 	}
 
 	/**
@@ -683,9 +717,13 @@ module.exports =
 	 */
 
 	function plural(ms, n, name) {
-	  if (ms < n) return;
-	  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-	  return Math.ceil(ms / n) + ' ' + name + 's';
+	  if (ms < n) {
+	    return
+	  }
+	  if (ms < n * 1.5) {
+	    return Math.floor(ms / n) + ' ' + name
+	  }
+	  return Math.ceil(ms / n) + ' ' + name + 's'
 	}
 
 
@@ -809,9 +847,9 @@ module.exports =
 	module.exports = AlgoliaSearch;
 
 	var Index = __webpack_require__(7);
-	var deprecate = __webpack_require__(15);
-	var deprecatedMessage = __webpack_require__(16);
-	var AlgoliaSearchCore = __webpack_require__(21);
+	var deprecate = __webpack_require__(12);
+	var deprecatedMessage = __webpack_require__(13);
+	var AlgoliaSearchCore = __webpack_require__(24);
 	var inherits = __webpack_require__(4);
 	var errors = __webpack_require__(10);
 
@@ -894,7 +932,7 @@ module.exports =
 	 *  content: the server answer that contains the task ID
 	 */
 	AlgoliaSearch.prototype.getLogs = function(offset, length, callback) {
-	  var clone = __webpack_require__(18);
+	  var clone = __webpack_require__(15);
 	  var params = {};
 	  if (typeof offset === 'object') {
 	    // getLogs(params)
@@ -1046,7 +1084,7 @@ module.exports =
 	 * @see {@link https://www.algolia.com/doc/rest_api#AddKey|Algolia REST API Documentation}
 	 */
 	AlgoliaSearch.prototype.addUserKey = function(acls, params, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: client.addUserKey(arrayOfAcls[, params, callback])';
 
 	  if (!isArray(acls)) {
@@ -1131,7 +1169,7 @@ module.exports =
 	 * @see {@link https://www.algolia.com/doc/rest_api#UpdateIndexKey|Algolia REST API Documentation}
 	 */
 	AlgoliaSearch.prototype.updateUserKey = function(key, acls, params, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: client.updateUserKey(key, arrayOfAcls[, params, callback])';
 
 	  if (!isArray(acls)) {
@@ -1232,7 +1270,7 @@ module.exports =
 	 * }], cb)
 	 */
 	AlgoliaSearch.prototype.batch = function(operations, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: client.batch(operations[, callback])';
 
 	  if (!isArray(operations)) {
@@ -1272,9 +1310,9 @@ module.exports =
 
 	var inherits = __webpack_require__(4);
 	var IndexCore = __webpack_require__(8);
-	var deprecate = __webpack_require__(15);
-	var deprecatedMessage = __webpack_require__(16);
-	var exitPromise = __webpack_require__(17);
+	var deprecate = __webpack_require__(12);
+	var deprecatedMessage = __webpack_require__(13);
+	var exitPromise = __webpack_require__(21);
 	var errors = __webpack_require__(10);
 
 	module.exports = Index;
@@ -1324,7 +1362,7 @@ module.exports =
 	*  content: the server answer that updateAt and taskID
 	*/
 	Index.prototype.addObjects = function(objects, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: index.addObjects(arrayOfObjects[, callback])';
 
 	  if (!isArray(objects)) {
@@ -1391,7 +1429,7 @@ module.exports =
 	*  content: the server answer that updateAt and taskID
 	*/
 	Index.prototype.partialUpdateObjects = function(objects, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: index.partialUpdateObjects(arrayOfObjects[, callback])';
 
 	  if (!isArray(objects)) {
@@ -1447,7 +1485,7 @@ module.exports =
 	*  content: the server answer that updateAt and taskID
 	*/
 	Index.prototype.saveObjects = function(objects, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: index.saveObjects(arrayOfObjects[, callback])';
 
 	  if (!isArray(objects)) {
@@ -1512,8 +1550,8 @@ module.exports =
 	*  content: the server answer that contains 3 elements: createAt, taskId and objectID
 	*/
 	Index.prototype.deleteObjects = function(objectIDs, callback) {
-	  var isArray = __webpack_require__(13);
-	  var map = __webpack_require__(14);
+	  var isArray = __webpack_require__(19);
+	  var map = __webpack_require__(20);
 
 	  var usage = 'Usage: index.deleteObjects(arrayOfObjectIDs[, callback])';
 
@@ -1552,8 +1590,8 @@ module.exports =
 	*  error: null or Error('message')
 	*/
 	Index.prototype.deleteByQuery = function(query, params, callback) {
-	  var clone = __webpack_require__(18);
-	  var map = __webpack_require__(14);
+	  var clone = __webpack_require__(15);
+	  var map = __webpack_require__(20);
 
 	  var indexObj = this;
 	  var client = indexObj.as;
@@ -1663,9 +1701,9 @@ module.exports =
 	    query = undefined;
 	  }
 
-	  var merge = __webpack_require__(12);
+	  var merge = __webpack_require__(14);
 
-	  var IndexBrowser = __webpack_require__(19);
+	  var IndexBrowser = __webpack_require__(22);
 
 	  var browser = new IndexBrowser();
 	  var client = this.as;
@@ -2125,7 +2163,7 @@ module.exports =
 	* @see {@link https://www.algolia.com/doc/rest_api#AddIndexKey|Algolia REST API Documentation}
 	*/
 	Index.prototype.addUserKey = function(acls, params, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: index.addUserKey(arrayOfAcls[, params, callback])';
 
 	  if (!isArray(acls)) {
@@ -2208,7 +2246,7 @@ module.exports =
 	* @see {@link https://www.algolia.com/doc/rest_api#UpdateIndexKey|Algolia REST API Documentation}
 	*/
 	Index.prototype.updateUserKey = function(key, acls, params, callback) {
-	  var isArray = __webpack_require__(13);
+	  var isArray = __webpack_require__(19);
 	  var usage = 'Usage: index.updateUserKey(key, arrayOfAcls[, params, callback])';
 
 	  if (!isArray(acls)) {
@@ -2252,6 +2290,8 @@ module.exports =
 /***/ function(module, exports, __webpack_require__) {
 
 	var buildSearchMethod = __webpack_require__(9);
+	var deprecate = __webpack_require__(12);
+	var deprecatedMessage = __webpack_require__(13);
 
 	module.exports = IndexCore;
 
@@ -2403,7 +2443,7 @@ module.exports =
 	* @see {@link https://www.algolia.com/doc/rest_api#Browse|Algolia REST API Documentation}
 	*/
 	IndexCore.prototype.browse = function(query, queryParameters, callback) {
-	  var merge = __webpack_require__(12);
+	  var merge = __webpack_require__(14);
 
 	  var indexObj = this;
 
@@ -2483,6 +2523,50 @@ module.exports =
 	  });
 	};
 
+	/*
+	* Search for facet values
+	* https://www.algolia.com/doc/rest-api/search#search-for-facet-values
+	*
+	* @param {string} params.facetName Facet name, name of the attribute to search for values in.
+	* Must be declared as a facet
+	* @param {string} params.facetQuery Query for the facet search
+	* @param {string} [params.*] Any search parameter of Algolia,
+	* see https://www.algolia.com/doc/api-client/javascript/search#search-parameters
+	* Pagination is not supported. The page and hitsPerPage parameters will be ignored.
+	* @param callback (optional)
+	*/
+	IndexCore.prototype.searchForFacetValues = function(params, callback) {
+	  var clone = __webpack_require__(15);
+	  var omit = __webpack_require__(16);
+	  var usage = 'Usage: index.searchForFacetValues({facetName, facetQuery, ...params}[, callback])';
+
+	  if (params.facetName === undefined || params.facetQuery === undefined) {
+	    throw new Error(usage);
+	  }
+
+	  var facetName = params.facetName;
+	  var filteredParams = omit(clone(params), function(keyName) {
+	    return keyName === 'facetName';
+	  });
+	  var searchParameters = this.as._getSearchParams(filteredParams, '');
+
+	  return this.as._jsonRequest({
+	    method: 'POST',
+	    url: '/1/indexes/' +
+	      encodeURIComponent(this.indexName) + '/facets/' + encodeURIComponent(facetName) + '/query',
+	    hostType: 'read',
+	    body: {params: searchParameters},
+	    callback: callback
+	  });
+	};
+
+	IndexCore.prototype.searchFacet = deprecate(function(params, callback) {
+	  return this.searchForFacetValues(params, callback);
+	}, deprecatedMessage(
+	  'index.searchFacet(params[, callback])',
+	  'index.searchForFacetValues(params[, callback])'
+	));
+
 	IndexCore.prototype._search = function(params, url, callback) {
 	  return this.as._jsonRequest({
 	    cache: this.cache,
@@ -2541,8 +2625,8 @@ module.exports =
 	* @param objectIDs the array of unique identifier of objects to retrieve
 	*/
 	IndexCore.prototype.getObjects = function(objectIDs, attributesToRetrieve, callback) {
-	  var isArray = __webpack_require__(13);
-	  var map = __webpack_require__(14);
+	  var isArray = __webpack_require__(19);
+	  var map = __webpack_require__(20);
 
 	  var usage = 'Usage: index.getObjects(arrayOfObjectIDs[, callback])';
 
@@ -2753,6 +2837,41 @@ module.exports =
 
 /***/ },
 /* 12 */
+/***/ function(module, exports) {
+
+	module.exports = function deprecate(fn, message) {
+	  var warned = false;
+
+	  function deprecated() {
+	    if (!warned) {
+	      /* eslint no-console:0 */
+	      console.log(message);
+	      warned = true;
+	    }
+
+	    return fn.apply(this, arguments);
+	  }
+
+	  return deprecated;
+	};
+
+
+/***/ },
+/* 13 */
+/***/ function(module, exports) {
+
+	module.exports = function deprecatedMessage(previousUsage, newUsage) {
+	  var githubAnchorLink = previousUsage.toLowerCase()
+	    .replace('.', '')
+	    .replace('()', '');
+
+	  return 'algoliasearch: `' + previousUsage + '` was replaced by `' + newUsage +
+	    '`. Please see https://github.com/algolia/algoliasearch-client-js/wiki/Deprecated#' + githubAnchorLink;
+	};
+
+
+/***/ },
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var foreach = __webpack_require__(11);
@@ -2777,7 +2896,205 @@ module.exports =
 
 
 /***/ },
-/* 13 */
+/* 15 */
+/***/ function(module, exports) {
+
+	module.exports = function clone(obj) {
+	  return JSON.parse(JSON.stringify(obj));
+	};
+
+
+/***/ },
+/* 16 */
+/***/ function(module, exports, __webpack_require__) {
+
+	module.exports = function omit(obj, test) {
+	  var keys = __webpack_require__(17);
+	  var foreach = __webpack_require__(11);
+
+	  var filtered = {};
+
+	  foreach(keys(obj), function doFilter(keyName) {
+	    if (test(keyName) !== true) {
+	      filtered[keyName] = obj[keyName];
+	    }
+	  });
+
+	  return filtered;
+	};
+
+
+/***/ },
+/* 17 */
+/***/ function(module, exports, __webpack_require__) {
+
+	
+
+	// modified from https://github.com/es-shims/es5-shim
+	var has = Object.prototype.hasOwnProperty;
+	var toStr = Object.prototype.toString;
+	var slice = Array.prototype.slice;
+	var isArgs = __webpack_require__(18);
+	var isEnumerable = Object.prototype.propertyIsEnumerable;
+	var hasDontEnumBug = !isEnumerable.call({ toString: null }, 'toString');
+	var hasProtoEnumBug = isEnumerable.call(function () {}, 'prototype');
+	var dontEnums = [
+		'toString',
+		'toLocaleString',
+		'valueOf',
+		'hasOwnProperty',
+		'isPrototypeOf',
+		'propertyIsEnumerable',
+		'constructor'
+	];
+	var equalsConstructorPrototype = function (o) {
+		var ctor = o.constructor;
+		return ctor && ctor.prototype === o;
+	};
+	var excludedKeys = {
+		$console: true,
+		$external: true,
+		$frame: true,
+		$frameElement: true,
+		$frames: true,
+		$innerHeight: true,
+		$innerWidth: true,
+		$outerHeight: true,
+		$outerWidth: true,
+		$pageXOffset: true,
+		$pageYOffset: true,
+		$parent: true,
+		$scrollLeft: true,
+		$scrollTop: true,
+		$scrollX: true,
+		$scrollY: true,
+		$self: true,
+		$webkitIndexedDB: true,
+		$webkitStorageInfo: true,
+		$window: true
+	};
+	var hasAutomationEqualityBug = (function () {
+		/* global window */
+		if (typeof window === 'undefined') { return false; }
+		for (var k in window) {
+			try {
+				if (!excludedKeys['$' + k] && has.call(window, k) && window[k] !== null && typeof window[k] === 'object') {
+					try {
+						equalsConstructorPrototype(window[k]);
+					} catch (e) {
+						return true;
+					}
+				}
+			} catch (e) {
+				return true;
+			}
+		}
+		return false;
+	}());
+	var equalsConstructorPrototypeIfNotBuggy = function (o) {
+		/* global window */
+		if (typeof window === 'undefined' || !hasAutomationEqualityBug) {
+			return equalsConstructorPrototype(o);
+		}
+		try {
+			return equalsConstructorPrototype(o);
+		} catch (e) {
+			return false;
+		}
+	};
+
+	var keysShim = function keys(object) {
+		var isObject = object !== null && typeof object === 'object';
+		var isFunction = toStr.call(object) === '[object Function]';
+		var isArguments = isArgs(object);
+		var isString = isObject && toStr.call(object) === '[object String]';
+		var theKeys = [];
+
+		if (!isObject && !isFunction && !isArguments) {
+			throw new TypeError('Object.keys called on a non-object');
+		}
+
+		var skipProto = hasProtoEnumBug && isFunction;
+		if (isString && object.length > 0 && !has.call(object, 0)) {
+			for (var i = 0; i < object.length; ++i) {
+				theKeys.push(String(i));
+			}
+		}
+
+		if (isArguments && object.length > 0) {
+			for (var j = 0; j < object.length; ++j) {
+				theKeys.push(String(j));
+			}
+		} else {
+			for (var name in object) {
+				if (!(skipProto && name === 'prototype') && has.call(object, name)) {
+					theKeys.push(String(name));
+				}
+			}
+		}
+
+		if (hasDontEnumBug) {
+			var skipConstructor = equalsConstructorPrototypeIfNotBuggy(object);
+
+			for (var k = 0; k < dontEnums.length; ++k) {
+				if (!(skipConstructor && dontEnums[k] === 'constructor') && has.call(object, dontEnums[k])) {
+					theKeys.push(dontEnums[k]);
+				}
+			}
+		}
+		return theKeys;
+	};
+
+	keysShim.shim = function shimObjectKeys() {
+		if (Object.keys) {
+			var keysWorksWithArguments = (function () {
+				// Safari 5.0 bug
+				return (Object.keys(arguments) || '').length === 2;
+			}(1, 2));
+			if (!keysWorksWithArguments) {
+				var originalKeys = Object.keys;
+				Object.keys = function keys(object) {
+					if (isArgs(object)) {
+						return originalKeys(slice.call(object));
+					} else {
+						return originalKeys(object);
+					}
+				};
+			}
+		} else {
+			Object.keys = keysShim;
+		}
+		return Object.keys || keysShim;
+	};
+
+	module.exports = keysShim;
+
+
+/***/ },
+/* 18 */
+/***/ function(module, exports) {
+
+	
+
+	var toStr = Object.prototype.toString;
+
+	module.exports = function isArguments(value) {
+		var str = toStr.call(value);
+		var isArgs = str === '[object Arguments]';
+		if (!isArgs) {
+			isArgs = str !== '[object Array]' &&
+				value !== null &&
+				typeof value === 'object' &&
+				typeof value.length === 'number' &&
+				value.length >= 0 &&
+				toStr.call(value.callee) === '[object Function]';
+		}
+		return isArgs;
+	};
+
+
+/***/ },
+/* 19 */
 /***/ function(module, exports) {
 
 	var toString = {}.toString;
@@ -2788,7 +3105,7 @@ module.exports =
 
 
 /***/ },
-/* 14 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var foreach = __webpack_require__(11);
@@ -2803,42 +3120,7 @@ module.exports =
 
 
 /***/ },
-/* 15 */
-/***/ function(module, exports) {
-
-	module.exports = function deprecate(fn, message) {
-	  var warned = false;
-
-	  function deprecated() {
-	    if (!warned) {
-	      /* eslint no-console:0 */
-	      console.log(message);
-	      warned = true;
-	    }
-
-	    return fn.apply(this, arguments);
-	  }
-
-	  return deprecated;
-	};
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports) {
-
-	module.exports = function deprecatedMessage(previousUsage, newUsage) {
-	  var githubAnchorLink = previousUsage.toLowerCase()
-	    .replace('.', '')
-	    .replace('()', '');
-
-	  return 'algoliasearch: `' + previousUsage + '` was replaced by `' + newUsage +
-	    '`. Please see https://github.com/algolia/algoliasearch-client-js/wiki/Deprecated#' + githubAnchorLink;
-	};
-
-
-/***/ },
-/* 17 */
+/* 21 */
 /***/ function(module, exports) {
 
 	// Parse cloud does not supports setTimeout
@@ -2851,16 +3133,7 @@ module.exports =
 
 
 /***/ },
-/* 18 */
-/***/ function(module, exports) {
-
-	module.exports = function clone(obj) {
-	  return JSON.parse(JSON.stringify(obj));
-	};
-
-
-/***/ },
-/* 19 */
+/* 22 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
@@ -2870,7 +3143,7 @@ module.exports =
 	module.exports = IndexBrowser;
 
 	var inherits = __webpack_require__(4);
-	var EventEmitter = __webpack_require__(20).EventEmitter;
+	var EventEmitter = __webpack_require__(23).EventEmitter;
 
 	function IndexBrowser() {
 	}
@@ -2905,23 +3178,29 @@ module.exports =
 
 
 /***/ },
-/* 20 */
+/* 23 */
 /***/ function(module, exports) {
 
 	module.exports = require("events");
 
 /***/ },
-/* 21 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	module.exports = AlgoliaSearchCore;
 
 	var errors = __webpack_require__(10);
-	var exitPromise = __webpack_require__(17);
+	var exitPromise = __webpack_require__(21);
 	var IndexCore = __webpack_require__(8);
+	var store = __webpack_require__(25);
 
-	// We will always put the API KEY in the JSON body in case of too long API KEY
+	// We will always put the API KEY in the JSON body in case of too long API KEY,
+	// to avoid query string being too long and failing in various conditions (our server limit, browser limit,
+	// proxies limit)
 	var MAX_API_KEY_LENGTH = 500;
+	var RESET_APP_DATA_TIMER =
+	  process.env.RESET_APP_DATA_TIMER && parseInt(process.env.RESET_APP_DATA_TIMER, 10) ||
+	  60 * 2 * 1000; // after 2 minutes reset to first host
 
 	/*
 	 * Algolia Search library initialization
@@ -2951,9 +3230,9 @@ module.exports =
 	function AlgoliaSearchCore(applicationID, apiKey, opts) {
 	  var debug = __webpack_require__(1)('algoliasearch');
 
-	  var clone = __webpack_require__(18);
-	  var isArray = __webpack_require__(13);
-	  var map = __webpack_require__(14);
+	  var clone = __webpack_require__(15);
+	  var isArray = __webpack_require__(19);
+	  var map = __webpack_require__(20);
 
 	  var usage = 'Usage: algoliasearch(applicationID, apiKey, opts)';
 
@@ -2968,25 +3247,24 @@ module.exports =
 	  this.applicationID = applicationID;
 	  this.apiKey = apiKey;
 
-	  var defaultHosts = shuffle([
-	    this.applicationID + '-1.algolianet.com',
-	    this.applicationID + '-2.algolianet.com',
-	    this.applicationID + '-3.algolianet.com'
-	  ]);
 	  this.hosts = {
 	    read: [],
 	    write: []
 	  };
 
-	  this.hostIndex = {
-	    read: 0,
-	    write: 0
-	  };
-
 	  opts = opts || {};
 
 	  var protocol = opts.protocol || 'https:';
-	  var timeout = opts.timeout === undefined ? 2000 : opts.timeout;
+	  this._timeouts = opts.timeouts || {
+	    connect: 1 * 1000, // 500ms connect is GPRS latency
+	    read: 2 * 1000,
+	    write: 30 * 1000
+	  };
+
+	  // backward compat, if opts.timeout is passed, we use it to configure all timeouts like before
+	  if (opts.timeout) {
+	    this._timeouts.connect = this._timeouts.read = this._timeouts.write = opts.timeout;
+	  }
 
 	  // while we advocate for colon-at-the-end values: 'http:' for `opts.protocol`
 	  // we also accept `http` and `https`. It's a common error.
@@ -2998,11 +3276,19 @@ module.exports =
 	    throw new errors.AlgoliaSearchError('protocol must be `http:` or `https:` (was `' + opts.protocol + '`)');
 	  }
 
-	  // no hosts given, add defaults
+	  this._checkAppIdData();
+
 	  if (!opts.hosts) {
+	    var defaultHosts = map(this._shuffleResult, function(hostNumber) {
+	      return applicationID + '-' + hostNumber + '.algolianet.com';
+	    });
+
+	    // no hosts given, compute defaults
 	    this.hosts.read = [this.applicationID + '-dsn.algolia.net'].concat(defaultHosts);
 	    this.hosts.write = [this.applicationID + '.algolia.net'].concat(defaultHosts);
 	  } else if (isArray(opts.hosts)) {
+	    // when passing custom hosts, we need to have a different host index if the number
+	    // of write/read hosts are different.
 	    this.hosts.read = clone(opts.hosts);
 	    this.hosts.write = clone(opts.hosts);
 	  } else {
@@ -3013,7 +3299,6 @@ module.exports =
 	  // add protocol and lowercase hosts
 	  this.hosts.read = map(this.hosts.read, prepareHost(protocol));
 	  this.hosts.write = map(this.hosts.write, prepareHost(protocol));
-	  this.requestTimeout = timeout;
 
 	  this.extraHeaders = [];
 
@@ -3058,13 +3343,17 @@ module.exports =
 	* @param algoliaAgent the agent to add
 	*/
 	AlgoliaSearchCore.prototype.addAlgoliaAgent = function(algoliaAgent) {
-	  this._ua += ';' + algoliaAgent;
+	  if (this._ua.indexOf(';' + algoliaAgent) === -1) {
+	    this._ua += ';' + algoliaAgent;
+	  }
 	};
 
 	/*
 	 * Wrapper that try all hosts to maximize the quality of service
 	 */
 	AlgoliaSearchCore.prototype._jsonRequest = function(initialOpts) {
+	  this._checkAppIdData();
+
 	  var requestDebug = __webpack_require__(1)('algoliasearch:' + initialOpts.url);
 
 	  var body;
@@ -3075,7 +3364,12 @@ module.exports =
 	  var hasFallback = client._useFallback && client._request.fallback && initialOpts.fallback;
 	  var headers;
 
-	  if (this.apiKey.length > MAX_API_KEY_LENGTH && initialOpts.body !== undefined && initialOpts.body.params !== undefined) {
+	  if (
+	    this.apiKey.length > MAX_API_KEY_LENGTH &&
+	    initialOpts.body !== undefined &&
+	    (initialOpts.body.params !== undefined || // index.search()
+	    initialOpts.body.requests !== undefined) // client.search()
+	  ) {
 	    initialOpts.body.apiKey = this.apiKey;
 	    headers = this._computeRequestHeaders(false);
 	  } else {
@@ -3090,6 +3384,8 @@ module.exports =
 	  var debugData = [];
 
 	  function doRequest(requester, reqOpts) {
+	    client._checkAppIdData();
+
 	    var startTime = new Date();
 	    var cacheID;
 
@@ -3136,13 +3432,13 @@ module.exports =
 	      // re-compute headers, they could be omitting the API KEY
 	      headers = client._computeRequestHeaders();
 
-	      reqOpts.timeout = client.requestTimeout * (tries + 1);
-	      client.hostIndex[initialOpts.hostType] = 0;
+	      reqOpts.timeouts = client._getTimeoutsForRequest(initialOpts.hostType);
+	      client._setHostIndexByType(0, initialOpts.hostType);
 	      usingFallback = true; // the current request is now using fallback
 	      return doRequest(client._request.fallback, reqOpts);
 	    }
 
-	    var currentHost = client.hosts[initialOpts.hostType][client.hostIndex[initialOpts.hostType]];
+	    var currentHost = client._getHostByType(initialOpts.hostType);
 
 	    var url = currentHost + reqOpts.url;
 	    var options = {
@@ -3150,12 +3446,12 @@ module.exports =
 	      jsonBody: reqOpts.jsonBody,
 	      method: reqOpts.method,
 	      headers: headers,
-	      timeout: reqOpts.timeout,
+	      timeouts: reqOpts.timeouts,
 	      debug: requestDebug
 	    };
 
-	    requestDebug('method: %s, url: %s, headers: %j, timeout: %d',
-	      options.method, url, options.headers, options.timeout);
+	    requestDebug('method: %s, url: %s, headers: %j, timeouts: %d',
+	      options.method, url, options.headers, options.timeouts);
 
 	    if (requester === client._request.fallback) {
 	      requestDebug('using fallback');
@@ -3198,7 +3494,7 @@ module.exports =
 	        content: body || null,
 	        contentLength: body !== undefined ? body.length : null,
 	        method: reqOpts.method,
-	        timeout: reqOpts.timeout,
+	        timeouts: reqOpts.timeouts,
 	        url: reqOpts.url,
 	        startTime: startTime,
 	        endTime: endTime,
@@ -3251,7 +3547,7 @@ module.exports =
 	        content: body || null,
 	        contentLength: body !== undefined ? body.length : null,
 	        method: reqOpts.method,
-	        timeout: reqOpts.timeout,
+	        timeouts: reqOpts.timeouts,
 	        url: reqOpts.url,
 	        startTime: startTime,
 	        endTime: endTime,
@@ -3291,14 +3587,15 @@ module.exports =
 
 	    function retryRequest() {
 	      requestDebug('retrying request');
-	      client.hostIndex[initialOpts.hostType] = (client.hostIndex[initialOpts.hostType] + 1) % client.hosts[initialOpts.hostType].length;
+	      client._incrementHostIndex(initialOpts.hostType);
 	      return doRequest(requester, reqOpts);
 	    }
 
 	    function retryRequestWithHigherTimeout() {
 	      requestDebug('retrying request with higher timeout');
-	      client.hostIndex[initialOpts.hostType] = (client.hostIndex[initialOpts.hostType] + 1) % client.hosts[initialOpts.hostType].length;
-	      reqOpts.timeout = client.requestTimeout * (tries + 1);
+	      client._incrementHostIndex(initialOpts.hostType);
+	      client._incrementTimeoutMultipler();
+	      reqOpts.timeouts = client._getTimeoutsForRequest(initialOpts.hostType);
 	      return doRequest(requester, reqOpts);
 	    }
 	  }
@@ -3309,7 +3606,7 @@ module.exports =
 	      method: initialOpts.method,
 	      body: body,
 	      jsonBody: initialOpts.body,
-	      timeout: client.requestTimeout * (tries + 1)
+	      timeouts: client._getTimeoutsForRequest(initialOpts.hostType)
 	    }
 	  );
 
@@ -3389,8 +3686,8 @@ module.exports =
 	 * @return {Promise|undefined} Returns a promise if no callback given
 	 */
 	AlgoliaSearchCore.prototype.search = function(queries, opts, callback) {
-	  var isArray = __webpack_require__(13);
-	  var map = __webpack_require__(14);
+	  var isArray = __webpack_require__(19);
+	  var map = __webpack_require__(20);
 
 	  var usage = 'Usage: client.search(arrayOfQueries[, callback])';
 
@@ -3498,13 +3795,113 @@ module.exports =
 
 	/**
 	* Set the number of milliseconds a request can take before automatically being terminated.
-	*
+	* @deprecated
 	* @param {Number} milliseconds
 	*/
 	AlgoliaSearchCore.prototype.setRequestTimeout = function(milliseconds) {
 	  if (milliseconds) {
-	    this.requestTimeout = parseInt(milliseconds, 10);
+	    this._timeouts.connect = this._timeouts.read = this._timeouts.write = milliseconds;
 	  }
+	};
+
+	/**
+	* Set the three different (connect, read, write) timeouts to be used when requesting
+	* @param {Object} timeouts
+	*/
+	AlgoliaSearchCore.prototype.setTimeouts = function(timeouts) {
+	  this._timeouts = timeouts;
+	};
+
+	/**
+	* Get the three different (connect, read, write) timeouts to be used when requesting
+	* @param {Object} timeouts
+	*/
+	AlgoliaSearchCore.prototype.getTimeouts = function() {
+	  return this._timeouts;
+	};
+
+	AlgoliaSearchCore.prototype._getAppIdData = function() {
+	  var data = store.get(this.applicationID);
+	  if (data !== null) this._cacheAppIdData(data);
+	  return data;
+	};
+
+	AlgoliaSearchCore.prototype._setAppIdData = function(data) {
+	  data.lastChange = (new Date()).getTime();
+	  this._cacheAppIdData(data);
+	  return store.set(this.applicationID, data);
+	};
+
+	AlgoliaSearchCore.prototype._checkAppIdData = function() {
+	  var data = this._getAppIdData();
+	  var now = (new Date()).getTime();
+	  if (data === null || now - data.lastChange > RESET_APP_DATA_TIMER) {
+	    return this._resetInitialAppIdData(data);
+	  }
+
+	  return data;
+	};
+
+	AlgoliaSearchCore.prototype._resetInitialAppIdData = function(data) {
+	  var newData = data || {};
+	  newData.hostIndexes = {read: 0, write: 0};
+	  newData.timeoutMultiplier = 1;
+	  newData.shuffleResult = newData.shuffleResult || shuffle([1, 2, 3]);
+	  return this._setAppIdData(newData);
+	};
+
+	AlgoliaSearchCore.prototype._cacheAppIdData = function(data) {
+	  this._hostIndexes = data.hostIndexes;
+	  this._timeoutMultiplier = data.timeoutMultiplier;
+	  this._shuffleResult = data.shuffleResult;
+	};
+
+	AlgoliaSearchCore.prototype._partialAppIdDataUpdate = function(newData) {
+	  var foreach = __webpack_require__(11);
+	  var currentData = this._getAppIdData();
+	  foreach(newData, function(value, key) {
+	    currentData[key] = value;
+	  });
+
+	  return this._setAppIdData(currentData);
+	};
+
+	AlgoliaSearchCore.prototype._getHostByType = function(hostType) {
+	  return this.hosts[hostType][this._getHostIndexByType(hostType)];
+	};
+
+	AlgoliaSearchCore.prototype._getTimeoutMultiplier = function() {
+	  return this._timeoutMultiplier;
+	};
+
+	AlgoliaSearchCore.prototype._getHostIndexByType = function(hostType) {
+	  return this._hostIndexes[hostType];
+	};
+
+	AlgoliaSearchCore.prototype._setHostIndexByType = function(hostIndex, hostType) {
+	  var clone = __webpack_require__(15);
+	  var newHostIndexes = clone(this._hostIndexes);
+	  newHostIndexes[hostType] = hostIndex;
+	  this._partialAppIdDataUpdate({hostIndexes: newHostIndexes});
+	  return hostIndex;
+	};
+
+	AlgoliaSearchCore.prototype._incrementHostIndex = function(hostType) {
+	  return this._setHostIndexByType(
+	    (this._getHostIndexByType(hostType) + 1) % this.hosts[hostType].length, hostType
+	  );
+	};
+
+	AlgoliaSearchCore.prototype._incrementTimeoutMultipler = function() {
+	  var timeoutMultiplier = Math.max(this._timeoutMultiplier + 1, 4);
+	  return this._partialAppIdDataUpdate({timeoutMultiplier: timeoutMultiplier});
+	};
+
+	AlgoliaSearchCore.prototype._getTimeoutsForRequest = function(hostType) {
+	  return {
+	    connect: this._timeouts.connect * this._timeoutMultiplier,
+	    complete: this._timeouts[hostType] * this._timeoutMultiplier
+	  };
 	};
 
 	function prepareHost(protocol) {
@@ -3577,12 +3974,92 @@ module.exports =
 
 
 /***/ },
-/* 22 */
+/* 25 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var debug = __webpack_require__(1)('algoliasearch:src/hostIndexState.js');
+	var localStorageNamespace = 'algoliasearch-client-js';
+
+	var store;
+	var moduleStore = {
+	  state: {},
+	  set: function(key, data) {
+	    this.state[key] = data;
+	    return this.state[key];
+	  },
+	  get: function(key) {
+	    return this.state[key] || null;
+	  }
+	};
+
+	var localStorageStore = {
+	  set: function(key, data) {
+	    try {
+	      var namespace = JSON.parse(global.localStorage[localStorageNamespace]);
+	      namespace[key] = data;
+	      global.localStorage[localStorageNamespace] = JSON.stringify(namespace);
+	      return namespace[key];
+	    } catch (e) {
+	      debug('localStorage set failed with', e);
+	      cleanup();
+	      store = moduleStore;
+	      return store.set(key, data);
+	    }
+	  },
+	  get: function(key) {
+	    return JSON.parse(global.localStorage[localStorageNamespace])[key] || null;
+	  }
+	};
+
+	store = supportsLocalStorage() ? localStorageStore : moduleStore;
+
+	module.exports = {
+	  get: getOrSet,
+	  set: getOrSet
+	};
+
+	function getOrSet(key, data) {
+	  if (arguments.length === 1) {
+	    return store.get(key);
+	  }
+
+	  return store.set(key, data);
+	}
+
+	function supportsLocalStorage() {
+	  try {
+	    if ('localStorage' in global &&
+	      global.localStorage !== null &&
+	      !global.localStorage[localStorageNamespace]) {
+	      // actual creation of the namespace
+	      global.localStorage.setItem(localStorageNamespace, JSON.stringify({}));
+	      return true;
+	    }
+
+	    return false;
+	  } catch (_) {
+	    return false;
+	  }
+	}
+
+	// In case of any error on localStorage, we clean our own namespace, this should handle
+	// quota errors when a lot of keys + data are used
+	function cleanup() {
+	  try {
+	    global.localStorage.removeItem(localStorageNamespace);
+	  } catch (_) {
+	    // nothing to do
+	  }
+	}
+
+
+/***/ },
+/* 26 */
 /***/ function(module, exports) {
 
 	
 
-	module.exports = '3.18.0';
+	module.exports = '3.20.3';
 
 
 /***/ }

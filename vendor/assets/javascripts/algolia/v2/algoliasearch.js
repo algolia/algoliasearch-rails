@@ -21,7 +21,7 @@
  * THE SOFTWARE.
  */
 
-var ALGOLIA_VERSION = '2.9.4';
+var ALGOLIA_VERSION = '2.9.7';
 
 /*
  * Copyright (c) 2013 Algolia
@@ -106,9 +106,9 @@ var AlgoliaSearch = function(applicationID, apiKey, methodOrOptions, resolveDNS,
   // If hosts is undefined, initialize it with applicationID
   if (this._isUndefined(hosts)) {
     hosts = [
-      this.applicationID + '-1.algolia.' + tld,
-      this.applicationID + '-2.algolia.' + tld,
-      this.applicationID + '-3.algolia.' + tld
+      this.applicationID + '-1.algolianet.com',
+      this.applicationID + '-2.algolianet.com',
+      this.applicationID + '-3.algolianet.com'
     ];
   }
   // detect is we use http or https
@@ -118,15 +118,9 @@ var AlgoliaSearch = function(applicationID, apiKey, methodOrOptions, resolveDNS,
   } else if (method === 'https' || method === 'HTTPS') {
     this.host_protocol = 'https://';
   }
-  // Add hosts in random order
+  // Add protocol to hosts
   for (var i = 0; i < hosts.length; ++i) {
-    if (Math.random() > 0.5) {
-      this.hosts.reverse();
-    }
     this.hosts.push(this.host_protocol + hosts[i]);
-  }
-  if (Math.random() > 0.5) {
-    this.hosts.reverse();
   }
   // then add Distributed Search Network host if there is one
   if (this.dsn || this.dsnHost != null) {
@@ -143,6 +137,8 @@ var AlgoliaSearch = function(applicationID, apiKey, methodOrOptions, resolveDNS,
       self.options.angular.$http = $http;
     }]);
   }
+
+  this._ua = this.options._ua || 'Algolia for vanilla JavaScript ' + window.ALGOLIA_VERSION;
 };
 
 // This holds the number of JSONP requests done accross clients
@@ -595,6 +591,7 @@ AlgoliaSearch.prototype = {
 
     opts.successiveRetryCount = 0;
     var impl = function() {
+
       if (opts.successiveRetryCount >= self.hosts.length) {
         var error = { message: 'Cannot connect the Algolia\'s Search API. Please send an email to support@algolia.com to report the issue.' };
         if (!self._isUndefined(callback) && callback) {
@@ -665,6 +662,7 @@ AlgoliaSearch.prototype = {
     if (this.tagFilters) {
       url += '&X-Algolia-TagFilters=' + encodeURIComponent(this.tagFilters);
     }
+    url += '&X-Algolia-Agent=' + encodeURIComponent(this._ua);
     for (var i = 0; i < this.extraHeaders.length; ++i) {
       url += '&' + this.extraHeaders[i].key + '=' + this.extraHeaders[i].value;
     }
@@ -711,6 +709,7 @@ AlgoliaSearch.prototype = {
     if (this.tagFilters) {
       url += '&X-Algolia-TagFilters=' + encodeURIComponent(this.tagFilters);
     }
+    url += '&X-Algolia-Agent=' + encodeURIComponent(this._ua);
     for (var i = 0; i < this.extraHeaders.length; ++i) {
       url += '&' + this.extraHeaders[i].key + '=' + this.extraHeaders[i].value;
     }
@@ -786,6 +785,8 @@ AlgoliaSearch.prototype = {
       url += '&X-Algolia-UserToken=' + encodeURIComponent(this.userToken);
     }
 
+    url += '&X-Algolia-Agent=' + encodeURIComponent(this._ua);
+
     for (var i = 0; i < this.extraHeaders.length; ++i) {
       url += '&' + this.extraHeaders[i].key + '=' + this.extraHeaders[i].value;
     }
@@ -799,7 +800,7 @@ AlgoliaSearch.prototype = {
       clean();
 
       opts.callback(true, false, { 'message': 'Timeout - Failed to load JSONP script.' });
-    }, this.requestTimeoutInMs);
+    }, this.requestTimeoutInMs * (opts.successiveRetryCount + 1));
 
     success = function() {
       if (done || timedOut) {
@@ -896,6 +897,8 @@ AlgoliaSearch.prototype = {
       url += '&X-Algolia-TagFilters=' + encodeURIComponent(this.tagFilters);
     }
 
+    url += '&X-Algolia-Agent=' + encodeURIComponent(this._ua);
+
     for (var i = 0; i < this.extraHeaders.length; ++i) {
       url += '&' + this.extraHeaders[i].key + '=' + this.extraHeaders[i].value;
     }
@@ -957,6 +960,13 @@ AlgoliaSearch.prototype = {
 
       opts.callback(retry, success, response);
     };
+
+    // we set an empty onprogress listener
+    // so that XDomainRequest on IE9 is not aborted
+    // refs:
+    //  - https://github.com/algolia/algoliasearch-client-js/issues/76
+    //  - https://social.msdn.microsoft.com/Forums/ie/en-US/30ef3add-767c-4436-b8a9-f1ca19b4812e/ie9-rtm-xdomainrequest-issued-requests-may-abort-if-all-event-handlers-not-specified?forum=iewebdevelopment
+    request.onprogress = function noop() {};
 
     if (this._support.timeout) {
       // .timeout supported by both XHR and XDR,
