@@ -178,11 +178,11 @@ class Product < ActiveRecord::Base
     # list of attribute used to build an Algolia record
     attributes :title, :subtitle, :description, :likes_count, :seller_name
 
-    # the attributesToIndex` setting defines the attributes
+    # the `searchableAttributes` (formerly known as attributesToIndex) setting defines the attributes
     # you want to search in: here `title`, `subtitle` & `description`.
     # You need to list them by order of importance. `description` is tagged as
     # `unordered` to avoid taking the position of a match into account in that attribute.
-    attributesToIndex ['title', 'subtitle', 'unordered(description)']
+    searchableAttributes ['title', 'subtitle', 'unordered(description)']
 
     # the `customRanking` setting defines the ranking criteria use to compare two matching
     # records in case their text-relevance is equal. It should reflect your record popularity.
@@ -655,7 +655,7 @@ class Item < ActiveRecord::Base
 
     # `title` is more important than `{story,comment}_text`, `{story,comment}_text` more than `url`, `url` more than `author`
     # btw, do not take into account position in most fields to avoid first word match boost
-    attributesToIndex ['unordered(title)', 'unordered(story_text)', 'unordered(comment_text)', 'unordered(url)', 'author']
+    searchableAttributes ['unordered(title)', 'unordered(story_text)', 'unordered(comment_text)', 'unordered(url)', 'author']
 
     # tags used for filtering
     tags do
@@ -770,16 +770,16 @@ class Book < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch per_environment: true do
-    attributesToIndex [:name, :author, :editor]
+    searchableAttributes [:name, :author, :editor]
 
     # define a replica index to search by `author` only
     add_replica 'Book_by_author', per_environment: true do
-      attributesToIndex [:author]
+      searchableAttributes [:author]
     end
 
     # define a replica index to search by `editor` only
     add_replica 'Book_by_editor', per_environment: true do
-      attributesToIndex [:editor]
+      searchableAttributes [:editor]
     end
   end
 
@@ -847,7 +847,7 @@ class Book < ActiveRecord::Base
 
   # store all books in index 'SECURED_INDEX_NAME'
   algoliasearch index_name: SECURED_INDEX_NAME do
-    attributesToIndex [:name, :author]
+    searchableAttributes [:name, :author]
     # convert security to tags
     tags do
       [released ? 'public' : 'private', premium ? 'premium' : 'standard']
@@ -855,7 +855,7 @@ class Book < ActiveRecord::Base
 
     # store all 'public' (released and not premium) books in index 'PUBLIC_INDEX_NAME'
     add_index PUBLIC_INDEX_NAME, if: :public? do
-      attributesToIndex [:name, :author]
+      searchableAttributes [:name, :author]
     end
   end
 
