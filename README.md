@@ -759,6 +759,7 @@ index = Contact.index
 # Indexes
 
 
+
 ## Primary/replica
 
 You can define replica indices using the <code>add_replica</code> method:
