@@ -762,7 +762,7 @@ index = Contact.index
 
 ## Primary/replica
 
-You can define replica indices using the <code>add_replica</code> method:
+You can define replica indices using the <code>add_slave</code> method:
 
 ```ruby
 class Book < ActiveRecord::Base
@@ -774,12 +774,12 @@ class Book < ActiveRecord::Base
     searchableAttributes [:name, :author, :editor]
 
     # define a replica index to search by `author` only
-    add_replica 'Book_by_author', per_environment: true do
+    add_slave 'Book_by_author', per_environment: true do
       searchableAttributes [:author]
     end
 
     # define a replica index to search by `editor` only
-    add_replica 'Book_by_editor', per_environment: true do
+    add_slave 'Book_by_editor', per_environment: true do
       searchableAttributes [:editor]
     end
   end
