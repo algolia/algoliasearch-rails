@@ -19,56 +19,51 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 
 1. [Install](#install)
 1. [Configuration](#configuration)
+1. [Timeouts](#timeouts)
+1. [Notes](#notes)
 
-**Quick Start**
+**Usage**
 
-1. [Schema](#schema)
+1. [Index Schema](#index-schema)
 1. [Relevancy](#relevancy)
 1. [Indexing](#indexing)
 1. [Frontend Search (realtime experience)](#frontend-search-realtime-experience)
 1. [Backend Search](#backend-search)
 1. [Backend Pagination](#backend-pagination)
-1. [Notes](#notes)
+1. [Tags](#tags)
+1. [Faceting](#faceting)
+1. [Faceted search](#faceted-search)
+1. [Group by](#group-by)
+1. [Geo-Search](#geo-search)
 
 **Options**
 
 1. [Auto-indexing &amp; asynchronism](#auto-indexing--asynchronism)
-1. [Exceptions](#exceptions)
 1. [Custom index name](#custom-index-name)
-1. [Per-environment indexes](#per-environment-indexes)
+1. [Per-environment indices](#per-environment-indices)
 1. [Custom attribute definition](#custom-attribute-definition)
 1. [Nested objects/relations](#nested-objectsrelations)
 1. [Custom `objectID`](#custom-objectid)
 1. [Restrict indexing to a subset of your data](#restrict-indexing-to-a-subset-of-your-data)
 1. [Sanitizer](#sanitizer)
 1. [UTF-8 Encoding](#utf-8-encoding)
+1. [Exceptions](#exceptions)
 1. [Configuration example](#configuration-example)
 
-**Indexing**
+**Indices**
 
 1. [Manual indexing](#manual-indexing)
 1. [Manual removal](#manual-removal)
 1. [Reindexing](#reindexing)
 1. [Clearing an index](#clearing-an-index)
 1. [Using the underlying index](#using-the-underlying-index)
-
-**Indexes**
-
 1. [Primary/replica](#primaryreplica)
 1. [Share a single index](#share-a-single-index)
-1. [Target multiple indexes](#target-multiple-indexes)
+1. [Target multiple indices](#target-multiple-indices)
 
-**Features**
+**Testing**
 
-1. [Tags](#tags)
-1. [Search](#search)
-1. [Faceting](#faceting)
-1. [Facet search](#facet-search)
-1. [Group by](#group-by)
-1. [Geo-Search](#geo-search)
-1. [Caveats](#caveats)
-1. [Timeouts](#timeouts)
-1. [Note on testing](#note-on-testing)
+1. [Notes](#notes)
 
 
 # Guides & Tutorials
@@ -121,12 +116,40 @@ AlgoliaSearch.configuration = { application_id: 'YourApplicationID', api_key: 'Y
 
 The gem is compatible with [ActiveRecord](https://github.com/rails/rails/tree/master/activerecord), [Mongoid](https://github.com/mongoid/mongoid) and [Sequel](https://github.com/jeremyevans/sequel).
 
+## Timeouts
 
-# Quick Start
+You can configure a various timeout thresholds by setting the following options at initialization time:
+
+```ruby
+AlgoliaSearch.configuration = {
+  application_id: 'YourApplicationID',
+  api_key: 'YourAPIKey'
+  connect_timeout: 2,
+  receive_timeout: 30,
+  send_timeout: 30,
+  batch_timeout: 120,
+  search_timeout: 5
+}
+```
+
+## Notes
+
+This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing `after_validation`, `before_save` or `after_commit` callbacks, it will not index your changes. For example: `update_attribute` doesn't perform validations checks, to perform validations when updating use `update_attributes`.
+
+All methods injected by the `AlgoliaSearch` module are prefixed by `algolia_` and aliased to the associated short names if they aren't already defined.
+
+```ruby
+Contact.algolia_reindex! # <=> Contact.reindex!
+
+Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
+```
+
+
+# Usage
 
 
 
-## Schema
+## Index Schema
 
 The following code will create a <code>Contact</code> index and add search capabilities to your <code>Contact</code> model:
 
@@ -243,16 +266,51 @@ index.search('something', { hitsPerPage: 10, page: 0 })
 
 ## Backend Search
 
-If you want to search from your backend you can use the `raw_search` method. It retrieves the raw JSON answer from the API:
+***Notes:*** We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-javascript) to perform queries directly from the end-user browser without going through your server.
+
+A search returns ORM-compliant objects reloading them from your database. We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-javascript) to perform queries to decrease the overall latency and offload your servers.
 
 ```ruby
-p Contact.raw_search("jon doe")
+hits =  Contact.search("jon doe")
+p hits
+p hits.raw_answer # to get the original JSON raw answer
 ```
 
-You could also use `search` but it's not recommended. This method will fetch the matching `objectIDs` from the API and perform a database query to retrieve an array of matching models:
+A `highlight_result` attribute is added to each ORM object:
 
 ```ruby
-p Contact.search("jon doe") # we recommend to use `raw_search` to avoid the database lookup
+hits[0].highlight_result['first_name']['value']
+```
+
+If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
+
+```ruby
+json_answer = Contact.raw_search("jon doe")
+p json_answer
+p json_answer['hits']
+p json_answer['facets']
+```
+
+Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings-parameters) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the `search` method:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    attribute :first_name, :last_name, :email
+
+    # default search parameters stored in the index settings
+    minWordSizeForApprox1 4
+    minWordSizeForApprox2 8
+    hitsPerPage 42
+  end
+end
+```
+
+```ruby
+# dynamical search parameters
+p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
 ```
 
 ## Backend Pagination
@@ -279,15 +337,119 @@ Then, as soon as you use the `search` method, the returning results will be a pa
 <%= paginate @results %>
 ```
 
-## Notes
+## Tags
 
-All methods injected by the `AlgoliaSearch` include are prefixed by `algolia_` and aliased to the associated short names if they aren't already defined.
+Use the <code>tags</code> method to add tags to your record:
 
 ```ruby
-Contact.algolia_reindex! # <=> Contact.reindex!
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
 
-Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
+  algoliasearch do
+    tags ['trusted']
+  end
+end
 ```
+
+or using dynamical values:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    tags do
+      [first_name.blank? || last_name.blank? ? 'partial' : 'full', has_valid_email? ? 'valid_email' : 'invalid_email']
+    end
+  end
+end
+```
+
+At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
+
+## Faceting
+
+Facets can be retrieved calling the extra `facets` method of the search answer.
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # [...]
+
+    # specify the list of attributes available for faceting
+    attributesForFaceting [:company, :zip_code]
+  end
+end
+```
+
+```ruby
+hits = Contact.search("jon doe", { :facets => '*' })
+p hits                    # ORM-compliant array of objects
+p hits.facets             # extra method added to retrieve facets
+p hits.facets['company']  # facet values+count of facet 'company'
+p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
+```
+
+```ruby
+raw_json = Contact.raw_search("jon doe", { :facets => '*' })
+p raw_json['facets']
+```
+
+## Faceted search
+
+You can also search for facet values.
+
+```ruby
+Product.search_for_facet_values('category', 'Headphones') # Array of {value, highlighted, count}
+```
+
+This method can also take any parameter a query can take.
+This will adjust the search to only hits which would have matched the query.
+
+```ruby
+# Only sends back the categories containing red Apple products (and only counts those)
+Product.search_for_facet_values('category', 'phone', {
+  query: 'red',
+  filters: 'brand:Apple'
+}) # Array of phone categories linked to red Apple products
+```
+
+## Group by
+
+More info on distinct for grouping can be found
+[here](https://www.algolia.com/doc/guides/search/distinct#distinct-for-grouping).
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    # [...]
+
+    # specify the attribute to be used for distinguishing the records
+    # in this case the records will be grouped by company
+    attributeForDistinct "company"
+  end
+end
+```
+
+## Geo-Search
+
+Use the <code>geoloc</code> method to localize your record:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch do
+    geoloc :lat_attr, :lng_attr
+  end
+end
+```
+
+At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
 
 
 # Options
@@ -422,21 +584,6 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-## Exceptions
-
-You can disable exceptions that could be raised while trying to reach Algolia's API by using the `raise_on_failure` option:
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  # only raise exceptions in development env
-  algoliasearch raise_on_failure: Rails.env.development? do
-    attribute :first_name, :last_name, :email
-  end
-end
-```
-
 ## Custom index name
 
 By default, the index name will be the class name, e.g. "Contact". You can customize the index name by using the `index_name` option:
@@ -451,7 +598,7 @@ class Contact < ActiveRecord::Base
 end
 ```
 
-## Per-environment indexes
+## Per-environment indices
 
 You can suffix the index name with the current Rails environment using the following option:
 
@@ -639,6 +786,21 @@ end
 
 ***Notes:*** This option is not compatible with Ruby 1.8
 
+## Exceptions
+
+You can disable exceptions that could be raised while trying to reach Algolia's API by using the `raise_on_failure` option:
+
+```ruby
+class Contact < ActiveRecord::Base
+  include AlgoliaSearch
+
+  # only raise exceptions in development env
+  algoliasearch raise_on_failure: Rails.env.development? do
+    attribute :first_name, :last_name, :email
+  end
+end
+```
+
 ## Configuration example
 
 Here is a real-word configuration example (from [HN Search](https://github.com/algolia/hn-search)):
@@ -697,7 +859,7 @@ end
 ```
 
 
-# Indexing
+# Indices
 
 
 
@@ -725,7 +887,7 @@ The gem provides 2 ways to reindex all your objects:
 
 ### Atomical reindexing
 
-To reindex all your records (taking into account the deleted objects), the `reindex` class method indexes all your objects to a temporary index called `<INDEX_NAME>.tmp` and moves the temporary index to the final one once everything is indexed (atomically). This is the safest way to reindex all your content.
+To reindex all your records (taking into account the deleted objects), the `reindex` class method indices all your objects to a temporary index called `<INDEX_NAME>.tmp` and moves the temporary index to the final one once everything is indexed (atomically). This is the safest way to reindex all your content.
 
 ```ruby
 Contact.reindex
@@ -757,11 +919,6 @@ You can access the underlying `index` object by calling the `index` class method
 index = Contact.index
 # index.get_settings, index.partial_update_object, ...
 ```
-
-
-# Indexes
-
-
 
 ## Primary/replica
 
@@ -836,9 +993,9 @@ end
 
 ***Notes:*** If you target a single index from several models, you must never use `MyModel.reindex` and only use `MyModel.reindex!`. The `reindex` method uses a temporary index to perform an atomic reindexing: if you use it, the resulting index will only contain records for the current model because it will not reindex the others.
 
-## Target multiple indexes
+## Target multiple indices
 
-You can index a record in several indexes using the <code>add_index</code> method:
+You can index a record in several indices using the <code>add_index</code> method:
 
 ```ruby
 class Book < ActiveRecord::Base
@@ -880,194 +1037,11 @@ Book.search 'foo bar', index: 'Book_by_editor'
 ```
 
 
-# Features
+# Testing
 
 
 
-## Tags
-
-Use the <code>tags</code> method to add tags to your record:
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    tags ['trusted']
-  end
-end
-```
-
-or using dynamical values:
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    tags do
-      [first_name.blank? || last_name.blank? ? 'partial' : 'full', has_valid_email? ? 'valid_email' : 'invalid_email']
-    end
-  end
-end
-```
-
-At query time, specify <code>{ tagFilters: 'tagvalue' }</code> or <code>{ tagFilters: ['tagvalue1', 'tagvalue2'] }</code> as search parameters to restrict the result set to specific tags.
-
-## Search
-
-***Notes:*** We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-javascript) to perform queries directly from the end-user browser without going through your server.
-
-A search returns ORM-compliant objects reloading them from your database. We recommend the usage of our [JavaScript API Client](https://github.com/algolia/algoliasearch-client-javascript) to perform queries to decrease the overall latency and offload your servers.
-
-```ruby
-hits =  Contact.search("jon doe")
-p hits
-p hits.raw_answer # to get the original JSON raw answer
-```
-
-A `highlight_result` attribute is added to each ORM object:
-
-```ruby
-hits[0].highlight_result['first_name']['value']
-```
-
-If you want to retrieve the raw JSON answer from the API, without re-loading the objects from the database, you can use:
-
-```ruby
-json_answer = Contact.raw_search("jon doe")
-p json_answer
-p json_answer['hits']
-p json_answer['facets']
-```
-
-Search parameters can be specified either through the index's [settings](https://github.com/algolia/algoliasearch-client-ruby#index-settings-parameters) statically in your model or dynamically at search time specifying [search parameters](https://github.com/algolia/algoliasearch-client-ruby#search) as second argument of the `search` method:
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    attribute :first_name, :last_name, :email
-
-    # default search parameters stored in the index settings
-    minWordSizeForApprox1 4
-    minWordSizeForApprox2 8
-    hitsPerPage 42
-  end
-end
-```
-
-```ruby
-# dynamical search parameters
-p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
-```
-
-## Faceting
-
-Facets can be retrieved calling the extra `facets` method of the search answer.
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    # [...]
-
-    # specify the list of attributes available for faceting
-    attributesForFaceting [:company, :zip_code]
-  end
-end
-```
-
-```ruby
-hits = Contact.search("jon doe", { :facets => '*' })
-p hits                    # ORM-compliant array of objects
-p hits.facets             # extra method added to retrieve facets
-p hits.facets['company']  # facet values+count of facet 'company'
-p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
-```
-
-```ruby
-raw_json = Contact.raw_search("jon doe", { :facets => '*' })
-p raw_json['facets']
-```
-
-## Facet search
-
-You can also search for facet values.
-
-```ruby
-Product.search_for_facet_values('category', 'Headphones') # Array of {value, highlighted, count}
-```
-
-This method can also take any parameter a query can take.
-This will adjust the search to only hits which would have matched the query.
-
-```ruby
-# Only sends back the categories containing red Apple products (and only counts those)
-Product.search_for_facet_values('category', 'phone', {
-  query: 'red',
-  filters: 'brand:Apple'
-}) # Array of phone categories linked to red Apple products
-```
-
-## Group by
-
-More info on distinct for grouping can be found
-[here](https://www.algolia.com/doc/guides/search/distinct#distinct-for-grouping).
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    # [...]
-
-    # specify the attribute to be used for distinguishing the records
-    # in this case the records will be grouped by company
-    attributeForDistinct "company"
-  end
-end
-```
-
-## Geo-Search
-
-Use the <code>geoloc</code> method to localize your record:
-
-```ruby
-class Contact < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch do
-    geoloc :lat_attr, :lng_attr
-  end
-end
-```
-
-At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
-
-## Caveats
-
-This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing `after_validation`, `before_save` or `after_commit` callbacks, it will not index your changes. For example: `update_attribute` doesn't perform validations checks, to perform validations when updating use `update_attributes`.
-
-## Timeouts
-
-You can configure a bunch of timeout threshold by setting the following options at initialization time:
-
-```ruby
-AlgoliaSearch.configuration = {
-  application_id: 'YourApplicationID',
-  api_key: 'YourAPIKey'
-  connect_timeout: 2,
-  receive_timeout: 30,
-  send_timeout: 30,
-  batch_timeout: 120,
-  search_timeout: 5
-}
-```
-
-## Note on testing
+## Notes
 
 To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
 
