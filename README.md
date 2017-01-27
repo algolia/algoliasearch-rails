@@ -38,7 +38,7 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 
 **Options**
 
-1. [Auto-indexing &amp; asynchronism](#auto-indexing--asynchronism)
+1. [Auto-indexing & asynchronism](#auto-indexing--asynchronism)
 1. [Custom index name](#custom-index-name)
 1. [Per-environment indices](#per-environment-indices)
 1. [Custom attribute definition](#custom-attribute-definition)
