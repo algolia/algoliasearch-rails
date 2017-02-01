@@ -1,5 +1,9 @@
 CHANGELOG
 
+2017-01-05 1.17.1
+
+      * Add missing `disablePrefixOnAttributes` and `disableTypoToleranceOnAttributes` attributes (#193)
+
 2017-01-05 1.17.0
 
       * Do not enqueue indexing operations if the indexing is disabled
