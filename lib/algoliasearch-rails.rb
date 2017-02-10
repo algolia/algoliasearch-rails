@@ -308,7 +308,7 @@ module AlgoliaSearch
         begin
           @index.get_settings(*args)
         rescue Algolia::AlgoliaError => e
-          return {} if e.status == 404 # not fatal
+          return {} if e.code == 404 # not fatal
           raise e
         end
       end
