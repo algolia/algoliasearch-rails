@@ -909,8 +909,10 @@ describe "FowardToReplicas" do
       algoliasearch synchronous: true, index_name: safe_index_name('ForwardToReplicas') do
         attribute :name
         attributesToIndex %w(first_value)
+        attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica') do
+          attributesToHighlight %w(replica_highlight)
         end
       end
     end
@@ -927,8 +929,13 @@ describe "FowardToReplicas" do
     ForwardToReplicas.create(name: 'val')
     ForwardToReplicas.reindex!
 
-    expect(ForwardToReplicas.index.get_settings['attributesToIndex']).to eq(['first_value'])
-    expect(ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings['attributesToIndex']).to eq(nil)
+    primary_settings = ForwardToReplicas.index.get_settings
+    expect(primary_settings['attributesToIndex']).to eq(%w(first_value))
+    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
+
+    replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
+    expect(replica_settings['attributesToIndex']).to eq(nil)
+    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
   end
 
   it 'should update the replica settings when changed' do
@@ -940,8 +947,10 @@ describe "FowardToReplicas" do
       algoliasearch synchronous: true, forward_to_replicas: true, index_name: safe_index_name('ForwardToReplicas') do
         attribute :name
         attributesToIndex %w(second_value)
+        attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica') do
+          attributesToHighlight %w(replica_highlight)
         end
       end
     end
@@ -954,8 +963,13 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.create(name: 'val')
     ForwardToReplicasTwo.reindex!
 
-    expect(ForwardToReplicas.index.get_settings['attributesToIndex']).to eq(['second_value'])
-    expect(ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings['attributesToIndex']).to eq(['second_value'])
+    primary_settings = ForwardToReplicas.index.get_settings
+    expect(primary_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
+
+    replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
+    expect(replica_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
   end
