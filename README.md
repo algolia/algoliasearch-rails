@@ -912,7 +912,8 @@ index = Contact.index
 
 ## Primary/replica
 
-You can define replica indices using the <code>add_replica</code> method:
+You can define replica indices using the <code>add_replica</code> method.  
+Use `forward_to_replicas: true` on the primary block if you want the replicas to inherit from the primary settings.
 
 ```ruby
 class Book < ActiveRecord::Base
@@ -920,7 +921,7 @@ class Book < ActiveRecord::Base
 
   include AlgoliaSearch
 
-  algoliasearch per_environment: true do
+  algoliasearch per_environment: true, forward_to_replicas: true do
     searchableAttributes [:name, :author, :editor]
 
     # define a replica index to search by `author` only
