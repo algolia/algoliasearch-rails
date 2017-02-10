@@ -944,12 +944,12 @@ describe "FowardToReplicas" do
     class ForwardToReplicasTwo < ActiveRecord::Base
       include AlgoliaSearch
 
-      algoliasearch synchronous: true, forward_to_replicas: true, index_name: safe_index_name('ForwardToReplicas') do
+      algoliasearch synchronous: true, index_name: safe_index_name('ForwardToReplicas') do
         attribute :name
         attributesToIndex %w(second_value)
         attributesToHighlight %w(primary_highlight)
 
-        add_replica safe_index_name('ForwardToReplicas_replica') do
+        add_replica safe_index_name('ForwardToReplicas_replica'), inherit: true do
           attributesToHighlight %w(replica_highlight)
         end
       end

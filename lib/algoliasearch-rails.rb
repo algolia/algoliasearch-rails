@@ -256,13 +256,13 @@ module AlgoliaSearch
     def add_replica(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :replica => true }), &block)
+      add_index(index_name, options.merge({ :replica => true, :primary_settings => self }), &block)
     end
 
     def add_slave(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :slave => true }), &block)
+      add_index(index_name, options.merge({ :slave => true, :primary_settings => self }), &block)
     end
 
     def additional_indexes
@@ -725,23 +725,31 @@ module AlgoliaSearch
 
     def algolia_ensure_init(options = nil, settings = nil, index_settings = nil)
       raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
+
       @algolia_indexes ||= {}
+
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
+
       return @algolia_indexes[settings] if @algolia_indexes[settings]
+
       @algolia_indexes[settings] = SafeIndex.new(algolia_index_name(options), algoliasearch_options[:raise_on_failure])
+
       current_settings = @algolia_indexes[settings].get_settings rescue nil # if the index doesn't exist
-      if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, settings.to_settings))
-        index_settings ||= settings.to_settings
+
+      index_settings ||= settings.to_settings
+      index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
+
+      if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, index_settings))
         used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
         replicas = index_settings.delete(:replicas) ||
                    index_settings.delete('replicas') ||
                    index_settings.delete(:slaves) ||
                    index_settings.delete('slaves')
-        index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil?
-        forward_to_replicas = !!(options[:forward_to_replicas] && (!options[:replica] && !options[:slave]))
-        @algolia_indexes[settings].set_settings(index_settings, { forwardToReplicas: forward_to_replicas })
+        index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil? || options[:inherit]
+        @algolia_indexes[settings].set_settings(index_settings)
       end
+
       @algolia_indexes[settings]
     end
 
