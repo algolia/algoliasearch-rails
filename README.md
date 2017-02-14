@@ -5,84 +5,73 @@
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.svg?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.svg)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.svg)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
 
-This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem. Rails 3.x, 4.x and 5.x are all supported.
+This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem.
+Rails 3.x, 4.x and 5.x are all supported.
 
 You might be interested in the sample Ruby on Rails application providing a `autocomplete.js`-based auto-completion and `instantsearch.js`-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
 
-**Note:** An easier-to-read version of this documentation is available on
-[Algolia's website](https://www.algolia.com/doc/api-client/rails/).
-
-# Table of Contents
 
 
-**Setup**
+## API Documentation
 
-1. [Install](#install)
-1. [Configuration](#configuration)
-1. [Timeouts](#timeouts)
-1. [Notes](#notes)
-
-**Usage**
-
-1. [Index Schema](#index-schema)
-1. [Relevancy](#relevancy)
-1. [Indexing](#indexing)
-1. [Frontend Search (realtime experience)](#frontend-search-realtime-experience)
-1. [Backend Search](#backend-search)
-1. [Backend Pagination](#backend-pagination)
-1. [Tags](#tags)
-1. [Faceting](#faceting)
-1. [Faceted search](#faceted-search)
-1. [Group by](#group-by)
-1. [Geo-Search](#geo-search)
-
-**Options**
-
-1. [Auto-indexing & asynchronism](#auto-indexing--asynchronism)
-1. [Custom index name](#custom-index-name)
-1. [Per-environment indices](#per-environment-indices)
-1. [Custom attribute definition](#custom-attribute-definition)
-1. [Nested objects/relations](#nested-objectsrelations)
-1. [Custom `objectID`](#custom-objectid)
-1. [Restrict indexing to a subset of your data](#restrict-indexing-to-a-subset-of-your-data)
-1. [Sanitizer](#sanitizer)
-1. [UTF-8 Encoding](#utf-8-encoding)
-1. [Exceptions](#exceptions)
-1. [Configuration example](#configuration-example)
-
-**Indices**
-
-1. [Manual indexing](#manual-indexing)
-1. [Manual removal](#manual-removal)
-1. [Reindexing](#reindexing)
-1. [Clearing an index](#clearing-an-index)
-1. [Using the underlying index](#using-the-underlying-index)
-1. [Primary/replica](#primaryreplica)
-1. [Share a single index](#share-a-single-index)
-1. [Target multiple indices](#target-multiple-indices)
-
-**Testing**
-
-1. [Notes](#notes)
+You can find the full reference on [Algolia's website](https://www.algolia.com/doc/api-client/rails/).
 
 
-# Guides & Tutorials
+## Table of Contents
 
-Check our [online guides](https://www.algolia.com/doc):
 
-* [Data Formatting](https://www.algolia.com/doc/indexing/formatting-your-data)
-* [Import and Synchronize data](https://www.algolia.com/doc/indexing/import-synchronize-data/php)
-* [Autocomplete](https://www.algolia.com/doc/search/auto-complete)
-* [Instant search page](https://www.algolia.com/doc/search/instant-search)
-* [Filtering and Faceting](https://www.algolia.com/doc/search/filtering-faceting)
-* [Sorting](https://www.algolia.com/doc/relevance/sorting)
-* [Ranking Formula](https://www.algolia.com/doc/relevance/ranking)
-* [Typo-Tolerance](https://www.algolia.com/doc/relevance/typo-tolerance)
-* [Geo-Search](https://www.algolia.com/doc/geo-search/geo-search-overview)
-* [Security](https://www.algolia.com/doc/security/best-security-practices)
-* [API-Keys](https://www.algolia.com/doc/security/api-keys)
-* [REST API](https://www.algolia.com/doc/rest)
+1. **[Setup](#setup)**
+
+    * [Install](#install)
+    * [Configuration](#configuration)
+    * [Timeouts](#timeouts)
+    * [Notes](#notes)
+
+1. **[Usage](#usage)**
+
+    * [Index Schema](#index-schema)
+    * [Relevancy](#relevancy)
+    * [Indexing](#indexing)
+    * [Frontend Search (realtime experience)](#frontend-search-realtime-experience)
+    * [Backend Search](#backend-search)
+    * [Backend Pagination](#backend-pagination)
+    * [Tags](#tags)
+    * [Faceting](#faceting)
+    * [Faceted search](#faceted-search)
+    * [Group by](#group-by)
+    * [Geo-Search](#geo-search)
+
+1. **[Options](#options)**
+
+    * [Auto-indexing & asynchronism](#auto-indexing--asynchronism)
+    * [Custom index name](#custom-index-name)
+    * [Per-environment indices](#per-environment-indices)
+    * [Custom attribute definition](#custom-attribute-definition)
+    * [Nested objects/relations](#nested-objectsrelations)
+    * [Custom `objectID`](#custom-objectid)
+    * [Restrict indexing to a subset of your data](#restrict-indexing-to-a-subset-of-your-data)
+    * [Sanitizer](#sanitizer)
+    * [UTF-8 Encoding](#utf-8-encoding)
+    * [Exceptions](#exceptions)
+    * [Configuration example](#configuration-example)
+
+1. **[Indices](#indices)**
+
+    * [Manual indexing](#manual-indexing)
+    * [Manual removal](#manual-removal)
+    * [Reindexing](#reindexing)
+    * [Clearing an index](#clearing-an-index)
+    * [Using the underlying index](#using-the-underlying-index)
+    * [Primary/replica](#primaryreplica)
+    * [Share a single index](#share-a-single-index)
+    * [Target multiple indices](#target-multiple-indices)
+
+1. **[Testing](#testing)**
+
+    * [Notes](#notes)
+
+
 
 
 # Setup
@@ -1086,5 +1075,6 @@ describe 'With a mocked client' do
 
 end
 ```
+
 
 
