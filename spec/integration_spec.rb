@@ -906,7 +906,7 @@ describe "FowardToReplicas" do
     class ForwardToReplicas < ActiveRecord::Base
       include AlgoliaSearch
 
-      algoliasearch synchronous: true, index_name: safe_index_name('ForwardToReplicas') do
+      algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
         attributesToIndex %w(first_value)
         attributesToHighlight %w(primary_highlight)
@@ -926,7 +926,7 @@ describe "FowardToReplicas" do
     ForwardToReplicas.send :algolia_ensure_init
 
     # Hacky way to have a wait on set_settings
-    ForwardToReplicas.create(name: 'val')
+    ForwardToReplicas.create(:name => 'val')
     ForwardToReplicas.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
@@ -944,12 +944,12 @@ describe "FowardToReplicas" do
     class ForwardToReplicasTwo < ActiveRecord::Base
       include AlgoliaSearch
 
-      algoliasearch synchronous: true, index_name: safe_index_name('ForwardToReplicas') do
+      algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
         attributesToIndex %w(second_value)
         attributesToHighlight %w(primary_highlight)
 
-        add_replica safe_index_name('ForwardToReplicas_replica'), inherit: true do
+        add_replica safe_index_name('ForwardToReplicas_replica'), :inherit => true do
           attributesToHighlight %w(replica_highlight)
         end
       end
@@ -960,7 +960,7 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.send :algolia_ensure_init
 
     # Hacky way to have a wait on set_settings
-    ForwardToReplicasTwo.create(name: 'val')
+    ForwardToReplicasTwo.create(:name => 'val')
     ForwardToReplicasTwo.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
