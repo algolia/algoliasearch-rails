@@ -40,6 +40,8 @@ matrix:
   #   env: RAILS_VERSION=5.0
   allow_failures:
   - rvm: rbx-2
+before_install:
+  - gem install bundler
 install: rm -f Gemfile.lock && bundle install
 cache: bundler
 env:
