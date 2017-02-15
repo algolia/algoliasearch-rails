@@ -47,5 +47,12 @@ end
 
 group :test, :development do
   gem 'will_paginate', '>= 2.3.15'
-  gem 'kaminari'
+  if defined?(RUBY_VERSION) &&
+     defined?(RUBY_ENGINE) &&
+     RUBY_ENGINE == 'ruby' &&
+     Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2')
+    gem 'kaminari', '< 1'
+  else
+    gem 'kaminari'
+  end
 end
