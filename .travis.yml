@@ -42,6 +42,7 @@ matrix:
   - rvm: rbx-2
 before_install:
   - gem install bundler
+  - bundle --version
 install: rm -f Gemfile.lock && bundle install
 cache: bundler
 env:

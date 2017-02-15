@@ -2,7 +2,10 @@ source "http://rubygems.org"
 
 gem 'json', '~> 1.5', '>= 1.5.1'
 gem 'algoliasearch', '~> 1.12.4'
-gem 'rubysl', '~> 2.0', :platform => :rbx
+
+if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
+  gem 'rubysl', '~> 2.0', :platform => :rbx
+end
 
 group :test do
   rails_version = ENV["RAILS_VERSION"] ? "~> #{ENV["RAILS_VERSION"]}" : '>= 3.2.0'
