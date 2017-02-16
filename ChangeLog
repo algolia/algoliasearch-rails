@@ -1,5 +1,9 @@
 CHANGELOG
 
+2017-02-16 1.18.0
+
+      * Add new replica parameter, `inherit` (#198)
+
 2017-01-05 1.17.1
 
       * Add missing `disablePrefixOnAttributes` and `disableTypoToleranceOnAttributes` attributes (#193)
