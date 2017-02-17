@@ -450,6 +450,26 @@ describe 'Encoding' do
 
 end
 
+# Rails 3.2 swallows exception in after_commit
+unless OLD_RAILS
+  describe 'Too big records' do
+    before(:all) do
+      Color.clear_index!(true)
+    end
+
+    after(:all) do
+      Color.delete_all
+    end
+
+    it "Throw an exception if the data is too big" do
+      expect {
+        Color.create! :name => 'big' * 100000
+      }.to raise_error(Algolia::AlgoliaProtocolError)
+    end
+
+  end
+end
+
 describe 'Settings' do
 
   it "should detect settings changes" do
