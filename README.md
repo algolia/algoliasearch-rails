@@ -912,7 +912,7 @@ index = Contact.index
 
 ## Primary/replica
 
-You can define replica indices using the <code>add_replica</code> method.  
+You can define replica indices using the <code>add_replica</code> method.
 Use `inherit: true` on the replica block if you want it  to inherit from the primary settings.
 
 ```ruby
@@ -929,9 +929,9 @@ class Book < ActiveRecord::Base
       searchableAttributes [:author]
     end
 
-    # define a replica index to search by `editor` only
-    add_replica 'Book_by_editor', inherit: true, per_environment: true do
-      searchableAttributes [:editor]
+    # define a replica index with custom ordering but same settings than the main block
+    add_replica 'Book_custom_order', inherit: true, per_environment: true do
+      customRanking ['asc(rank)']
     end
   end
 
