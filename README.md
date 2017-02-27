@@ -44,7 +44,7 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 
 1. **[Options](#options)**
 
-    * [Auto-indexing & asynchronism](#auto-indexing--asynchronism)
+    * [Auto-indexing &amp; asynchronism](#auto-indexing--asynchronism)
     * [Custom index name](#custom-index-name)
     * [Per-environment indices](#per-environment-indices)
     * [Custom attribute definition](#custom-attribute-definition)
