@@ -2,7 +2,6 @@ namespace :algoliasearch do
  
   desc "Reindex all models"
   task :reindex => :environment do
-    puts "reindexing all models"
     AlgoliaSearch::Utilities.reindex_all_models
   end
   
