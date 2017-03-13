@@ -4,7 +4,7 @@ module AlgoliaSearch
       def get_model_classes
         Rails.application.eager_load! # Ensure all models are loaded (not necessary in production when cache_classes is true).
 
-        ActiveRecord::Base.descendants.select{ |model| model.respond_to?(:reindex) }
+        ActiveRecord::Base.descendants.select{ |model| model.respond_to?(:algolia_reindex) }
       end
 
       def clear_all_indexes
@@ -19,13 +19,13 @@ module AlgoliaSearch
         puts ''
         puts "Reindexing #{klasses.count} models: #{klasses.to_sentence}."
         puts ''
-        
+
         klasses.each do |klass|
           say "#{klass}:"
 
           say "Reindexing #{klass.count} records...", true
 
-          klass.reindex
+          klass.algolia_reindex
         end
       end
     end
