@@ -291,8 +291,8 @@ class Contact < ActiveRecord::Base
     attribute :first_name, :last_name, :email
 
     # default search parameters stored in the index settings
-    minWordSizeForApprox1 4
-    minWordSizeForApprox2 8
+    minWordSizefor1Typo 4
+    minWordSizefor2Typos 8
     hitsPerPage 42
   end
 end
