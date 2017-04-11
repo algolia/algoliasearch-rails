@@ -445,12 +445,12 @@ module AlgoliaSearch
 
             define_method(:after_destroy) do |*args|
               copy_after_destroy.bind(self).call
-              algolia_enqueue_remove_from_index!(algolia_synchronous?)
+              algolia_enqueue_remove_from_index!
               super(*args)
             end
           end
         else
-          after_destroy { |searchable| searchable.algolia_enqueue_remove_from_index!(algolia_synchronous?) } if respond_to?(:after_destroy)
+          after_destroy { |searchable| searchable.algolia_enqueue_remove_from_index! } if respond_to?(:after_destroy)
         end
       end
     end
@@ -897,7 +897,7 @@ module AlgoliaSearch
       self.class.algolia_remove_from_index!(self, synchronous || algolia_synchronous?)
     end
 
-    def algolia_enqueue_remove_from_index!(synchronous)
+    def algolia_enqueue_remove_from_index!(synchronous = false)
       if algoliasearch_options[:enqueue]
         algoliasearch_options[:enqueue].call(self, true) unless self.class.send(:algolia_indexing_disabled?, algoliasearch_options)
       else
@@ -905,7 +905,7 @@ module AlgoliaSearch
       end
     end
 
-    def algolia_enqueue_index!(synchronous)
+    def algolia_enqueue_index!(synchronous = false)
       if algoliasearch_options[:enqueue]
         algoliasearch_options[:enqueue].call(self, false) unless self.class.send(:algolia_indexing_disabled?, algoliasearch_options)
       else
@@ -939,7 +939,7 @@ module AlgoliaSearch
 
     def algolia_perform_index_tasks
       return if !@algolia_auto_indexing || @algolia_must_reindex == false
-      algolia_enqueue_index!(algolia_synchronous?)
+      algolia_enqueue_index!
       remove_instance_variable(:@algolia_auto_indexing) if instance_variable_defined?(:@algolia_auto_indexing)
       remove_instance_variable(:@algolia_synchronous) if instance_variable_defined?(:@algolia_synchronous)
       remove_instance_variable(:@algolia_must_reindex) if instance_variable_defined?(:@algolia_must_reindex)
