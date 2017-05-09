@@ -531,8 +531,16 @@ end
 
 class MySidekiqWorker
   def perform(id, remove)
-    c = Contact.find(id)
-    remove ? c.remove_from_index! : c.index!
+    if remove
+      # the record has likely already been removed from your database so we cannot
+      # use ActiveRecord#find to load it
+      index = Algolia::Index.new("index_name")
+      index.delete_object(id)
+    else
+      # the record should be present
+      c = Contact.find(id)
+      c.index!
+    end
   end
 end
 ```
