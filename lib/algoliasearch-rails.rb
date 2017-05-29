@@ -465,11 +465,11 @@ module AlgoliaSearch
     end
 
     def algolia_without_auto_index_scope=(value)
-      Thread.current["algolia_without_auto_index_scope_for_#{self.name}"] = value
+      Thread.current["algolia_without_auto_index_scope_for_#{self.model_name}"] = value
     end
 
     def algolia_without_auto_index_scope
-      Thread.current["algolia_without_auto_index_scope_for_#{self.name}"]
+      Thread.current["algolia_without_auto_index_scope_for_#{self.model_name}"]
     end
 
     def algolia_reindex!(batch_size = 1000, synchronous = false)
