@@ -400,7 +400,7 @@ module AlgoliaSearch
           raise ArgumentError.new("Invalid `enqueue` option: #{options[:enqueue]}")
         end
         algoliasearch_options[:enqueue] = Proc.new do |record, remove|
-          proc.call(record, remove) unless @algolia_without_auto_index_scope
+          proc.call(record, remove) unless algolia_without_auto_index_scope
         end
       end
       unless options[:auto_index] == false
@@ -456,16 +456,24 @@ module AlgoliaSearch
     end
 
     def algolia_without_auto_index(&block)
-      @algolia_without_auto_index_scope = true
+      self.algolia_without_auto_index_scope = true
       begin
         yield
       ensure
-        @algolia_without_auto_index_scope = false
+        self.algolia_without_auto_index_scope = false
       end
     end
 
+    def algolia_without_auto_index_scope=(value)
+      Thread.current["algolia_without_auto_index_scope_for_#{self.name}"] = value
+    end
+
+    def algolia_without_auto_index_scope
+      Thread.current["algolia_without_auto_index_scope_for_#{self.name}"]
+    end
+
     def algolia_reindex!(batch_size = 1000, synchronous = false)
-      return if @algolia_without_auto_index_scope
+      return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
@@ -496,7 +504,7 @@ module AlgoliaSearch
 
     # reindex whole database using a extra temporary index + move operation
     def algolia_reindex(batch_size = 1000, synchronous = false)
-      return if @algolia_without_auto_index_scope
+      return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         next if options[:slave] || options[:replica]
@@ -545,7 +553,7 @@ module AlgoliaSearch
     end
 
     def algolia_index!(object, synchronous = false)
-      return if @algolia_without_auto_index_scope
+      return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
@@ -571,7 +579,7 @@ module AlgoliaSearch
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
-      return if @algolia_without_auto_index_scope
+      return if algolia_without_auto_index_scope
       object_id = algolia_object_id_of(object)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
