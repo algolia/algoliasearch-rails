@@ -399,7 +399,7 @@ class WithSlave < ActiveRecord::Base
   end
 
   # Ensure the index is indeed using slaves
-  algolia_index.set_settings({slaves: ['WithSlave_slave']})
+  algolia_index.set_settings({:slaves => ['WithSlave_slave']})
 end
 
 unless OLD_RAILS
