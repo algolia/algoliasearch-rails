@@ -867,11 +867,17 @@ module AlgoliaSearch
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
         items = []
-        all.each do |item|
-          items << item
-          if items.length % batch_size == 0
-            yield items
-            items = []
+
+        per_batch = 1000
+        count = all.count
+
+        0.step(count, per_batch) do |offset|
+          all.limit(per_batch).skip(offset).each do |item|
+            items << item
+            if items.length % batch_size == 0
+              yield items
+              items = []
+            end
           end
         end
         yield items unless items.empty?
