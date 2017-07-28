@@ -15,13 +15,17 @@ matrix:
   - rvm: 2.2.5
     env: RAILS_VERSION=4.2
   - rvm: 2.2.5
-    env: RAILS_VERSION=5.0
-  - rvm: 2.3.1
+    env: RAILS_VERSION=5.1
+  - rvm: 2.3.4
     env: RAILS_VERSION=3.2.0
-  - rvm: 2.3.1
+  - rvm: 2.3.4
     env: RAILS_VERSION=4.2
-  - rvm: 2.3.1
-    env: RAILS_VERSION=5.0
+  - rvm: 2.3.4
+    env: RAILS_VERSION=5.1
+  - rvm: 2.4.1
+    env: RAILS_VERSION=4.2
+  - rvm: 2.4.1
+    env: RAILS_VERSION=5.1
   # - rvm: jruby-9.1.2.0
   #   env: RAILS_VERSION=3.2.0
   # - rvm: jruby-9.1.2.0
@@ -47,5 +51,5 @@ install: rm -f Gemfile.lock && bundle install
 cache: bundler
 env:
   global:
-  - secure: kD+PX8ZNg+AAzyr6WYs1vp9teAkzMfEoYkIMI0hrRN0ml9ccJVsJR1pIGpaIwyCa5PmFtCZ1Xi2vFb4XzTTeaZoHHS/ll9LwuQH6mwvdgj3n6TmNRdq3b/oGRHBX4Z0HMobqaftuzY/V8iTpVk92jwIY8NPj00k055b2jrKqhdw=
-  - secure: Eai99h4K7s9/Sh3CHClWs3IQNaEUdVagpmA/A8m0rysGBAYJdMKbUOp9DZPAmCnT+06l0aFv87+CRYtgyX05pE5f21nqBOU46eKS38cLif3aPTwFmwokf28WLDgmZKa/zJp767SiQ/dp0hz+LJrkJvkDRnA1un36f7wiyY9xnYs=
+  - secure: "o/Hi/6KnBugN5P/cpVtpwyKrK5fVzAc0efw+qZ9ZqwqZN0GmipZrHmRNuLVUxVf+CIcqfLpIT0U172XGOZ5zJ1gs3qZZrDsJ1ptXnPyvvCrw+VX5yGhMh67JnlO0WLWvci0WdltJTmrhCoLSSw39nCPswC7I6/hai4KyiOXoMk4="
+  - secure: "Jv9jOYRwJq5i17Int/p75330yxCJXKLYlstHuBjwkKa6anJHFSXQaAxWj8sZHCY4IAVDsBfdi0j6S3dtVu2LaVLA3hfPp36YRVolSZu9zLbGqyPKBWM7E3i7GkS3Jub0nMV3Yo3cMeiFzQ4BmpSQOYo0biCkL8bh4/5NRZ7Q6VI="
