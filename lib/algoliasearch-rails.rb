@@ -66,7 +66,8 @@ module AlgoliaSearch
       :unretrievableAttributes, :disableTypoToleranceOnWords, :disableTypoToleranceOnAttributes, :altCorrections,
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex, :numericAttributesForFiltering,
       :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray,
-      :advancedSyntax, :disablePrefixOnAttributes, :disableTypoToleranceOnAttributes]
+      :advancedSyntax, :disablePrefixOnAttributes, :disableTypoToleranceOnAttributes,
+      :paginationLimitedTo]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
