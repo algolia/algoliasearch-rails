@@ -20,10 +20,8 @@ module AlgoliaSearch
         puts ''
 
         klasses.each do |klass|
-          say "#{klass}:"
-
-          say "Reindexing #{klass.count} records...", true
-
+          puts klass
+          puts "Reindexing #{klass.count} records..."
           klass.algolia_reindex
         end
       end
