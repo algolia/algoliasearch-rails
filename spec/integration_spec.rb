@@ -22,7 +22,10 @@ ActiveRecord::Base.establish_connection(
     'pool' => 5,
     'timeout' => 5000
 )
-ActiveRecord::Base.raise_in_transactional_callbacks = true unless OLD_RAILS
+
+if Gem.loaded_specs['rails'].version < Gem::Version.new('5')
+  ActiveRecord::Base.raise_in_transactional_callbacks = true
+end
 
 SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
