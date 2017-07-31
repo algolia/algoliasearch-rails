@@ -1,5 +1,12 @@
 CHANGELOG
 
+2017-07-31 1.20.0
+
+      * Override the user-agent (#238)
+      * Fixed NPE while running mocked tests (#242)
+      * Add `paginationLimitedTo` setting (#243)
+      * Make `algolia_without_auto_index_scope` thread-safe (#234)
+
 2017-03-13 1.19.1
 
       * Make sure get_model_classes is not ActiveRecord compliant only
