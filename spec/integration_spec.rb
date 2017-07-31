@@ -23,7 +23,7 @@ ActiveRecord::Base.establish_connection(
     'timeout' => 5000
 )
 
-if Gem.loaded_specs['rails'].version < Gem::Version.new('5')
+if ActiveRecord::Base.respond_to?(:raise_in_transactional_callbacks)
   ActiveRecord::Base.raise_in_transactional_callbacks = true
 end
 
