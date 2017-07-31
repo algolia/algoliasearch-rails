@@ -8,6 +8,7 @@ rescue => e
 end
 require 'algoliasearch'
 
+require 'algoliasearch/version'
 require 'algoliasearch/utilities'
 
 if defined? Rails
