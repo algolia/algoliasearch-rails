@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem 'json', '~> 1.5', '>= 1.5.1'
+gem 'json', '~> 1.8', '>= 1.8.6'
 gem 'algoliasearch', '~> 1.14.0'
 
 if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
