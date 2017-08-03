@@ -658,7 +658,7 @@ module AlgoliaSearch
         algolia_object_id_of(hit)
       end
       results = json['hits'].map do |hit|
-        o = results_by_id[hit['objectID']]
+        o = results_by_id[hit['objectID'].to_s]
         if o
           o.highlight_result = hit['_highlightResult']
           o.snippet_result = hit['_snippetResult']
