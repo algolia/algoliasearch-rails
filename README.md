@@ -74,6 +74,8 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 
 
 
+
+
 # Setup
 
 
@@ -113,7 +115,7 @@ You can configure a various timeout thresholds by setting the following options 
 ```ruby
 AlgoliaSearch.configuration = {
   application_id: 'YourApplicationID',
-  api_key: 'YourAPIKey'
+  api_key: 'YourAPIKey',
   connect_timeout: 2,
   receive_timeout: 30,
   send_timeout: 30,
@@ -124,7 +126,7 @@ AlgoliaSearch.configuration = {
 
 ## Notes
 
-This gem makes intensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing `after_validation`, `before_save` or `after_commit` callbacks, it will not index your changes. For example: `update_attribute` doesn't perform validations checks, to perform validations when updating use `update_attributes`.
+This gem makes extensive use of Rails' callbacks to trigger the indexing tasks. If you're using methods bypassing `after_validation`, `before_save` or `after_commit` callbacks, it will not index your changes. For example: `update_attribute` doesn't perform validations checks, to perform validations when updating use `update_attributes`.
 
 All methods injected by the `AlgoliaSearch` module are prefixed by `algolia_` and aliased to the associated short names if they aren't already defined.
 
@@ -133,6 +135,7 @@ Contact.algolia_reindex! # <=> Contact.reindex!
 
 Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
 ```
+
 
 
 # Usage
@@ -300,7 +303,7 @@ end
 
 ```ruby
 # dynamical search parameters
-p Contact.raw_search("jon doe", { :hitsPerPage => 5, :page => 2 })
+p Contact.raw_search('jon doe', { hitsPerPage: 5, page: 2 })
 ```
 
 ## Backend Pagination
@@ -375,7 +378,7 @@ end
 ```
 
 ```ruby
-hits = Contact.search("jon doe", { :facets => '*' })
+hits = Contact.search('jon doe', { facets: '*' })
 p hits                    # ORM-compliant array of objects
 p hits.facets             # extra method added to retrieve facets
 p hits.facets['company']  # facet values+count of facet 'company'
@@ -383,7 +386,7 @@ p hits.facets['zip_code'] # facet values+count of facet 'zip_code'
 ```
 
 ```ruby
-raw_json = Contact.raw_search("jon doe", { :facets => '*' })
+raw_json = Contact.raw_search('jon doe', { facets: '*' })
 p raw_json['facets']
 ```
 
@@ -409,7 +412,7 @@ Product.search_for_facet_values('category', 'phone', {
 ## Group by
 
 More info on distinct for grouping can be found
-[here](https://www.algolia.com/doc/guides/search/distinct#distinct-for-grouping).
+[here](https://www.algolia.com/doc/guides/ranking/distinct/).
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -440,6 +443,7 @@ end
 ```
 
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
+
 
 
 # Options
@@ -857,6 +861,7 @@ end
 ```
 
 
+
 # Indices
 
 
@@ -892,6 +897,8 @@ Contact.reindex
 ```
 
 **Notes**: if you're using an index-specific API key, ensure you're allowing both `<INDEX_NAME>` and `<INDEX_NAME>.tmp`.
+
+**Warning:** You should not use such an atomic reindexing operation while scoping/filtering the model because this operation **replaces the entire index**, keeping the filtered objects only. ie: Don't do `MyModel.where(...).reindex` but do `MyModel.where(...).reindex!` (with the trailing `!`)!!!
 
 ### Regular reindexing
 
@@ -1036,13 +1043,14 @@ Book.search 'foo bar', index: 'Book_by_editor'
 ```
 
 
+
 # Testing
 
 
 
 ## Notes
 
-To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indexes, DO NOT use your production account.
+To run the specs, please set the <code>ALGOLIA_APPLICATION_ID</code> and <code>ALGOLIA_API_KEY</code> environment variables. Since the tests are creating and removing indices, DO NOT use your production account.
 
 You may want to disable all indexing (add, update & delete operations) API calls, you can set the `disable_indexing` option:
 
@@ -1050,14 +1058,14 @@ You may want to disable all indexing (add, update & delete operations) API calls
 class User < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :per_environment => true, :disable_indexing => Rails.env.test? do
+  algoliasearch per_environment: true, disable_indexing: Rails.env.test? do
   end
 end
 
 class User < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :per_environment => true, :disable_indexing => Proc.new { Rails.env.test? || more_complex_condition } do
+  algoliasearch per_environment: true, disable_indexing: Proc.new { Rails.env.test? || more_complex_condition } do
   end
 end
 ```
@@ -1084,6 +1092,5 @@ describe 'With a mocked client' do
 
 end
 ```
-
 
 
