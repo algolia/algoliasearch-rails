@@ -715,14 +715,14 @@ module AlgoliaSearch
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
-          changed_method = "#{k}_changed?"
+          changed_method = attribute_changed_method(k)
           return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
-            changed_method = "#{condition}_changed?"
+            changed_method = attribute_changed_method(condition)
             return true if !object.respond_to?(changed_method) || object.send(changed_method)
           else
             # if the :if, :unless condition is a anything else,
@@ -797,7 +797,7 @@ module AlgoliaSearch
     end
 
     def algolia_object_id_changed?(o, options = nil)
-      m = "#{algolia_object_id_method(options)}_changed?"
+      m = attribute_changed_method(algolia_object_id_method(options))
       o.respond_to?(m) ? o.send(m) : false
     end
 
@@ -889,6 +889,15 @@ module AlgoliaSearch
           end
         end
         yield items unless items.empty?
+      end
+    end
+
+    def attribute_changed_method attr
+      if ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1 ||
+          ActiveRecord::Version::MAJOR > 5
+        "will_save_change_to_#{attr}?"
+      else
+        "#{attr}_changed?"
       end
     end
   end
