@@ -95,6 +95,10 @@ module AlgoliaSearch
       instance_exec(&block) if block
     end
 
+    def use_serializer(serializer)
+      @serializer = serializer
+    end
+
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
@@ -162,7 +166,11 @@ module AlgoliaSearch
 
     def get_attributes(object)
       attributes = if @attributes.nil? || @attributes.length == 0
-        get_default_attributes(object)
+        if @serializer.nil?
+          get_default_attributes(object)
+        else
+          {}
+        end
       else
         if is_active_record?(object)
           object.class.unscoped do
@@ -173,6 +181,7 @@ module AlgoliaSearch
         end
       end
 
+      attributes.merge!(@serializer.new(object).attributes) if @serializer
       attributes.merge!(attributes_to_hash(@additional_attributes, object))
 
       if @options[:sanitize]

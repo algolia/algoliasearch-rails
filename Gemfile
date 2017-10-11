@@ -10,6 +10,7 @@ end
 group :test do
   rails_version = ENV["RAILS_VERSION"] ? "~> #{ENV["RAILS_VERSION"]}" : '>= 3.2.0'
   gem 'rails', rails_version
+  gem 'active_model_serializers'
   if defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
     gem 'i18n', '< 0.7'
     gem 'highline', '< 1.7'
