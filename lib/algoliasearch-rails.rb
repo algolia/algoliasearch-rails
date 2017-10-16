@@ -750,7 +750,7 @@ module AlgoliaSearch
       index_settings ||= settings.to_settings
       index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
 
-      if !algolia_indexing_disabled?(options) && (index_settings || algoliasearch_settings_changed?(current_settings, index_settings))
+      if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, index_settings)
         used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
         replicas = index_settings.delete(:replicas) ||
                    index_settings.delete('replicas') ||
