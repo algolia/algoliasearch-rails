@@ -1,11 +1,3 @@
-begin
-  require "rubygems"
-  require "bundler"
-
-  Bundler.setup :default
-rescue => e
-  puts "AlgoliaSearch: #{e.message}"
-end
 require 'algoliasearch'
 
 require 'algoliasearch/version'
