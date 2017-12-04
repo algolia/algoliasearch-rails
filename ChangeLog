@@ -1,5 +1,13 @@
 CHANGELOG
 
+2017-12-04 1.20.4
+
+      * Remove Bundler and RubyGems requirements
+
+2017-11-02 1.20.2
+
+      * Upgrade algoliasearch gem to 1.17.0
+
 2017-08-04 1.20.1
 
       * Make sure objectIDs are manipulated as strings
