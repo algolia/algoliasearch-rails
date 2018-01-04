@@ -275,7 +275,7 @@ class City < ActiveRecord::Base
   end
 end
 
-class SequelBook < Sequel::Model[SEQUEL_DB]
+class SequelBook < Sequel::Model
   plugin :active_model
 
   include AlgoliaSearch
