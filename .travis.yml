@@ -51,7 +51,3 @@ before_install:
 install: rm -f Gemfile.lock && bundle install
 cache: bundler
 script: eval $(./algolia-keys export) && bundle exec rake
-env:
-  global:
-  - secure: "o/Hi/6KnBugN5P/cpVtpwyKrK5fVzAc0efw+qZ9ZqwqZN0GmipZrHmRNuLVUxVf+CIcqfLpIT0U172XGOZ5zJ1gs3qZZrDsJ1ptXnPyvvCrw+VX5yGhMh67JnlO0WLWvci0WdltJTmrhCoLSSw39nCPswC7I6/hai4KyiOXoMk4="
-  - secure: "Jv9jOYRwJq5i17Int/p75330yxCJXKLYlstHuBjwkKa6anJHFSXQaAxWj8sZHCY4IAVDsBfdi0j6S3dtVu2LaVLA3hfPp36YRVolSZu9zLbGqyPKBWM7E3i7GkS3Jub0nMV3Yo3cMeiFzQ4BmpSQOYo0biCkL8bh4/5NRZ7Q6VI="
