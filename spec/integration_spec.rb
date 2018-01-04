@@ -304,6 +304,7 @@ class SequelBook < Sequel::Model
     released && !premium
   end
 end
+SequelBook.db = SEQUEL_DB
 
 describe 'SequelBook' do
   before(:all) do
