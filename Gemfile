@@ -39,7 +39,7 @@ group :test do
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
   gem 'redgreen'
-  gem 'sequel'
+  gem 'sequel', '< 5.0'
 end
 
 group :development do
