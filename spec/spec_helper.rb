@@ -32,5 +32,5 @@ end
 def safe_index_name(name)
   return name if ENV['TRAVIS'].to_s != "true"
   id = ENV['TRAVIS_JOB_NUMBER'].split('.').last
-  "#{name}_travis-#{id}"
+  "TRAVIS_RAILS_#{name}_#{id}"
 end
