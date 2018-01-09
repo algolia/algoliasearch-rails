@@ -1,6 +1,8 @@
+
 # Algolia Search API Client for Rails
 
-[Algolia Search](https://www.algolia.com) is a hosted full-text, numerical, and faceted search engine capable of delivering realtime results from the first keystroke.
+[Algolia Search](https://www.algolia.com) is a hosted full-text, numerical,
+and faceted search engine capable of delivering realtime results from the first keystroke.
 
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.svg?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.svg)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.svg)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
@@ -9,7 +11,6 @@ This gem let you easily integrate the Algolia Search API to your favorite ORM. I
 Rails 3.x, 4.x and 5.x are all supported.
 
 You might be interested in the sample Ruby on Rails application providing a `autocomplete.js`-based auto-completion and `InstantSearch.js`-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
-
 
 
 
@@ -23,14 +24,12 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 
 
 1. **[Setup](#setup)**
-
     * [Install](#install)
     * [Configuration](#configuration)
     * [Timeouts](#timeouts)
     * [Notes](#notes)
 
 1. **[Usage](#usage)**
-
     * [Index Schema](#index-schema)
     * [Relevancy](#relevancy)
     * [Indexing](#indexing)
@@ -44,13 +43,12 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Geo-Search](#geo-search)
 
 1. **[Options](#options)**
-
-    * [Auto-indexing &amp; asynchronism](#auto-indexing--asynchronism)
+    * [Auto-indexing &amp; asynchronism](#auto-indexing-amp;-asynchronism)
     * [Custom index name](#custom-index-name)
     * [Per-environment indices](#per-environment-indices)
     * [Custom attribute definition](#custom-attribute-definition)
     * [Nested objects/relations](#nested-objectsrelations)
-    * [Custom `objectID`](#custom-objectid)
+    * [Custom <code>objectID</code>](#custom-codeobjectidcode)
     * [Restrict indexing to a subset of your data](#restrict-indexing-to-a-subset-of-your-data)
     * [Sanitizer](#sanitizer)
     * [UTF-8 Encoding](#utf-8-encoding)
@@ -58,7 +56,6 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Configuration example](#configuration-example)
 
 1. **[Indices](#indices)**
-
     * [Manual indexing](#manual-indexing)
     * [Manual removal](#manual-removal)
     * [Reindexing](#reindexing)
@@ -69,10 +66,7 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Target multiple indices](#target-multiple-indices)
 
 1. **[Testing](#testing)**
-
     * [Notes](#notes)
-
-
 
 
 
@@ -137,6 +131,7 @@ Contact.algolia_reindex! # <=> Contact.reindex!
 
 Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
 ```
+
 
 
 
@@ -448,13 +443,14 @@ At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 500
 
 
 
+
 # Options
 
 
 
 ## Auto-indexing & asynchronism
 
-Each time a record is saved; it will be - asynchronously - indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index. That means that a network call with the ADD/DELETE operation is sent **synchronously** to the Algolia API but then the engine will **asynchronously** process the operation (so if you do a search just after, the results may not reflect it yet).
+Each time a record is saved, it will be *asynchronously* indexed. On the other hand, each time a record is destroyed, it will be - asynchronously - removed from the index. That means that a network call with the ADD/DELETE operation is sent **synchronously** to the Algolia API but then the engine will **asynchronously** process the operation (so if you do a search just after, the results may not reflect it yet).
 
 You can disable auto-indexing and auto-removing setting the following options:
 
@@ -864,6 +860,7 @@ end
 
 
 
+
 # Indices
 
 
@@ -1046,6 +1043,7 @@ Book.search 'foo bar', index: 'Book_by_editor'
 
 
 
+
 # Testing
 
 
@@ -1094,5 +1092,6 @@ describe 'With a mocked client' do
 
 end
 ```
+
 
 
