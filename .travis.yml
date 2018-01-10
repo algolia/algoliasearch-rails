@@ -25,7 +25,9 @@ matrix:
   - rvm: 2.4.1
     env: RAILS_VERSION=4.2
   - rvm: 2.4.1
-    env: RAILS_VERSION=5.1
+    env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
+  - rvm: 2.4.1
+    env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
   # - rvm: jruby-9.1.2.0
   #   env: RAILS_VERSION=3.2.0
   # - rvm: jruby-9.1.2.0

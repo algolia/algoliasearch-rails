@@ -402,7 +402,6 @@ module AlgoliaSearch
           class_eval do
             copy_after_validation = instance_method(:after_validation)
             copy_before_save = instance_method(:before_save)
-            copy_after_commit = instance_method(:after_commit)
 
             define_method(:after_validation) do |*args|
               super(*args)
@@ -416,10 +415,23 @@ module AlgoliaSearch
               super(*args)
             end
 
-            define_method(:after_commit) do |*args|
-              super(*args)
-              copy_after_commit.bind(self).call
-              algolia_perform_index_tasks
+            sequel_version = Gem::Version.new(Sequel.version)
+            if sequel_version >= Gem::Version.new('4.0.0') && sequel_version < Gem::Version.new('5.0.0')
+              copy_after_commit = instance_method(:after_commit)
+              define_method(:after_commit) do |*args|
+                super(*args)
+                copy_after_commit.bind(self).call
+                algolia_perform_index_tasks
+              end
+            else
+              copy_after_save = instance_method(:after_save)
+              define_method(:after_save) do |*args|
+                super(*args)
+                copy_after_save.bind(self).call
+                self.db.after_commit do
+                  algolia_perform_index_tasks
+                end
+              end
             end
           end
         else

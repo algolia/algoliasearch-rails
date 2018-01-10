@@ -275,7 +275,7 @@ class City < ActiveRecord::Base
   end
 end
 
-class SequelBook < Sequel::Model
+class SequelBook < Sequel::Model(SEQUEL_DB)
   plugin :active_model
 
   include AlgoliaSearch
@@ -304,7 +304,6 @@ class SequelBook < Sequel::Model
     released && !premium
   end
 end
-SequelBook.db = SEQUEL_DB
 
 describe 'SequelBook' do
   before(:all) do
