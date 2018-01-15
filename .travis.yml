@@ -50,6 +50,6 @@ before_install:
   - wget http://api-key-dealer.herokuapp.com/clients/algolia-keys && chmod +x algolia-keys
   - gem install bundler
   - bundle --version
-install: rm -f Gemfile.lock && bundle install
+install: rm -f Gemfile.lock && bundle install --without development
 cache: bundler
 script: eval $(./algolia-keys export) && bundle exec rake
