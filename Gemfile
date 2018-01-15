@@ -39,7 +39,9 @@ group :test do
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
   gem 'redgreen'
-  gem 'sequel', '< 5.0'
+
+  sequel_version = ENV['SEQUEL_VERSION'] ? "~> #{ENV['SEQUEL_VERSION']}" : '>= 4.0'
+  gem 'sequel', sequel_version
 end
 
 group :development do
