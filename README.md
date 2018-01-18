@@ -655,6 +655,8 @@ end
 
 ## Nested objects/relations
 
+### Defining the relationship
+
 You can easily embed nested objects defining an extra attribute returning any JSON-compliant object (an array or a hash or a combination of both).
 
 ```ruby
@@ -677,6 +679,83 @@ class Profile < ActiveRecord::Base
     end
   end
 
+end
+```
+
+### Propagating the change from a nested child
+
+#### With ActiveRecord
+
+With ActiveRecord, we'll be using `touch` and `after_touch` to achieve this.
+
+```ruby
+# app/models/app.rb
+class App < ApplicationRecord
+  include AlgoliaSearch
+
+  belongs_to :author, class_name: :User
+  after_touch :index!
+
+  algoliasearch do
+    attribute :title
+    attribute :author do
+      author.as_json
+    end
+  end
+end
+
+# app/models/user.rb
+class User < ApplicationRecord
+  # If your association uses belongs_to
+  # - use `touch: true`
+  # - do not define an `after_save` hook
+  has_many :apps, foreign_key: :author_id
+
+  after_save { apps.each(&:touch) }
+end
+```
+
+
+#### With Sequel
+
+With Sequel, you can use the `touch` plugin to propagate the changes:
+
+```ruby
+# app/models/app.rb
+class App < Sequel::Model
+  include AlgoliaSearch
+
+  many_to_one :author, class: :User
+
+  plugin :timestamps
+  plugin :touch
+
+  algoliasearch do
+    attribute :title
+    attribute :author do
+      author.to_hash
+    end
+  end
+end
+
+# app/models/user.rb
+class User < Sequel::Model
+  one_to_many :apps, key: :author_id
+
+  plugin :timestamps
+  # Can't use the associations since it won't trigger the after_save
+  plugin :touch
+
+  # Define the associations that need to be touched here
+  # Less performant, but allows for the after_save hook to trigger
+  def touch_associations
+    apps.map(&:touch)
+  end
+
+  def touch
+    super
+    touch_associations
+  end
 end
 ```
 
