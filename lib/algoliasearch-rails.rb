@@ -59,7 +59,7 @@ module AlgoliaSearch
       :unretrievableAttributes, :disableTypoToleranceOnWords, :disableTypoToleranceOnAttributes, :altCorrections,
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex, :numericAttributesForFiltering,
       :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray,
-      :advancedSyntax, :disablePrefixOnAttributes, :disableTypoToleranceOnAttributes,
+      :advancedSyntax, :disablePrefixOnAttributes,
       :paginationLimitedTo]
     OPTIONS.each do |k|
       define_method k do |v|
