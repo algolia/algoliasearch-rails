@@ -19,9 +19,6 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 You can find the full reference on [Algolia's website](https://www.algolia.com/doc/api-client/rails/).
 
 
-## Table of Contents
-
-
 
 1. **[Setup](#setup)**
     * [Install](#install)
