@@ -40,7 +40,7 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Geo-Search](#geo-search)
 
 1. **[Options](#options)**
-    * [Auto-indexing &amp; asynchronism](#auto-indexing-amp;-asynchronism)
+    * [Auto-indexing &amp; asynchronism](#auto-indexing--asynchronism)
     * [Custom index name](#custom-index-name)
     * [Per-environment indices](#per-environment-indices)
     * [Custom attribute definition](#custom-attribute-definition)
