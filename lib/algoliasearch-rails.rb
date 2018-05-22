@@ -684,7 +684,7 @@ module AlgoliaSearch
                    params.delete(:slave) ||
                    params.delete('slave') ||
                    params.delete(:replica) ||
-                   params.delete('replicas')
+                   params.delete('replica')
       index = algolia_index(index_name)
       query = Hash[params.map { |k, v| [k.to_s, v.to_s] }]
       index.search_facet(facet, text, query)['facetHits']
