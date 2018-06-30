@@ -478,7 +478,7 @@ module AlgoliaSearch
       Thread.current["algolia_without_auto_index_scope_for_#{self.model_name}"]
     end
 
-    def algolia_reindex!(batch_size = 1000, synchronous = false)
+    def algolia_reindex!(batch_size = 1000, synchronous = false, opts = {})
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
@@ -502,6 +502,7 @@ module AlgoliaSearch
             attributes.merge 'objectID' => algolia_object_id_of(o, options)
           end
           last_task = index.save_objects(objects)
+          sleep(opts[:sleep].to_i) if opts[:sleep]
         end
         index.wait_task(last_task["taskID"]) if last_task and (synchronous || options[:synchronous])
       end
@@ -509,7 +510,7 @@ module AlgoliaSearch
     end
 
     # reindex whole database using a extra temporary index + move operation
-    def algolia_reindex(batch_size = 1000, synchronous = false)
+    def algolia_reindex(batch_size = 1000, synchronous = false, opts = {})
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
@@ -540,6 +541,7 @@ module AlgoliaSearch
           end
           objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
           tmp_index.save_objects(objects)
+          sleep(opts[:sleep].to_i) if opts[:sleep]
         end
 
         move_task = SafeIndex.move_index(tmp_index.name, index_name)
