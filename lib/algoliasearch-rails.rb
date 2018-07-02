@@ -903,7 +903,9 @@ module AlgoliaSearch
 
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
-        find_in_batches(:batch_size => batch_size, &block)
+        ActiveRecord::Base.uncached do
+          find_in_batches(:batch_size => batch_size, &block)
+        end
       elsif defined?(::Sequel) && self < Sequel::Model
         dataset.extension(:pagination).each_page(batch_size, &block)
       else
