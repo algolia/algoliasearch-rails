@@ -755,6 +755,7 @@ module AlgoliaSearch
       index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
 
       if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, index_settings)
+        Rails.logger("Algolialib: got in that bad settings loop with: #{current_settings} || #{index_settings}")
         used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
         replicas = index_settings.delete(:replicas) ||
                    index_settings.delete('replicas') ||
@@ -808,9 +809,15 @@ module AlgoliaSearch
         prev_v = prev[k.to_s]
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
-          return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
+          if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
+            Rails.logger("Algolialib: Mismatch between #{v} and #{prev_v}")
+            return true
+          end
         else
-          return true if prev_v != v
+          if prev_v != v
+            Rails.logger("Algolialib: Mismatch between #{v} and #{prev_v}")
+            return true
+          end
         end
       end
       false
