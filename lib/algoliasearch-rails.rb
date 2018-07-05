@@ -804,6 +804,7 @@ module AlgoliaSearch
     def algoliasearch_settings_changed?(prev, current)
       return true if prev.nil?
       current.each do |k, v|
+        next if k.to_s == 'synonyms' || k.to_s == 'replicas'
         prev_v = prev[k.to_s]
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
