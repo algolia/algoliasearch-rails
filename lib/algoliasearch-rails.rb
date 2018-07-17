@@ -576,6 +576,12 @@ module AlgoliaSearch
       nil
     end
 
+    def algolia_set_settings(synchronous = false)
+      index = SafeIndex.new(algolia_index_name, true)
+      task = index.set_settings(algoliasearch_settings.to_settings)
+      index.wait_task(task["taskID"]) if synchronous
+    end
+
     def algolia_index_objects(objects, synchronous = false)
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
