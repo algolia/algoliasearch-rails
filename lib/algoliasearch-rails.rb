@@ -60,7 +60,7 @@ module AlgoliaSearch
       :ignorePlurals, :maxValuesPerFacet, :distinct, :numericAttributesToIndex, :numericAttributesForFiltering,
       :allowTyposOnNumericTokens, :allowCompressionOfIntegerArray,
       :advancedSyntax, :disablePrefixOnAttributes,
-      :paginationLimitedTo]
+      :paginationLimitedTo, :decompoundedAttributes]
     OPTIONS.each do |k|
       define_method k do |v|
         instance_variable_set("@#{k}", v)
