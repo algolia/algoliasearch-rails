@@ -18,6 +18,7 @@ coverage
 rdoc
 pkg
 .rvmrc
+Gemfile.lock
 
 ## PROJECT::SPECIFIC
 data.sqlite3
