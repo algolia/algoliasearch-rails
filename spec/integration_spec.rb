@@ -527,7 +527,7 @@ describe 'NestedItem' do
     @i2 = NestedItem.create :hidden => true
 
     @i1.children << NestedItem.create(:hidden => true) << NestedItem.create(:hidden => true)
-    NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(1000, true)
+    NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
 
     result = NestedItem.index.get_object(@i1.id)
     result['nb_children'].should == 2
@@ -579,7 +579,7 @@ describe 'Colors' do
       Color.create!(:name => "blue", :short_name => "b", :hex => 0xFF0000)
     end
     expect(Color.search("blue").size).to eq(1)
-    Color.reindex!(1000, true)
+    Color.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     expect(Color.search("blue").size).to eq(2)
   end
 
@@ -612,10 +612,10 @@ describe 'Colors' do
 
   it "should use the specified scope" do
     Color.clear_index!(true)
-    Color.where(:name => 'red').reindex!(1000, true)
+    Color.where(:name => 'red').reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     expect(Color.search("").size).to eq(3)
     Color.clear_index!(true)
-    Color.where(:id => Color.first.id).reindex!(1000, true)
+    Color.where(:id => Color.first.id).reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     expect(Color.search("").size).to eq(1)
   end
 
@@ -705,7 +705,7 @@ describe 'An imaginary store' do
 
     @products_in_database = Product.all
 
-    Product.reindex(1000, true)
+    Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     sleep 5
   end
 
@@ -717,7 +717,7 @@ describe 'An imaginary store' do
 
   describe 'pagination' do
     it 'should display total results correctly' do
-      results = Product.search('crapoola', :hitsPerPage => 1000)
+      results = Product.search('crapoola', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE)
       results.length.should == Product.where(:name => 'crapoola').count
     end
   end
@@ -791,12 +791,12 @@ describe 'An imaginary store' do
     end
 
     it "should not duplicate while reindexing" do
-      n = Product.search('', :hitsPerPage => 1000).length
-      Product.reindex!(1000, true)
-      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n)
-      Product.reindex!(1000, true)
-      Product.reindex!(1000, true)
-      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n)
+      n = Product.search('', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE).length
+      Product.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
+      expect(Product.search('', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE).size).to eq(n)
+      Product.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
+      Product.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
+      expect(Product.search('', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE).size).to eq(n)
     end
 
     it "should not return products that are not indexable" do
@@ -831,10 +831,10 @@ describe 'An imaginary store' do
     end
 
     it "should delete not-anymore-indexable product while reindexing" do
-      n = Product.search('', :hitsPerPage => 1000).size
+      n = Product.search('', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE).size
       Product.where(:release_date => nil).first.update_attribute :release_date, Time.now + 1.day
-      Product.reindex!(1000, true)
-      expect(Product.search('', :hitsPerPage => 1000).size).to eq(n - 1)
+      Product.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
+      expect(Product.search('', :hitsPerPage => AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE).size).to eq(n - 1)
     end
 
     it "should find using synonyms" do
@@ -888,12 +888,12 @@ describe 'Cities' do
   end
 
   it "should reindex with replicas in place" do
-    City.reindex!(1000, true)
+    City.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     expect(City.index.get_settings['replicas'].length).to eq(2)
   end
 
   it "should reindex with replicas using a temporary index" do
-    City.reindex(1000, true)
+    City.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     expect(City.index.get_settings['replicas'].length).to eq(2)
   end
 

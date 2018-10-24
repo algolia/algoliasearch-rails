@@ -49,6 +49,7 @@ module AlgoliaSearch
   class IndexSettings
 
     # AlgoliaSearch settings
+    DEFAULT_BATCH_SIZE = 1000
     OPTIONS = [:minWordSizefor1Typo, :minWordSizefor2Typos, :typoTolerance,
       :hitsPerPage, :attributesToRetrieve,
       :attributesToHighlight, :attributesToSnippet, :attributesToIndex, :searchableAttributes,
@@ -478,7 +479,7 @@ module AlgoliaSearch
       Thread.current["algolia_without_auto_index_scope_for_#{self.model_name}"]
     end
 
-    def algolia_reindex!(batch_size = 1000, synchronous = false)
+    def algolia_reindex!(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
@@ -509,7 +510,7 @@ module AlgoliaSearch
     end
 
     # reindex whole database using a extra temporary index + move operation
-    def algolia_reindex(batch_size = 1000, synchronous = false)
+    def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
