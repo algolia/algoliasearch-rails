@@ -31,6 +31,6 @@ end
 # avoid concurrent access to the same index
 def safe_index_name(name)
   return name if ENV['TRAVIS'].to_s != "true"
-  id = ENV['TRAVIS_JOB_NUMBER'].split('.').last
+  id = ENV['TRAVIS_JOB_NUMBER']
   "TRAVIS_RAILS_#{name}_#{id}"
 end
