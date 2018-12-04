@@ -892,9 +892,8 @@ module AlgoliaSearch
       end
     end
 
-    def attribute_changed_method attr
-      if ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1 ||
-          ActiveRecord::Version::MAJOR > 5
+    def attribute_changed_method(attr)
+      if ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1
         "will_save_change_to_#{attr}?"
       else
         "#{attr}_changed?"
