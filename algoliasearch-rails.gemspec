@@ -2,6 +2,8 @@
 
 require File.join(File.dirname(__FILE__), 'lib', 'algoliasearch', 'version')
 
+require 'date'
+
 Gem::Specification.new do |s|
   s.name = "algoliasearch-rails"
   s.version = AlgoliaSearch::VERSION
