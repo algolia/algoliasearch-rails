@@ -1,6 +1,6 @@
 CHANGELOG
 
-2018-12-07 1.20.5
+2018-12-07 1.20.6
 
     * Better support for Rails 5.1 and deprecated `attribute_changed?`
     * Better support for `after_commit` for Sequel 5.0
