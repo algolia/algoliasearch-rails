@@ -21,6 +21,7 @@ group :test do
   elsif defined?(RUBY_VERSION) && RUBY_VERSION == "1.9.3"
     gem 'rack', '< 2'
     gem 'nokogiri', '< 1.7.0'
+    gem 'rack-cache', '<= 1.7.1'
     if Gem::Version.new(ENV['RAILS_VERSION'] || '3.2.0') >= Gem::Version.new('4.0')
       gem 'mime-types', '~> 2.6'
     else
