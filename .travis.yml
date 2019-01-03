@@ -1,61 +1,54 @@
 language: ruby
+
 branches:
   only:
-  - master
+    - master
+
 matrix:
   include:
-  - rvm: 1.8.7
-    env: RAILS_VERSION=3.2.0 SEQUEL_VERSION=4.0
-  - rvm: 1.9.3
-    env: RAILS_VERSION=3.2.0
-  - rvm: 1.9.3
-    env: RAILS_VERSION=4.2
-  - rvm: 2.2.9
-    env: RAILS_VERSION=3.2.0
-  - rvm: 2.2.9
-    env: RAILS_VERSION=4.2
-  - rvm: 2.2.9
-    env: RAILS_VERSION=5.1
-  - rvm: 2.3.6
-    env: RAILS_VERSION=3.2.0
-  - rvm: 2.3.6
-    env: RAILS_VERSION=4.2
-  - rvm: 2.3.6
-    env: RAILS_VERSION=5.1
-  - rvm: 2.4.3
-    env: RAILS_VERSION=4.2
-  - rvm: 2.4.3
-    env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
-  - rvm: 2.4.3
-    env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
-  - rvm: 2.5.0
-    env: RAILS_VERSION=4.2
-  - rvm: 2.5.0
-    env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
-  - rvm: 2.5.0
-    env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
-  # - rvm: jruby-9.1.2.0
-  #   env: RAILS_VERSION=3.2.0
-  # - rvm: jruby-9.1.2.0
-  #   env: RAILS_VERSION=4.2
-  # - rvm: jruby-9.1.2.0
-  #   env: RAILS_VERSION=5.0
-  # - rvm: rbx-2
-  #   env: RAILS_VERSION=3.2.0
-  # - rvm: rbx-2
-  #   env: RAILS_VERSION=4.2
-  # - rvm: rbx-3.20
-  #   env: RAILS_VERSION=3.2.0
-  # - rvm: rbx-3.20
-  #   env: RAILS_VERSION=4.2
-  # - rvm: rbx-3.20
-  #   env: RAILS_VERSION=5.0
+    - rvm: 1.8.7
+      env: RAILS_VERSION=3.2.0 SEQUEL_VERSION=4.0
+    - rvm: 1.9.3
+      env: RAILS_VERSION=3.2.0
+    - rvm: 1.9.3
+      env: RAILS_VERSION=4.2
+    - rvm: 2.2.9
+      env: RAILS_VERSION=3.2.0
+    - rvm: 2.2.9
+      env: RAILS_VERSION=4.2
+    - rvm: 2.2.9
+      env: RAILS_VERSION=5.1
+    - rvm: 2.3.6
+      env: RAILS_VERSION=3.2.0
+    - rvm: 2.3.6
+      env: RAILS_VERSION=4.2
+    - rvm: 2.3.6
+      env: RAILS_VERSION=5.1
+    - rvm: 2.4.3
+      env: RAILS_VERSION=4.2
+    - rvm: 2.4.3
+      env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
+    - rvm: 2.4.3
+      env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
+    - rvm: 2.5.0
+      env: RAILS_VERSION=4.2
+    - rvm: 2.5.0
+      env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
+    - rvm: 2.5.0
+      env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
+
   allow_failures:
-  - rvm: rbx-2
+    - rvm: rbx-2
+
 before_install:
   - wget http://api-key-dealer.herokuapp.com/clients/algolia-keys && chmod +x algolia-keys
-  - gem install bundler
+  - gem i rubygems-update -v '<3' && update_rubygems
+  - gem install bundler -v 1.17.3
   - bundle --version
+
 install: rm -f Gemfile.lock && bundle install --without development
+
 cache: bundler
-script: eval $(./algolia-keys export) && bundle exec rake
+
+script:
+  - eval $(./algolia-keys export) && bundle exec rake
