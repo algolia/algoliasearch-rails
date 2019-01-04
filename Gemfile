@@ -62,3 +62,4 @@ group :test, :development do
     gem 'kaminari'
   end
 end
+

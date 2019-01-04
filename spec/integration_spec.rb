@@ -163,6 +163,8 @@ class Color < ActiveRecord::Base
     tags do
       name # single tag
     end
+
+    # we're using all attributes of the Color class + the _tag "extra" attribute
   end
 end
 
@@ -456,6 +458,10 @@ if defined?(ActiveModel::Serializer)
 
     algoliasearch :index_name => safe_index_name('SerializedObject') do
       use_serializer SerializedObjectSerializer
+
+      tags do
+        ['tag1', 'tag2']
+      end
     end
   end
 end
@@ -469,7 +475,7 @@ if defined?(ActiveModel::Serializer)
     it "should push the name but not the other attribute" do
       o = SerializedObject.new :name => 'test', :skip => 'skip me'
       attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
-      expect(attributes).to eq({:name => 'test'})
+      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2']})
     end
   end
 end

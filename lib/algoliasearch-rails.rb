@@ -164,8 +164,10 @@ module AlgoliaSearch
         attributes = @serializer.new(object).attributes
       else
         if @attributes.nil? || @attributes.length == 0
+          # no `attribute ...` have been configured, use the default attributes of the model
           attributes = get_default_attributes(object)
         else
+          # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
           if is_active_record?(object)
             object.class.unscoped do
               attributes = attributes_to_hash(@attributes, object)
@@ -173,10 +175,10 @@ module AlgoliaSearch
           else
             attributes = attributes_to_hash(@attributes, object)
           end
-
-          attributes.merge!(attributes_to_hash(@additional_attributes, object))
         end
       end
+
+      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
 
       if @options[:sanitize]
         sanitizer = begin
