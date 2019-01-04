@@ -454,7 +454,7 @@ if defined?(ActiveModel::Serializer)
   class SerializedObject < ActiveRecord::Base
     include AlgoliaSearch
 
-    algoliasearch do
+    algoliasearch :index_name => safe_index_name('SerializedObject') do
       use_serializer SerializedObjectSerializer
     end
   end

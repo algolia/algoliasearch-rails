@@ -97,6 +97,7 @@ module AlgoliaSearch
 
     def use_serializer(serializer)
       @serializer = serializer
+      # instance_variable_set("@serializer", serializer)
     end
 
     def attribute(*names, &block)
@@ -145,15 +146,7 @@ module AlgoliaSearch
     end
 
     def get_attribute_names(object)
-      res = if @attributes.nil? || @attributes.length == 0
-        get_default_attributes(object).keys
-      else
-        @attributes.keys
-      end
-
-      res += @additional_attributes.keys if @additional_attributes
-
-      res
+      get_attributes(object).keys
     end
 
     def attributes_to_hash(attributes, object)
@@ -165,24 +158,25 @@ module AlgoliaSearch
     end
 
     def get_attributes(object)
-      attributes = if @attributes.nil? || @attributes.length == 0
-        if @serializer.nil?
-          get_default_attributes(object)
-        else
-          {}
-        end
+      # If a serializer is set, we ignore attributes
+      # everything should be done via the serializer
+      if not @serializer.nil?
+        attributes = @serializer.new(object).attributes
       else
-        if is_active_record?(object)
-          object.class.unscoped do
-            attributes_to_hash(@attributes, object)
-          end
+        if @attributes.nil? || @attributes.length == 0
+          attributes = get_default_attributes(object)
         else
-          attributes_to_hash(@attributes, object)
+          if is_active_record?(object)
+            object.class.unscoped do
+              attributes = attributes_to_hash(@attributes, object)
+            end
+          else
+            attributes = attributes_to_hash(@attributes, object)
+          end
+
+          attributes.merge!(attributes_to_hash(@additional_attributes, object))
         end
       end
-
-      attributes.merge!(@serializer.new(object).attributes) if @serializer
-      attributes.merge!(attributes_to_hash(@additional_attributes, object))
 
       if @options[:sanitize]
         sanitizer = begin
