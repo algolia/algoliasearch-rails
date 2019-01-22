@@ -16,7 +16,7 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 
 ## API Documentation
 
-You can find the full reference on [Algolia's website](https://www.algolia.com/doc/api-client/rails/).
+You can find the full reference on [Algolia's website](https://www.algolia.com/doc/framework-integration/rails/setup/).
 
 
 
