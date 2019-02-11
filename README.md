@@ -1,8 +1,7 @@
 
 # Algolia Search API Client for Rails
 
-[Algolia Search](https://www.algolia.com) is a hosted full-text, numerical,
-and faceted search engine capable of delivering realtime results from the first keystroke.
+[Algolia Search](https://www.algolia.com) is a hosted search engine capable of delivering real-time results from the first keystroke.
 
 [![Build Status](https://travis-ci.org/algolia/algoliasearch-rails.svg?branch=master)](https://travis-ci.org/algolia/algoliasearch-rails) [![Gem Version](https://badge.fury.io/rb/algoliasearch-rails.svg)](http://badge.fury.io/rb/algoliasearch-rails) [![Code Climate](https://codeclimate.com/github/algolia/algoliasearch-rails.svg)](https://codeclimate.com/github/algolia/algoliasearch-rails) ![ActiveRecord](https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square) ![Mongoid](https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square) ![Sequel](https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square)
 
@@ -16,7 +15,7 @@ You might be interested in the sample Ruby on Rails application providing a `aut
 
 ## API Documentation
 
-You can find the full reference on [Algolia's website](https://www.algolia.com/doc/framework-integration/rails/setup/).
+You can find the full reference on [Algolia's website](https://www.algolia.com/doc/framework-integration/rails/).
 
 
 
@@ -64,7 +63,6 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 
 1. **[Testing](#testing)**
     * [Notes](#notes)
-
 
 
 
@@ -128,7 +126,6 @@ Contact.algolia_reindex! # <=> Contact.reindex!
 
 Contact.algolia_search("jon doe") # <=> Contact.search("jon doe")
 ```
-
 
 
 
@@ -406,7 +403,7 @@ Product.search_for_facet_values('category', 'phone', {
 ## Group by
 
 More info on distinct for grouping can be found
-[here](https://www.algolia.com/doc/guides/ranking/distinct/).
+[here](https://www.algolia.com/doc/guides/managing-results/refine-results/grouping/).
 
 ```ruby
 class Contact < ActiveRecord::Base
@@ -437,7 +434,6 @@ end
 ```
 
 At query time, specify <code>{ aroundLatLng: "37.33, -121.89", aroundRadius: 50000 }</code> as search parameters to restrict the result set to 50KM around San Jose.
-
 
 
 
@@ -935,7 +931,6 @@ end
 
 
 
-
 # Indices
 
 
@@ -1115,7 +1110,6 @@ Book.raw_search 'foo bar', index: 'Book_by_editor'
 # or
 Book.search 'foo bar', index: 'Book_by_editor'
 ```
-
 
 
 
