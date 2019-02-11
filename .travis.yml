@@ -30,19 +30,18 @@ matrix:
       env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
     - rvm: 2.4.3
       env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
-    - rvm: 2.5.0
-      env: RAILS_VERSION=4.2
-    - rvm: 2.5.0
-      env: RAILS_VERSION=5.1 SEQUEL_VERSION=4.0
-    - rvm: 2.5.0
+    - rvm: 2.5.3
       env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
-
-  allow_failures:
-    - rvm: rbx-2
+    - rvm: 2.6.0
+      env: RAILS_VERSION=5.2 SEQUEL_VERSION=5.0
 
 before_install:
   - wget http://api-key-dealer.herokuapp.com/clients/algolia-keys && chmod +x algolia-keys
-  - gem i rubygems-update -v '<3' && update_rubygems
+  - which bundle || true
+  - find /home/travis/.rvm -wholename "*/bundler-*.gemspec" -print -delete || true
+  - bundle --version || true
+  - gem uninstall bundler || true
+  - bundle --version || true
   - gem install bundler -v 1.17.3
   - bundle --version
 

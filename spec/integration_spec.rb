@@ -10,6 +10,7 @@ end
 require 'sqlite3' if !defined?(JRUBY_VERSION)
 require 'logger'
 require 'sequel'
+require 'active_model_serializers'
 
 AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
 
@@ -113,6 +114,12 @@ ActiveRecord::Schema.define do
   create_table :misconfigured_blocks do |t|
     t.string :name
   end
+  if defined?(ActiveModel::Serializer)
+    create_table :serialized_objects do |t|
+      t.string :name
+      t.string :skip
+    end
+  end
 end
 
 class Product < ActiveRecord::Base
@@ -156,6 +163,8 @@ class Color < ActiveRecord::Base
     tags do
       name # single tag
     end
+
+    # we're using all attributes of the Color class + the _tag "extra" attribute
   end
 end
 
@@ -439,6 +448,38 @@ class MisconfiguredBlock < ActiveRecord::Base
   include AlgoliaSearch
 end
 
+if defined?(ActiveModel::Serializer)
+  class SerializedObjectSerializer < ActiveModel::Serializer
+    attributes :name
+  end
+
+  class SerializedObject < ActiveRecord::Base
+    include AlgoliaSearch
+
+    algoliasearch :index_name => safe_index_name('SerializedObject') do
+      use_serializer SerializedObjectSerializer
+
+      tags do
+        ['tag1', 'tag2']
+      end
+    end
+  end
+end
+
+if defined?(ActiveModel::Serializer)
+  describe 'SerializedObject' do
+    before(:all) do
+      SerializedObject.clear_index!(true)
+    end
+
+    it "should push the name but not the other attribute" do
+      o = SerializedObject.new :name => 'test', :skip => 'skip me'
+      attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
+      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2']})
+    end
+  end
+end
+
 describe 'Encoding' do
   before(:all) do
     EncodedString.clear_index!(true)
@@ -452,7 +493,6 @@ describe 'Encoding' do
       expect(results['hits'].first['value']).to eq("\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('utf-8'))
     end
   end
-
 end
 
 # Rails 3.2 swallows exception in after_commit

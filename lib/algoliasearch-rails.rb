@@ -95,6 +95,11 @@ module AlgoliaSearch
       instance_exec(&block) if block
     end
 
+    def use_serializer(serializer)
+      @serializer = serializer
+      # instance_variable_set("@serializer", serializer)
+    end
+
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
@@ -141,15 +146,7 @@ module AlgoliaSearch
     end
 
     def get_attribute_names(object)
-      res = if @attributes.nil? || @attributes.length == 0
-        get_default_attributes(object).keys
-      else
-        @attributes.keys
-      end
-
-      res += @additional_attributes.keys if @additional_attributes
-
-      res
+      get_attributes(object).keys
     end
 
     def attributes_to_hash(attributes, object)
@@ -161,19 +158,27 @@ module AlgoliaSearch
     end
 
     def get_attributes(object)
-      attributes = if @attributes.nil? || @attributes.length == 0
-        get_default_attributes(object)
+      # If a serializer is set, we ignore attributes
+      # everything should be done via the serializer
+      if not @serializer.nil?
+        attributes = @serializer.new(object).attributes
       else
-        if is_active_record?(object)
-          object.class.unscoped do
-            attributes_to_hash(@attributes, object)
-          end
+        if @attributes.nil? || @attributes.length == 0
+          # no `attribute ...` have been configured, use the default attributes of the model
+          attributes = get_default_attributes(object)
         else
-          attributes_to_hash(@attributes, object)
+          # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
+          if is_active_record?(object)
+            object.class.unscoped do
+              attributes = attributes_to_hash(@attributes, object)
+            end
+          else
+            attributes = attributes_to_hash(@attributes, object)
+          end
         end
       end
 
-      attributes.merge!(attributes_to_hash(@additional_attributes, object))
+      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
 
       if @options[:sanitize]
         sanitizer = begin
