@@ -1,5 +1,35 @@
 CHANGELOG
 
+## [1.21.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.21.0) (2019-02-12)
+
+**Added**
+
+* Add `AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE` constant - PR [#319](https://github.com/algolia/algoliasearch-rails/pull/319)
+
+* Support ActiveModel Serializer 🎉 - PR [#266](https://github.com/algolia/algoliasearch-rails/pull/266)
+
+    ```ruby
+    class SerializedObject < ActiveRecord::Base
+        include AlgoliaSearch
+
+        algoliasearch do
+
+            use_serializer SerializedObjectSerializer
+
+            tags do
+                ['tag1', 'tag2']
+            end
+
+        end
+    end
+    ```
+
+**Fixed**
+
+* Add support for all new recent engine settings - PR [#327](https://github.com/algolia/algoliasearch-rails/pull/327)
+
+    Algolia regularly introduce new settings, all of them are supported by this gem.
+
 2018-12-07 1.20.6
 
     * Better support for Rails 5.1 and deprecated `attribute_changed?`
