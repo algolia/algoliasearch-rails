@@ -272,19 +272,22 @@ module AlgoliaSearch
       @additional_indexes ||= {}
       raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
+
+      options.merge!({ :primary_settings => self }) if options[:inherit]
+
       @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
 
     def add_replica(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :replica => true, :primary_settings => self }), &block)
+      add_index(index_name, options.merge({ :replica => true }), &block)
     end
 
     def add_slave(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :slave => true, :primary_settings => self }), &block)
+      add_index(index_name, options.merge({ :slave => true }), &block)
     end
 
     def additional_indexes
