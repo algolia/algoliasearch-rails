@@ -167,6 +167,10 @@ class Color < ActiveRecord::Base
 
     # we're using all attributes of the Color class + the _tag "extra" attribute
   end
+
+  def hex_changed?
+    false
+  end
 end
 
 class DisabledBoolean < ActiveRecord::Base
@@ -542,14 +546,18 @@ describe 'Change detection' do
     color.save
     Color.algolia_must_reindex?(color).should == false
 
+    color.hex = 123456
+    Color.algolia_must_reindex?(color).should == false
+
     color.not_indexed = "strstr"
     Color.algolia_must_reindex?(color).should == false
     color.name = "red"
     Color.algolia_must_reindex?(color).should == true
+
+    color.delete
   end
 
 end
-
 
 describe 'Namespaced::Model' do
   it "should have an index name without :: hierarchy" do

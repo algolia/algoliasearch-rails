@@ -743,15 +743,14 @@ module AlgoliaSearch
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
-          changed_method = attribute_changed_method(k)
-          return true if !object.respond_to?(changed_method) || object.send(changed_method)
+          return true if algolia_attribute_changed?(object, k)
+          # return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
-            changed_method = attribute_changed_method(condition)
-            return true if !object.respond_to?(changed_method) || object.send(changed_method)
+            return true if algolia_attribute_changed?(object, condition)
           else
             # if the :if, :unless condition is a anything else,
             # we have no idea whether we should reindex or not
@@ -825,8 +824,8 @@ module AlgoliaSearch
     end
 
     def algolia_object_id_changed?(o, options = nil)
-      m = attribute_changed_method(algolia_object_id_method(options))
-      o.respond_to?(m) ? o.send(m) : false
+      changed = algolia_attribute_changed?(o, algolia_object_id_method(options))
+      changed.nil? ? false : changed
     end
 
     def algoliasearch_settings_changed?(prev, current)
@@ -920,13 +919,16 @@ module AlgoliaSearch
       end
     end
 
-    def attribute_changed_method(attr)
-      if defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1 ||
-          (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
-        "will_save_change_to_#{attr}?"
-      else
-        "#{attr}_changed?"
+    def algolia_attribute_changed?(object, attr_name)
+      # if one of two method is implemented, we return its result
+      # true/false means whether it has changed or not
+      ["#{attr_name}_changed?", "will_save_change_to_#{attr_name}?"].each do |method_name|
+        if object.respond_to?(method_name)
+          return object.send(method_name)
+        end
       end
+      # Nil means we don't know if the attribute has changed
+      nil
     end
   end
 
