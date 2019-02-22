@@ -739,6 +739,9 @@ module AlgoliaSearch
     end
 
     def algolia_must_reindex?(object)
+      # use +algolia_dirty?+ method if implemented
+      return object.send(:algolia_dirty?) if (object.respond_to?(:algolia_dirty?))
+      # Loop over each index to see if a attribute used in records has changed
       algolia_configurations.each do |options, settings|
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
@@ -759,6 +762,7 @@ module AlgoliaSearch
           end
         end
       end
+      # By default, we don't reindex
       return false
     end
 

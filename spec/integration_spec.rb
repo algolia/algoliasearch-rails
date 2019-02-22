@@ -83,6 +83,12 @@ ActiveRecord::Schema.define do
     t.boolean :premium
     t.boolean :released
   end
+  create_table :ebooks do |t|
+    t.string :name
+    t.string :author
+    t.boolean :premium
+    t.boolean :released
+  end
   create_table :disabled_booleans do |t|
     t.string :name
   end
@@ -377,6 +383,22 @@ class Book < ActiveRecord::Base
   end
 end
 
+class Ebook < ActiveRecord::Base
+  include AlgoliaSearch
+  attr_accessor :current_time, :published_at
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("eBooks")do
+    attributesToIndex [:name]
+  end
+
+  def algolia_dirty?
+    return true if self.published_at.nil? || self.current_time.nil?
+    # Consider dirty if published date is in the past
+    # This doesn't make so much business sense but it's easy to test.
+    self.published_at < self.current_time
+  end
+end
+
 class EncodedString < ActiveRecord::Base
   include AlgoliaSearch
 
@@ -539,8 +561,8 @@ end
 
 describe 'Change detection' do
 
-  it "should detect settings changes" do
-    color = Color.new name: "dark-blue", short_name: "blue"
+  it "should detect attribute changes" do
+    color = Color.new :name => "dark-blue", :short_name => "blue"
 
     Color.algolia_must_reindex?(color).should == true
     color.save
@@ -555,6 +577,17 @@ describe 'Change detection' do
     Color.algolia_must_reindex?(color).should == true
 
     color.delete
+  end
+
+  it "should detect change with algolia_dirty? method" do
+    ebook = Ebook.new :name => "My life", :author => "Myself", :premium => false, :released => true
+
+    Ebook.algolia_must_reindex?(ebook).should == true # Because it's defined in algolia_dirty? method
+    ebook.current_time = 10
+    ebook.published_at = 8
+    Ebook.algolia_must_reindex?(ebook).should == true
+    ebook.published_at = 12
+    Ebook.algolia_must_reindex?(ebook).should == false
   end
 
 end
