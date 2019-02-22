@@ -155,6 +155,7 @@ end
 
 class Color < ActiveRecord::Base
   include AlgoliaSearch
+  attr_accessor :not_indexed
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
     attributesToIndex [:name]
@@ -531,6 +532,24 @@ describe 'Settings' do
   end
 
 end
+
+describe 'Change detection' do
+
+  it "should detect settings changes" do
+    color = Color.new name: "dark-blue", short_name: "blue"
+
+    Color.algolia_must_reindex?(color).should == true
+    color.save
+    Color.algolia_must_reindex?(color).should == false
+
+    color.not_indexed = "strstr"
+    Color.algolia_must_reindex?(color).should == false
+    color.name = "red"
+    Color.algolia_must_reindex?(color).should == true
+  end
+
+end
+
 
 describe 'Namespaced::Model' do
   it "should have an index name without :: hierarchy" do
