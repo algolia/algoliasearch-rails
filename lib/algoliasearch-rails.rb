@@ -1,5 +1,6 @@
 require 'algoliasearch'
 
+require 'algoliasearch/database_adapter'
 require 'algoliasearch/version'
 require 'algoliasearch/utilities'
 
@@ -120,41 +121,8 @@ module AlgoliaSearch
     end
     alias :add_attributes :add_attribute
 
-    def is_mongoid?(object)
-      defined?(::Mongoid::Document) && object.class.include?(::Mongoid::Document)
-    end
-
-    def is_sequel?(object)
-      defined?(::Sequel) && object.class < ::Sequel::Model
-    end
-
-    def is_active_record?(object)
-      !is_mongoid?(object) && !is_sequel?(object)
-    end
-
-    def get_default_attributes(object)
-      if is_mongoid?(object)
-        # work-around mongoid 2.4's unscoped method, not accepting a block
-        object.attributes
-      elsif is_sequel?(object)
-        object.to_hash
-      else
-        object.class.unscoped do
-          object.attributes
-        end
-      end
-    end
-
     def get_attribute_names(object)
       get_attributes(object).keys
-    end
-
-    def attributes_to_hash(attributes, object)
-      if attributes
-        Hash[attributes.map { |name, value| [name.to_s, value.call(object) ] }]
-      else
-        {}
-      end
     end
 
     def get_attributes(object)
@@ -165,20 +133,14 @@ module AlgoliaSearch
       else
         if @attributes.nil? || @attributes.length == 0
           # no `attribute ...` have been configured, use the default attributes of the model
-          attributes = get_default_attributes(object)
+          attributes = DatabaseAdapter.get_default_attributes(object)
         else
           # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
-          if is_active_record?(object)
-            object.class.unscoped do
-              attributes = attributes_to_hash(@attributes, object)
-            end
-          else
-            attributes = attributes_to_hash(@attributes, object)
-          end
+          attributes = DatabaseAdapter.get_attributes(@attributes, object)
         end
       end
 
-      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      attributes.merge!(DatabaseAdapter.attributes_to_hash(@additional_attributes, object)) if @additional_attributes
 
       if @options[:sanitize]
         sanitizer = begin
@@ -394,20 +356,7 @@ module AlgoliaSearch
 
       attr_accessor :highlight_result, :snippet_result
 
-      if options[:synchronous] == true
-        if defined?(::Sequel) && self < Sequel::Model
-          class_eval do
-            copy_after_validation = instance_method(:after_validation)
-            define_method(:after_validation) do |*args|
-              super(*args)
-              copy_after_validation.bind(self).call
-              algolia_mark_synchronous
-            end
-          end
-        else
-          after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
-        end
-      end
+      DatabaseAdapter.prepare_for_synchronous(self) if options[:synchronous] == true
       if options[:enqueue]
         raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
         proc = if options[:enqueue] == true
@@ -425,68 +374,9 @@ module AlgoliaSearch
           proc.call(record, remove) unless algolia_without_auto_index_scope
         end
       end
-      unless options[:auto_index] == false
-        if defined?(::Sequel) && self < Sequel::Model
-          class_eval do
-            copy_after_validation = instance_method(:after_validation)
-            copy_before_save = instance_method(:before_save)
 
-            define_method(:after_validation) do |*args|
-              super(*args)
-              copy_after_validation.bind(self).call
-              algolia_mark_must_reindex
-            end
-
-            define_method(:before_save) do |*args|
-              copy_before_save.bind(self).call
-              algolia_mark_for_auto_indexing
-              super(*args)
-            end
-
-            sequel_version = Gem::Version.new(Sequel.version)
-            if sequel_version >= Gem::Version.new('4.0.0') && sequel_version < Gem::Version.new('5.0.0')
-              copy_after_commit = instance_method(:after_commit)
-              define_method(:after_commit) do |*args|
-                super(*args)
-                copy_after_commit.bind(self).call
-                algolia_perform_index_tasks
-              end
-            else
-              copy_after_save = instance_method(:after_save)
-              define_method(:after_save) do |*args|
-                super(*args)
-                copy_after_save.bind(self).call
-                self.db.after_commit do
-                  algolia_perform_index_tasks
-                end
-              end
-            end
-          end
-        else
-          after_validation :algolia_mark_must_reindex if respond_to?(:after_validation)
-          before_save :algolia_mark_for_auto_indexing if respond_to?(:before_save)
-          if respond_to?(:after_commit)
-            after_commit :algolia_perform_index_tasks
-          elsif respond_to?(:after_save)
-            after_save :algolia_perform_index_tasks
-          end
-        end
-      end
-      unless options[:auto_remove] == false
-        if defined?(::Sequel) && self < Sequel::Model
-          class_eval do
-            copy_after_destroy = instance_method(:after_destroy)
-
-            define_method(:after_destroy) do |*args|
-              copy_after_destroy.bind(self).call
-              algolia_enqueue_remove_from_index!(algolia_synchronous?)
-              super(*args)
-            end
-          end
-        else
-          after_destroy { |searchable| searchable.algolia_enqueue_remove_from_index!(algolia_synchronous?) } if respond_to?(:after_destroy)
-        end
-      end
+      DatabaseAdapter.prepare_for_auto_index(self) unless options[:auto_index] == false
+      DatabaseAdapter.prepare_for_auto_remove(self) unless options[:auto_remove] == false
     end
 
     def algolia_without_auto_index(&block)
@@ -902,31 +792,11 @@ module AlgoliaSearch
     end
 
     def algolia_find_in_batches(batch_size, &block)
-      if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
-        find_in_batches(:batch_size => batch_size, &block)
-      elsif defined?(::Sequel) && self < Sequel::Model
-        dataset.extension(:pagination).each_page(batch_size, &block)
-      else
-        # don't worry, mongoid has its own underlying cursor/streaming mechanism
-        items = []
-        all.each do |item|
-          items << item
-          if items.length % batch_size == 0
-            yield items
-            items = []
-          end
-        end
-        yield items unless items.empty?
-      end
+      DatabaseAdapter.find_in_batches(self, batch_size, &block)
     end
 
     def attribute_changed_method(attr)
-      if defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1 ||
-          (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
-        "will_save_change_to_#{attr}?"
-      else
-        "#{attr}_changed?"
-      end
+      DatabaseAdapter.attribute_changed_method(attr)
     end
   end
 
@@ -979,12 +849,7 @@ module AlgoliaSearch
     end
 
     def algolia_mark_must_reindex
-      @algolia_must_reindex =
-       if defined?(::Sequel) && is_a?(Sequel::Model)
-         new? || self.class.algolia_must_reindex?(self)
-       else
-         new_record? || self.class.algolia_must_reindex?(self)
-       end
+      @algolia_must_reindex = DatabaseAdapter.mark_must_reindex(self)
       true
     end
 
