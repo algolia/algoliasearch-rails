@@ -22,6 +22,7 @@ Gemfile.lock
 
 ## PROJECT::SPECIFIC
 data.sqlite3
+mock.sqlite3
 sequel_data.sqlite3
 
 ## DEBUG

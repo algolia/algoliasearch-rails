@@ -20,6 +20,9 @@ module DatabaseAdapter
     adapter.get_default_attributes(object)
   end
 
+  ## Mark an object as required for reindexing in the ORM
+  #
+  # @param object [Class Instance] Instance of the ORM Object
   def mark_must_reindex(object)
     determine_instance(object)
     adapter.mark_must_reindex(object)
@@ -35,16 +38,25 @@ module DatabaseAdapter
     adapter.find_in_batches(klass, batch_size, &block)
   end
 
+  ## Set the ORM callbacks required for auto indexing
+  #
+  # @param klass [Class] The ORM Class
   def prepare_for_auto_index(klass)
     determine_class(klass)
     adapter.prepare_for_auto_index(klass)
   end
 
+  ## Set the ORM callbacks required for auto removing objects
+  #
+  # @param klass [Class] The ORM Class
   def prepare_for_auto_remove(klass)
     determine_class(klass)
     adapter.prepare_for_auto_remove(klass)
   end
 
+  ## Set the ORM callbacks required for synchronous indexing
+  #
+  # @param klass [Class] The ORM Class
   def prepare_for_synchronous(klass)
     determine_class(klass)
     adapter.prepare_for_synchronous(klass)
@@ -79,7 +91,7 @@ module DatabaseAdapter
 
   private
 
-  # Return the database adapter instance (default active_record)
+  ## Return the database adapter instance (default active_record)
   def adapter
     return @adapter if @adapter
     self.adapter = :active_record
@@ -87,6 +99,8 @@ module DatabaseAdapter
   end
 
   ## Set the database adapter
+  #
+  # @param adapter [Symbol] A symbol representation of the ORM
   def adapter=(adapter)
     require "algoliasearch/database_adapter/#{adapter}"
     @adapter = DatabaseAdapter.const_get(adapter.to_s.split("_").each(&:capitalize!).join)
@@ -110,8 +124,11 @@ module DatabaseAdapter
     self.adapter = :active_record if is_active_record_class?(klass)
   end
 
+
+  #### Database Adapter Class Determination
+
   def is_mongoid_class?(klass)
-    !is_sequel_class?(klass) && !is_active_record_class?(klass)
+    defined?(::Mongoid::Document) && klass.include?(::Mongoid::Document)
   end
 
   def is_sequel_class?(klass)
@@ -123,6 +140,7 @@ module DatabaseAdapter
   end
 
   #### Database Adapter Object Determination
+
   def is_mongoid?(object)
     defined?(::Mongoid::Document) && object.class.include?(::Mongoid::Document)
   end

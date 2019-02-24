@@ -33,6 +33,16 @@ RSpec.configure do |c|
       Algolia.client.delete_index!(index['name'])
     end
   end
+
+  # Before each example connect to the default db
+  c.before(:each) do
+    connect_to_db()
+  end
+
+  # Before each example marked `mocked_db: true` switch database
+  c.before(:each, mocked_db: true) do
+    connect_to_db(name: "mock")
+  end
 end
 
 # A unique prefix for your test run in local or CI
@@ -48,4 +58,15 @@ def safe_index_list
   list = Algolia.client.list_indexes()['items']
   list = list.select { |index| index["name"].include?(SAFE_INDEX_PREFIX) }
   list.sort_by { |index| index["primary"] || "" }
+end
+
+# Perform database switching in specs so that unit specs can be
+# seperated from integration specs in the same run
+def connect_to_db(name: "data")
+  ActiveRecord::Base.establish_connection(
+    'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite3',
+    'database' => "#{name}.sqlite3",
+    'pool' => 5,
+    'timeout' => 5000
+  )
 end
