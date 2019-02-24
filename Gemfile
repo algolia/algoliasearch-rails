@@ -43,7 +43,8 @@ group :test do
 
   sequel_version = ENV['SEQUEL_VERSION'] ? "~> #{ENV['SEQUEL_VERSION']}" : '>= 4.0'
   gem 'sequel', sequel_version
-  gem 'mongoid'
+  mongoid_version = ENV['MONGOID_VERSION'] ? "~> #{ENV['MONGOID_VERSION']}" : '>= 3.0'
+  gem 'mongoid', mongoid_version
 end
 
 group :development do

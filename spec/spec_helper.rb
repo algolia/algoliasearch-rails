@@ -41,7 +41,7 @@ RSpec.configure do |c|
 
   # Before each example marked `mocked_db: true` switch database
   c.before(:each, mocked_db: true) do
-    connect_to_db(name: "mock")
+    connect_to_db("mock")
   end
 end
 
@@ -62,7 +62,7 @@ end
 
 # Perform database switching in specs so that unit specs can be
 # seperated from integration specs in the same run
-def connect_to_db(name: "data")
+def connect_to_db(name = "data")
   ActiveRecord::Base.establish_connection(
     'adapter' => defined?(JRUBY_VERSION) ? 'jdbcsqlite3' : 'sqlite3',
     'database' => "#{name}.sqlite3",

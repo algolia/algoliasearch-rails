@@ -1,5 +1,5 @@
 require "spec_helper"
-connect_to_db(name: "mock")
+connect_to_db("mock")
 
 require "algoliasearch/database_adapter"
 
