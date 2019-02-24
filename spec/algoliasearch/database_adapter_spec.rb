@@ -12,9 +12,9 @@ require "algoliasearch/database_adapter/sequel"
 require "support/mocked_orm_classes"
 
 ADAPTERS = [
-  { name: :active_record, adapter: DatabaseAdapter::ActiveRecord, mocked_class: SimpleActiveRecord },
-  { name: :sequel, adapter: DatabaseAdapter::Sequel, mocked_class: SimpleSequel },
-  { name: :mongoid, adapter: DatabaseAdapter::Mongoid, mocked_class: SimpleMongoid }
+  { "name" => :active_record, "adapter" => DatabaseAdapter::ActiveRecord, "mocked_class" => SimpleActiveRecord },
+  { "name" => :sequel, "adapter" => DatabaseAdapter::Sequel, "mocked_class" => SimpleSequel },
+  { "name" => :mongoid, "adapter" => DatabaseAdapter::Mongoid, "mocked_class" => SimpleMongoid }
 ]
 
 RSpec.describe DatabaseAdapter do
@@ -24,49 +24,49 @@ RSpec.describe DatabaseAdapter do
   describe "public methods", mocked_db: true do
 
     ADAPTERS.each do | test_block |
-      describe "when #{test_block[:name]} object or class" do
+      describe "when #{test_block['name']} object or class" do
 
         describe "methods sending object" do
           [:get_default_attributes, :mark_must_reindex].each do |adapter_method|
-            it "delegates ##{adapter_method} to #{test_block[:adapter]}" do
+            it "delegates ##{adapter_method} to #{test_block['adapter']}" do
               # Arrange
-              allow(test_block[:adapter]).to receive(adapter_method)
+              allow(test_block['adapter']).to receive(adapter_method)
               # Act
-              DatabaseAdapter.send(adapter_method, test_block[:mocked_class].new())
+              DatabaseAdapter.send(adapter_method, test_block['mocked_class'].new())
               # Assert
-              expect(test_block[:adapter]).to have_received(adapter_method)
+              expect(test_block['adapter']).to have_received(adapter_method)
             end
           end
 
-          it "delegates #get_attributes to #{test_block[:adapter]}" do
+          it "delegates #get_attributes to #{test_block['adapter']}" do
             # Arrange
-            allow(test_block[:adapter]).to receive(:get_attributes)
+            allow(test_block['adapter']).to receive(:get_attributes)
             # Act
-            DatabaseAdapter.get_attributes({}, test_block[:mocked_class].new())
+            DatabaseAdapter.get_attributes({}, test_block['mocked_class'].new())
             # Assert
-            expect(test_block[:adapter]).to have_received(:get_attributes)
+            expect(test_block['adapter']).to have_received(:get_attributes)
           end
         end
 
         describe "methods sending klass" do
           [:prepare_for_auto_index, :prepare_for_auto_remove, :prepare_for_synchronous].each do |adapter_method|
-            it "delegates ##{adapter_method} to #{test_block[:adapter]}" do
+            it "delegates ##{adapter_method} to #{test_block['adapter']}" do
               # Arrange
-              allow(test_block[:adapter]).to receive(adapter_method)
+              allow(test_block['adapter']).to receive(adapter_method)
               # Act
-              DatabaseAdapter.send(adapter_method, test_block[:mocked_class])
+              DatabaseAdapter.send(adapter_method, test_block['mocked_class'])
               # Assert
-              expect(test_block[:adapter]).to have_received(adapter_method)
+              expect(test_block['adapter']).to have_received(adapter_method)
             end
           end
 
-          it "delegates #find_in_batches to #{test_block[:adapter]}" do
+          it "delegates #find_in_batches to #{test_block['adapter']}" do
             # Arrange
-            allow(test_block[:adapter]).to receive(:find_in_batches)
+            allow(test_block['adapter']).to receive(:find_in_batches)
             # Act
-            DatabaseAdapter.find_in_batches(test_block[:mocked_class], 10) do Proc.new { |x| x*1 } end
+            DatabaseAdapter.find_in_batches(test_block['mocked_class'], 10) do Proc.new { |x| x*1 } end
             # Assert
-            expect(test_block[:adapter]).to have_received(:find_in_batches)
+            expect(test_block['adapter']).to have_received(:find_in_batches)
           end
         end
 
