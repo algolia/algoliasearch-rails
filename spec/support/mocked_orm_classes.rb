@@ -24,10 +24,10 @@ class SimpleActiveRecord < ActiveRecord::Base; end
 
 ## Sequel basic class
 
-SEQUEL_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
+SEQUEL_MOCK_DB = Sequel.connect(defined?(JRUBY_VERSION) ? 'jdbc:sqlite:sequel_data.sqlite3' : { 'adapter' => 'sqlite', 'database' => 'sequel_data.sqlite3' })
 
-unless SEQUEL_DB.table_exists?(:simple_sequels)
-  SEQUEL_DB.create_table(:simple_sequels) do
+unless SEQUEL_MOCK_DB.table_exists?(:simple_sequels)
+  SEQUEL_MOCK_DB.create_table(:simple_sequels) do
     primary_key :id
     String :name
     String :author
@@ -36,7 +36,7 @@ unless SEQUEL_DB.table_exists?(:simple_sequels)
   end
 end
 
-class SimpleSequel < Sequel::Model(SEQUEL_DB)
+class SimpleSequel < Sequel::Model(SEQUEL_MOCK_DB)
   plugin :active_model
 end
 

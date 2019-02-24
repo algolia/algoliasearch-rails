@@ -40,7 +40,7 @@ RSpec.configure do |c|
   end
 
   # Before each example marked `mocked_db: true` switch database
-  c.before(:each, mocked_db: true) do
+  c.before(:each, :mocked_db => true) do
     connect_to_db("mock")
   end
 end

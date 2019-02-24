@@ -21,7 +21,7 @@ RSpec.describe DatabaseAdapter do
 
   ## Ensure that these specs use the mock DB setup in
   ## mocked_orm_classes.rb
-  describe "public methods", mocked_db: true do
+  describe "public methods", :mocked_db => true do
 
     ADAPTERS.each do | test_block |
       describe "when #{test_block['name']} object or class" do
