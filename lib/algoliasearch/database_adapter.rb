@@ -28,7 +28,7 @@ module DatabaseAdapter
     adapter.mark_must_reindex(object)
   end
 
-  ## Find in batches on the ORM klass
+  ## Find in batches on the ORM Class
   #
   # @param klass [Class] The ORM Class
   # @param batch_size [Integer] Number of records to fetch per batch
