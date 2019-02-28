@@ -926,13 +926,35 @@ module AlgoliaSearch
     def algolia_attribute_changed?(object, attr_name)
       # if one of two method is implemented, we return its result
       # true/false means whether it has changed or not
-      ["#{attr_name}_changed?", "will_save_change_to_#{attr_name}?"].each do |method_name|
-        if object.respond_to?(method_name)
+      # +#{attr_name}_changed?+ always defined for automatic attributes but deprecated after Rails 5.2
+      # +will_save_change_to_#{attr_name}?+ should be use instead for Rails 5.2+, also defined for automatic attributes.
+      # If none of the method are defined, it's a dynamic attribute
+
+      method_name = "#{attr_name}_changed?"
+      if object.respond_to?(method_name)
+        # If +#{attr_name}_changed?+ respond we want to see if the method is user defined or if it's automatically
+        # defined by Rails.
+        # If it's user-defined, we call it.
+        # If it's automatic we check ActiveRecord version to see if this method is deprecated
+        # and try to call +will_save_change_to_#{attr_name}?+ instead.
+        # See: https://github.com/algolia/algoliasearch-rails/pull/338
+        rails_magic_def = object.method(method_name).source_location[0].end_with?("active_model/attribute_methods.rb")
+        unless rails_magic_def && automatic_changed_method_deprecated?
           return object.send(method_name)
         end
       end
+
+      if object.respond_to?("will_save_change_to_#{attr_name}?")
+        return object.send("will_save_change_to_#{attr_name}?")
+      end
+
       # Nil means we don't know if the attribute has changed
       nil
+    end
+
+    def automatic_changed_method_deprecated?
+      (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1) ||
+          (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
     end
   end
 
