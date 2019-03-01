@@ -177,6 +177,10 @@ class Color < ActiveRecord::Base
   def hex_changed?
     false
   end
+
+  def will_save_change_to_short_name?
+    false
+  end
 end
 
 class DisabledBoolean < ActiveRecord::Base
@@ -588,6 +592,23 @@ describe 'Change detection' do
     Ebook.algolia_must_reindex?(ebook).should == true
     ebook.published_at = 12
     Ebook.algolia_must_reindex?(ebook).should == false
+  end
+
+  it "should know if the _changed? method is user-defined" do
+    color = Color.new :name => "dark-blue", :short_name => "blue"
+
+    expect { Color.send(:automatic_changed_method?, color, :something_that_doesnt_exist) }.to raise_error(ArgumentError)
+
+    Color.send(:automatic_changed_method?, color, :name_changed?).should == true
+    Color.send(:automatic_changed_method?, color, :hex_changed?).should == false
+
+    Color.send(:automatic_changed_method?, color, :will_save_change_to_short_name?).should == false
+
+    if Color.send(:automatic_changed_method_deprecated?)
+      Color.send(:automatic_changed_method?, color, :will_save_change_to_name?).should == true
+      Color.send(:automatic_changed_method?, color, :will_save_change_to_hex?).should == true
+    end
+
   end
 
 end
