@@ -938,6 +938,11 @@ module AlgoliaSearch
         # If it's automatic we check ActiveRecord version to see if this method is deprecated
         # and try to call +will_save_change_to_#{attr_name}?+ instead.
         # See: https://github.com/algolia/algoliasearch-rails/pull/338
+        # This feature is not compatible with Ruby 1.8
+        # In this case, we always call #{attr_name}_changed?
+        if Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9
+          return object.send(method_name)
+        end
         unless automatic_changed_method?(object, method_name) && automatic_changed_method_deprecated?
           return object.send(method_name)
         end
@@ -953,11 +958,7 @@ module AlgoliaSearch
 
     def automatic_changed_method?(object, method_name)
       raise ArgumentError.new("Method #{method_name} doesn't exist on #{object.class.name}") unless object.respond_to?(method_name)
-      if defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9
-        file = object.method(method_name).__file__
-      else
-        file = object.method(method_name).source_location[0]
-      end
+      file = object.method(method_name).source_location[0]
       file.end_with?("active_model/attribute_methods.rb")
     end
 

@@ -594,7 +594,7 @@ describe 'Change detection' do
     Ebook.algolia_must_reindex?(ebook).should == false
   end
 
-  it "should know if the _changed? method is user-defined" do
+  it "should know if the _changed? method is user-defined", :skip => Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9 do
     color = Color.new :name => "dark-blue", :short_name => "blue"
 
     expect { Color.send(:automatic_changed_method?, color, :something_that_doesnt_exist) }.to raise_error(ArgumentError)
