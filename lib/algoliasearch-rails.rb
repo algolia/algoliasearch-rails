@@ -632,15 +632,15 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
-        settings.get_attribute_names(object).each do |k|
-          changed_method = attribute_changed_method(k)
+        settings.get_attribute_names(object).each do |attribute_name|
+          changed_method = DatabaseAdapter.attribute_changed_method(object, attribute_name)
           return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
-            changed_method = attribute_changed_method(condition)
+            changed_method = DatabaseAdapter.attribute_changed_method(object, condition)
             return true if !object.respond_to?(changed_method) || object.send(changed_method)
           else
             # if the :if, :unless condition is a anything else,
@@ -715,7 +715,7 @@ module AlgoliaSearch
     end
 
     def algolia_object_id_changed?(o, options = nil)
-      m = attribute_changed_method(algolia_object_id_method(options))
+      m = DatabaseAdapter.attribute_changed_method(o, algolia_object_id_method(options))
       o.respond_to?(m) ? o.send(m) : false
     end
 
@@ -793,10 +793,6 @@ module AlgoliaSearch
 
     def algolia_find_in_batches(batch_size, &block)
       DatabaseAdapter.find_in_batches(self, batch_size, &block)
-    end
-
-    def attribute_changed_method(attr)
-      DatabaseAdapter.attribute_changed_method(attr)
     end
   end
 

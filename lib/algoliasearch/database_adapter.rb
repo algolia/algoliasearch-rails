@@ -65,14 +65,15 @@ module DatabaseAdapter
   ## Determine the correct changed method to send to the ORM class
   #
   # This method is not ORM specific so isn't forwared to the
-  # ORM adapter
-  def attribute_changed_method(attr)
-    if defined?(::ActiveRecord) && ::ActiveRecord::VERSION::MAJOR >= 5 && ::ActiveRecord::VERSION::MINOR >= 1 ||
-      (defined?(::ActiveRecord) && ::ActiveRecord::VERSION::MAJOR > 5)
-      "will_save_change_to_#{attr}?"
-    else
-      "#{attr}_changed?"
-    end
+  # ORM adapter. We assert the new ActiveRecord 5.1.2 method
+  # as `will_save_change_to` if this is not present, return
+  # the old method
+  def attribute_changed_method(object, attribute_name)
+    will_save_method = "will_save_change_to_#{attribute_name}?"
+    did_change_method = "#{attribute_name}_changed?"
+
+    return will_save_method if object.respond_to?(will_save_method)
+    did_change_method
   end
 
   #### Helper Methods
