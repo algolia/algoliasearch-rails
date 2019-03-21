@@ -1,4 +1,26 @@
-CHANGELOG
+# CHANGELOG
+
+## [1.22.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.22.0) (2019-03-21)
+
+🚨 The documentation for our Rails integration was refreshed 🎉
+https://www.algolia.com/doc/framework-integration/rails/getting-started/setup/
+
+**Added**
+
+* Introduce `algolia_dirty?` on models to decide if a model should be reindex.
+
+    This feature already exists via _changed? methods but might requires to implements many
+    methods if you have multiple dynamic attributes. Dynamic attributes are attributes not mapping
+    to a DB column. This feature allows you to group avoid all the _changed? method calls and
+    group all the logic inside one unique method.
+
+**Fixed**
+
+* Fix _changed? method call for Rails 5.2+ with dynamic attribute - PR [#338](https://github.com/algolia/algoliasearch-rails/pull/338)
+
+    Related issue: https://github.com/algolia/algoliasearch-rails/issues/140
+    Documentation: https://www.algolia.com/doc/framework-integration/rails/indexing/indexing/#automatic-updates
+
 
 ## [1.21.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.21.0) (2019-02-12)
 
