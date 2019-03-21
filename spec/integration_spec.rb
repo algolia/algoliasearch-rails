@@ -83,6 +83,12 @@ ActiveRecord::Schema.define do
     t.boolean :premium
     t.boolean :released
   end
+  create_table :ebooks do |t|
+    t.string :name
+    t.string :author
+    t.boolean :premium
+    t.boolean :released
+  end
   create_table :disabled_booleans do |t|
     t.string :name
   end
@@ -155,6 +161,7 @@ end
 
 class Color < ActiveRecord::Base
   include AlgoliaSearch
+  attr_accessor :not_indexed
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
     attributesToIndex [:name]
@@ -165,6 +172,14 @@ class Color < ActiveRecord::Base
     end
 
     # we're using all attributes of the Color class + the _tag "extra" attribute
+  end
+
+  def hex_changed?
+    false
+  end
+
+  def will_save_change_to_short_name?
+    false
   end
 end
 
@@ -372,6 +387,22 @@ class Book < ActiveRecord::Base
   end
 end
 
+class Ebook < ActiveRecord::Base
+  include AlgoliaSearch
+  attr_accessor :current_time, :published_at
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("eBooks")do
+    attributesToIndex [:name]
+  end
+
+  def algolia_dirty?
+    return true if self.published_at.nil? || self.current_time.nil?
+    # Consider dirty if published date is in the past
+    # This doesn't make so much business sense but it's easy to test.
+    self.published_at < self.current_time
+  end
+end
+
 class EncodedString < ActiveRecord::Base
   include AlgoliaSearch
 
@@ -528,6 +559,56 @@ describe 'Settings' do
     Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
     Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should == false
     Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
+  end
+
+end
+
+describe 'Change detection' do
+
+  it "should detect attribute changes" do
+    color = Color.new :name => "dark-blue", :short_name => "blue"
+
+    Color.algolia_must_reindex?(color).should == true
+    color.save
+    Color.algolia_must_reindex?(color).should == false
+
+    color.hex = 123456
+    Color.algolia_must_reindex?(color).should == false
+
+    color.not_indexed = "strstr"
+    Color.algolia_must_reindex?(color).should == false
+    color.name = "red"
+    Color.algolia_must_reindex?(color).should == true
+
+    color.delete
+  end
+
+  it "should detect change with algolia_dirty? method" do
+    ebook = Ebook.new :name => "My life", :author => "Myself", :premium => false, :released => true
+
+    Ebook.algolia_must_reindex?(ebook).should == true # Because it's defined in algolia_dirty? method
+    ebook.current_time = 10
+    ebook.published_at = 8
+    Ebook.algolia_must_reindex?(ebook).should == true
+    ebook.published_at = 12
+    Ebook.algolia_must_reindex?(ebook).should == false
+  end
+
+  it "should know if the _changed? method is user-defined", :skip => Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9 do
+    color = Color.new :name => "dark-blue", :short_name => "blue"
+
+    expect { Color.send(:automatic_changed_method?, color, :something_that_doesnt_exist) }.to raise_error(ArgumentError)
+
+    Color.send(:automatic_changed_method?, color, :name_changed?).should == true
+    Color.send(:automatic_changed_method?, color, :hex_changed?).should == false
+
+    Color.send(:automatic_changed_method?, color, :will_save_change_to_short_name?).should == false
+
+    if Color.send(:automatic_changed_method_deprecated?)
+      Color.send(:automatic_changed_method?, color, :will_save_change_to_name?).should == true
+      Color.send(:automatic_changed_method?, color, :will_save_change_to_hex?).should == true
+    end
+
   end
 
 end

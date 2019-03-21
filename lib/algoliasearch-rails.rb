@@ -739,19 +739,21 @@ module AlgoliaSearch
     end
 
     def algolia_must_reindex?(object)
+      # use +algolia_dirty?+ method if implemented
+      return object.send(:algolia_dirty?) if (object.respond_to?(:algolia_dirty?))
+      # Loop over each index to see if a attribute used in records has changed
       algolia_configurations.each do |options, settings|
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
-          changed_method = attribute_changed_method(k)
-          return true if !object.respond_to?(changed_method) || object.send(changed_method)
+          return true if algolia_attribute_changed?(object, k)
+          # return true if !object.respond_to?(changed_method) || object.send(changed_method)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
-            changed_method = attribute_changed_method(condition)
-            return true if !object.respond_to?(changed_method) || object.send(changed_method)
+            return true if algolia_attribute_changed?(object, condition)
           else
             # if the :if, :unless condition is a anything else,
             # we have no idea whether we should reindex or not
@@ -760,6 +762,7 @@ module AlgoliaSearch
           end
         end
       end
+      # By default, we don't reindex
       return false
     end
 
@@ -825,8 +828,8 @@ module AlgoliaSearch
     end
 
     def algolia_object_id_changed?(o, options = nil)
-      m = attribute_changed_method(algolia_object_id_method(options))
-      o.respond_to?(m) ? o.send(m) : false
+      changed = algolia_attribute_changed?(o, algolia_object_id_method(options))
+      changed.nil? ? false : changed
     end
 
     def algoliasearch_settings_changed?(prev, current)
@@ -920,13 +923,48 @@ module AlgoliaSearch
       end
     end
 
-    def attribute_changed_method(attr)
-      if defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1 ||
-          (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
-        "will_save_change_to_#{attr}?"
-      else
-        "#{attr}_changed?"
+    def algolia_attribute_changed?(object, attr_name)
+      # if one of two method is implemented, we return its result
+      # true/false means whether it has changed or not
+      # +#{attr_name}_changed?+ always defined for automatic attributes but deprecated after Rails 5.2
+      # +will_save_change_to_#{attr_name}?+ should be use instead for Rails 5.2+, also defined for automatic attributes.
+      # If none of the method are defined, it's a dynamic attribute
+
+      method_name = "#{attr_name}_changed?"
+      if object.respond_to?(method_name)
+        # If +#{attr_name}_changed?+ respond we want to see if the method is user defined or if it's automatically
+        # defined by Rails.
+        # If it's user-defined, we call it.
+        # If it's automatic we check ActiveRecord version to see if this method is deprecated
+        # and try to call +will_save_change_to_#{attr_name}?+ instead.
+        # See: https://github.com/algolia/algoliasearch-rails/pull/338
+        # This feature is not compatible with Ruby 1.8
+        # In this case, we always call #{attr_name}_changed?
+        if Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f < 1.9
+          return object.send(method_name)
+        end
+        unless automatic_changed_method?(object, method_name) && automatic_changed_method_deprecated?
+          return object.send(method_name)
+        end
       end
+
+      if object.respond_to?("will_save_change_to_#{attr_name}?")
+        return object.send("will_save_change_to_#{attr_name}?")
+      end
+
+      # Nil means we don't know if the attribute has changed
+      nil
+    end
+
+    def automatic_changed_method?(object, method_name)
+      raise ArgumentError.new("Method #{method_name} doesn't exist on #{object.class.name}") unless object.respond_to?(method_name)
+      file = object.method(method_name).source_location[0]
+      file.end_with?("active_model/attribute_methods.rb")
+    end
+
+    def automatic_changed_method_deprecated?
+      (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1) ||
+          (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
     end
   end
 
