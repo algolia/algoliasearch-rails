@@ -555,18 +555,15 @@ module AlgoliaSearch
         master_settings.delete 'replicas'
 
         # init temporary index
-        index_name = algolia_index_name(options)
-        tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
-        tmp_options.delete(:per_environment) # already included in the temporary index_name
-        tmp_settings = settings.dup
-        tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
+        ::Algolia::copy_index!(index_name, "#{index_name}.tmp", %w(settings synonyms rules))
+        tmp_index = SafeIndex.new("#{index_name}.tmp", !!options[:raise_on_failure])
 
         algolia_find_in_batches(batch_size) do |group|
-          if algolia_conditional_index?(tmp_options)
+          if algolia_conditional_index?(options)
             # select only indexable objects
-            group = group.select { |o| algolia_indexable?(o, tmp_options) }
+            group = group.select { |o| algolia_indexable?(o, options) }
           end
-          objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
+          objects = group.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) }
           tmp_index.save_objects(objects)
         end
 
