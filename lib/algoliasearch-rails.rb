@@ -542,24 +542,37 @@ module AlgoliaSearch
     # reindex whole database using a extra temporary index + move operation
     def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
+
       algolia_configurations.each do |options, settings|
+
         next if algolia_indexing_disabled?(options)
-        next if options[:slave] || options[:replica]
 
-        # fetch the master settings
-        master_index = algolia_ensure_init(options, settings)
-        master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
-        master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
+        if options[:primary_settings] && options[:inherit_settings]
+          final_settings_map = options[:primary_settings].to_settings
+          final_settings_map.merge!(settings.to_settings)
+        else
+          final_settings_map = settings.to_settings
+        end
 
-        # remove the replicas of the temporary index
-        master_settings.delete :slaves
-        master_settings.delete 'slaves'
-        master_settings.delete :replicas
-        master_settings.delete 'replicas'
+        # Always remove the replicas because the index is either:
+        #  - Temporary index (never set replicas to tmp index you're going to move)
+        #  - A replica itself so it cannot have replicas
+        final_settings_map.delete :slaves
+        final_settings_map.delete :replicas
+
+        # For replica, we set_settings in case they are different or if they have changed
+        if options[:slave] || options[:replica]
+          replicaIndex = SafeIndex.new(algolia_index_name(options), algoliasearch_options[:raise_on_failure])
+          replicaIndex.set_settings final_settings_map
+          next
+        end
+
+        src_index_name = options[:index_name] || index_name
 
         # init temporary index
-        ::Algolia::copy_index!(index_name, "#{index_name}.tmp", %w(settings synonyms rules))
-        tmp_index = SafeIndex.new("#{index_name}.tmp", !!options[:raise_on_failure])
+        ::Algolia::copy_index!(src_index_name, "#{src_index_name}.tmp", %w(settings synonyms rules))
+        tmp_index = SafeIndex.new("#{src_index_name}.tmp", !!options[:raise_on_failure])
+        tmp_index.set_settings final_settings_map
 
         algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(options)
@@ -570,8 +583,9 @@ module AlgoliaSearch
           tmp_index.save_objects(objects)
         end
 
-        move_task = SafeIndex.move_index(tmp_index.name, index_name)
-        master_index.wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
+        move_task = SafeIndex.move_index(tmp_index.name, src_index_name)
+        # wait if synchronous
+        SafeIndex.new(src_index_name, !!options[:raise_on_failure]).wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
       end
       nil
     end
