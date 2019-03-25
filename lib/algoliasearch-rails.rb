@@ -100,6 +100,14 @@ module AlgoliaSearch
       # instance_variable_set("@serializer", serializer)
     end
 
+    def get_attribute_list
+      @attributes
+    end
+
+    def get_additional_attribute_list
+      @additional_attributes
+    end
+
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
@@ -163,22 +171,38 @@ module AlgoliaSearch
       if not @serializer.nil?
         attributes = @serializer.new(object).attributes
       else
-        if @attributes.nil? || @attributes.length == 0
+        if @options[:primary_settings] && @options[:inherit_attributes]
+          attr = @options[:primary_settings].get_attribute_list
+          if attr.nil?
+            attr = @attributes
+          elsif not @attributes.nil?
+            attr.merge!(@attributes)
+          end
+        else
+          attr = @attributes
+        end
+
+        if attr.nil? || attr.length == 0
           # no `attribute ...` have been configured, use the default attributes of the model
           attributes = get_default_attributes(object)
         else
           # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
           if is_active_record?(object)
             object.class.unscoped do
-              attributes = attributes_to_hash(@attributes, object)
+              attributes = attributes_to_hash(attr, object)
             end
           else
-            attributes = attributes_to_hash(@attributes, object)
+            attributes = attributes_to_hash(attr, object)
           end
         end
       end
 
-      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      additional_attr = {}
+      if @options[:primary_settings] && @options[:inherit_attributes]
+        additional_attr.merge!(attributes_to_hash(@options[:primary_settings].get_additional_attribute_list, object))
+      end
+      additional_attr.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      attributes.merge!(additional_attr)
 
       if @options[:sanitize]
         sanitizer = begin
@@ -567,6 +591,7 @@ module AlgoliaSearch
           next
         end
 
+        # options[:index_name] for add_index, index_name for main index
         src_index_name = options[:index_name] || index_name
 
         # init temporary index
