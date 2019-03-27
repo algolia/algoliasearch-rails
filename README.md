@@ -44,7 +44,7 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
     * [Per-environment indices](#per-environment-indices)
     * [Custom attribute definition](#custom-attribute-definition)
     * [Nested objects/relations](#nested-objectsrelations)
-    * [Custom <code>objectID</code>](#custom-codeobjectidcode)
+    * [Custom <code>objectID</code>](#custom-objectid)
     * [Restrict indexing to a subset of your data](#restrict-indexing-to-a-subset-of-your-data)
     * [Sanitizer](#sanitizer)
     * [UTF-8 Encoding](#utf-8-encoding)
