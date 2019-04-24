@@ -743,6 +743,7 @@ module AlgoliaSearch
       return object.send(:algolia_dirty?) if (object.respond_to?(:algolia_dirty?))
       # Loop over each index to see if a attribute used in records has changed
       algolia_configurations.each do |options, settings|
+        next if algolia_indexing_disabled?(options)
         next if options[:slave] || options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
