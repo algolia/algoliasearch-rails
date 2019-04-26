@@ -98,6 +98,9 @@ ActiveRecord::Schema.define do
   create_table :disabled_symbols do |t|
     t.string :name
   end
+  create_table :disabled_conditionals do |t|
+    t.string :name
+  end
   create_table :encoded_strings do |t|
   end
   create_table :forward_to_replicas do |t|
@@ -205,6 +208,21 @@ class DisabledSymbol < ActiveRecord::Base
 
   def self.truth
     true
+  end
+end
+
+class DisabledConditional < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("DisabledConditional"), :unless => :nil_name do
+    attribute :name_length do
+      # will crash if name is nil
+      name.length
+    end
+  end
+
+  def nil_name
+    name.nil?
   end
 end
 
@@ -506,7 +524,7 @@ if defined?(ActiveModel::Serializer)
     it "should push the name but not the other attribute" do
       o = SerializedObject.new :name => 'test', :skip => 'skip me'
       attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
-      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2']})
+      expect(attributes).to eq({"name" => 'test', "_tags" => ['tag1', 'tag2']})
     end
   end
 end
@@ -1341,6 +1359,11 @@ describe 'Disabled' do
   it "should disable the indexing using a symbol" do
     DisabledSymbol.create :name => 'foo'
     expect(DisabledSymbol.search('').size).to eq(0)
+  end
+
+  it "should disable the indexing using a conditional and not read attributes" do
+    DisabledConditional.create :name => nil
+    expect(DisabledConditional.search('').size).to eq(0)
   end
 end
 

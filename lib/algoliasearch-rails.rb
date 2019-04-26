@@ -146,18 +146,18 @@ module AlgoliaSearch
     end
 
     def get_attribute_names(object)
-      get_attributes(object).keys
+      get_unresolved_attributes(object).keys
     end
 
     def attributes_to_hash(attributes, object)
       if attributes
-        Hash[attributes.map { |name, value| [name.to_s, value.call(object) ] }]
+        Hash[attributes.map { |name, value| [name.to_s, value.is_a?(Proc) ? value.call(object) : value] }]
       else
         {}
       end
     end
 
-    def get_attributes(object)
+    def get_unresolved_attributes(object)
       # If a serializer is set, we ignore attributes
       # everything should be done via the serializer
       if not @serializer.nil?
@@ -168,17 +168,23 @@ module AlgoliaSearch
           attributes = get_default_attributes(object)
         else
           # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
-          if is_active_record?(object)
-            object.class.unscoped do
-              attributes = attributes_to_hash(@attributes, object)
-            end
-          else
-            attributes = attributes_to_hash(@attributes, object)
-          end
+          attributes = @attributes
         end
       end
 
-      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      attributes.merge!(@additional_attributes) if @additional_attributes
+      attributes
+    end
+
+    def get_attributes(object)
+      attributes = get_unresolved_attributes(object)
+      if is_active_record?(object)
+        object.class.unscoped do
+          attributes = attributes_to_hash(attributes, object)
+        end
+      else
+        attributes = attributes_to_hash(attributes, object)
+      end
 
       if @options[:sanitize]
         sanitizer = begin
