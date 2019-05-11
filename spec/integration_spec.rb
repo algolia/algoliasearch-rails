@@ -56,6 +56,7 @@ ActiveRecord::Schema.define do
   end
   create_table :namespaced_models do |t|
     t.string :name
+    t.integer :another_private_value
   end
   create_table :uniq_users, :id => false do |t|
     t.string :name
@@ -181,6 +182,10 @@ class Color < ActiveRecord::Base
   def will_save_change_to_short_name?
     false
   end
+
+  def will_save_change_to__tags?
+    false
+  end
 end
 
 class DisabledBoolean < ActiveRecord::Base
@@ -216,19 +221,15 @@ end
 class Namespaced::Model < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch do
+  algoliasearch :synchronous => true  do
     attribute :customAttr do
       40 + another_private_value
     end
     attribute :myid do
       id
     end
+    searchableAttributes ['customAttr']
     tags ['static_tag1', 'static_tag2']
-  end
-
-  private
-  def another_private_value
-    2
   end
 end
 
@@ -583,6 +584,23 @@ describe 'Change detection' do
     color.delete
   end
 
+  it "should detect attribute changes even in a transaction" do
+    color = Color.new :name => "dark-blue", :short_name => "blue"
+    color.save
+
+    color.instance_variable_get("@algolia_must_reindex").should == nil
+    Color.transaction do
+      color.name = "red"
+      color.save
+      color.not_indexed = "strstr"
+      color.save
+      color.instance_variable_get("@algolia_must_reindex").should == true
+    end
+    color.instance_variable_get("@algolia_must_reindex").should == nil
+
+    color.delete
+  end
+
   it "should detect change with algolia_dirty? method" do
     ebook = Ebook.new :name => "My life", :author => "Myself", :premium => false, :released => true
 
@@ -614,15 +632,35 @@ describe 'Change detection' do
 end
 
 describe 'Namespaced::Model' do
+  before(:all) do
+    Namespaced::Model.index.clear_index!
+  end
+
   it "should have an index name without :: hierarchy" do
     Namespaced::Model.index_name.should == "Namespaced_Model"
   end
 
   it "should use the block to determine attribute's value" do
-    m = Namespaced::Model.new
+    m = Namespaced::Model.new(another_private_value: 2)
     attributes = Namespaced::Model.algoliasearch_settings.get_attributes(m)
     attributes['customAttr'].should == 42
     attributes['myid'].should == m.id
+  end
+
+  it "should always update when there is no custom _changed? function" do
+    m = Namespaced::Model.create!(another_private_value: 2)
+    results = Namespaced::Model.search(42)
+    expect(results.size).to eq(1)
+    expect(results[0].id).to eq(m.id)
+
+    m.update!(another_private_value: 5)
+
+    results = Namespaced::Model.search(42)
+    expect(results.size).to eq(0)
+
+    results = Namespaced::Model.search(45)
+    expect(results.size).to eq(1)
+    expect(results[0].id).to eq(m.id)
   end
 end
 
