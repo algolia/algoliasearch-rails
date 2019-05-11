@@ -953,8 +953,8 @@ module AlgoliaSearch
         return object.send("will_save_change_to_#{attr_name}?")
       end
 
-      # Nil means we don't know if the attribute has changed
-      nil
+      # We don't know if the attribute has changed, so conservatively assume it has
+      true
     end
 
     def automatic_changed_method?(object, method_name)
@@ -1018,7 +1018,9 @@ module AlgoliaSearch
     end
 
     def algolia_mark_must_reindex
-      @algolia_must_reindex =
+      # algolia_must_reindex flag is reset after every commit as part. If we must reindex at any point in
+      # a stransaction, keep flag set until it is explicitly unset
+      @algolia_must_reindex ||=
        if defined?(::Sequel) && is_a?(Sequel::Model)
          new? || self.class.algolia_must_reindex?(self)
        else
