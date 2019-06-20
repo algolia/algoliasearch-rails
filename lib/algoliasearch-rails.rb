@@ -227,6 +227,7 @@ module AlgoliaSearch
           name
         end
         settings.delete(:slaves) if settings[:slaves].empty?
+
         settings[:replicas] = additional_indexes.select { |opts, s| opts[:replica] }.map do |opts, s|
           name = opts[:index_name]
           name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
@@ -755,14 +756,14 @@ module AlgoliaSearch
       index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
 
       if !algolia_indexing_disabled?(options) && algoliasearch_settings_changed?(current_settings, index_settings)
-        Rails.logger("Algolialib: got in that bad settings loop with: #{current_settings} || #{index_settings}")
+        Rails.logger.info("Algolialib: got in that bad settings loop with: #{current_settings} || #{index_settings}")
         used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
         replicas = index_settings.delete(:replicas) ||
                    index_settings.delete('replicas') ||
                    index_settings.delete(:slaves) ||
                    index_settings.delete('slaves')
         index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil? || options[:inherit]
-        @algolia_indexes[settings].set_settings(index_settings)
+        @algolia_indexes[settings].set_settings(index_settings, { forwardToReplicas: true })
       end
 
       @algolia_indexes[settings]
@@ -810,12 +811,12 @@ module AlgoliaSearch
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
           if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
-            Rails.logger("Algolialib: Mismatch between #{v} and #{prev_v}")
+            Rails.logger.info("Algolialib: Mismatch between #{v} and #{prev_v}")
             return true
           end
         else
           if prev_v != v
-            Rails.logger("Algolialib: Mismatch between #{v} and #{prev_v}")
+            Rails.logger.info("Algolialib: Mismatch between #{v} and #{prev_v}")
             return true
           end
         end
