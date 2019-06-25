@@ -563,7 +563,7 @@ module AlgoliaSearch
       nil
     end
 
-    # reindex whole database using a extra temporary index + move operation
+    # reindex whole database using a temporary index + move operation
     def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
 
@@ -617,7 +617,7 @@ module AlgoliaSearch
 
     def algolia_set_settings(synchronous = false)
       algolia_configurations.each do |options, settings|
-        if options[:primary_settings] && options[:inherit]
+        if options[:primary_settings] && (options[:inherit] || options[:inherit_settings])
           primary = options[:primary_settings].to_settings
           primary.delete :slaves
           primary.delete 'slaves'
