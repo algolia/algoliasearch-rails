@@ -5,7 +5,9 @@ module AlgoliaSearch
     end
 
     def configuration=(configuration)
-      @@configuration = configuration.merge(:user_agent => "Algolia for Rails (#{AlgoliaSearch::VERSION}); Algolia for Ruby (#{Algolia::VERSION})")
+      @@configuration = configuration.merge(
+          :user_agent => "Algolia for Rails (#{AlgoliaSearch::VERSION}); Rails (#{Rails::VERSION})"
+      )
       Algolia.init @@configuration
     end
   end
