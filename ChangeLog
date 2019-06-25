@@ -1,5 +1,36 @@
 # CHANGELOG
 
+## [1.23.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.23.0) (2019-06-25)
+
+**Added**
+
+* Introduce `rake algoliasearch:set_all_settings` command - PR [#315](https://github.com/algolia/algoliasearch-rails/pull/315)
+
+    This command will push settings for all models to all indices: primary index,
+    replicas and additional indices. It follows the `inherit: true` option.
+    It should typically be added to your deployment script
+
+* Add option to disable automatic settings - PR [#315](https://github.com/algolia/algoliasearch-rails/pull/315)
+
+    By default, this gem check your settings to see when to push them. Depending on
+    your implementation, it might create a lot of API calls. If you wish to disable
+    the automatic change detection for settings, use the `check_settings` option:
+
+    ```ruby
+    class Musician < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch check_settings: false do
+        # Settings...
+      end
+    end
+    ```
+
+**Fixed**
+
+* Handle attribute_changed? in transactions - PR [#354](https://github.com/algolia/algoliasearch-rails/pull/354)
+
+
 ## [1.22.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.22.0) (2019-03-21)
 
 🚨 The documentation for our Rails integration was refreshed 🎉
