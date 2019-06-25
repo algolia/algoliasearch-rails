@@ -25,6 +25,19 @@ module AlgoliaSearch
           klass.algolia_reindex
         end
       end
+
+      def set_settings_all_models
+        klasses = get_model_classes
+
+        puts ''
+        puts "Pushing settings for #{klasses.count} models: #{klasses.to_sentence}."
+        puts ''
+
+        klasses.each do |klass|
+          puts "Pushing #{klass} settings..."
+          klass.algolia_set_settings
+        end
+      end
     end
   end
 end
