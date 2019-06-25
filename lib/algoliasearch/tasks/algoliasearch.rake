@@ -6,7 +6,7 @@ namespace :algoliasearch do
   end
 
   desc "Set settings to all indexes"
-  task :set_settings => :environment do
+  task :set_all_settings => :environment do
     AlgoliaSearch::Utilities.set_settings_all_models
   end
   

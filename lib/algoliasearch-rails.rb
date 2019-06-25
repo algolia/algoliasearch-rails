@@ -577,9 +577,22 @@ module AlgoliaSearch
     end
 
     def algolia_set_settings(synchronous = false)
-      index = SafeIndex.new(algolia_index_name, true)
-      task = index.set_settings(algoliasearch_settings.to_settings)
-      index.wait_task(task["taskID"]) if synchronous
+      algolia_configurations.each do |options, settings|
+        if options[:primary_settings] && options[:inherit]
+          primary = options[:primary_settings].to_settings
+          primary.delete :slaves
+          primary.delete 'slaves'
+          primary.delete :replicas
+          primary.delete 'replicas'
+          final_settings = primary.merge(settings.to_settings)
+        else
+          final_settings = settings.to_settings
+        end
+
+        index = SafeIndex.new(algolia_index_name(options), true)
+        task = index.set_settings(final_settings)
+        index.wait_task(task["taskID"]) if synchronous
+      end
     end
 
     def algolia_index_objects(objects, synchronous = false)
