@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## [1.23.2](https://github.com/algolia/algoliasearch-rails/releases/tag/1.23.2) (2019-06-26)
+
+**Fixed**
+
+* Use `copy_index` when initiating a temporary index to preserve settings, synonyms, and rules.
+
+
 ## [1.23.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.23.0) (2019-06-25)
 
 **Added**
