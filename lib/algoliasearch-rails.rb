@@ -591,8 +591,7 @@ module AlgoliaSearch
           next
         end
 
-        # options[:index_name] for add_index, index_name for main index
-        src_index_name = options[:index_name] || index_name
+        src_index_name = algolia_index_name(options)
 
         # init temporary index
         ::Algolia::copy_index!(src_index_name, "#{src_index_name}.tmp", %w(settings synonyms rules))
