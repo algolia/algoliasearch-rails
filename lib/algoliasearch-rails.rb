@@ -100,6 +100,14 @@ module AlgoliaSearch
       # instance_variable_set("@serializer", serializer)
     end
 
+    def get_attribute_list
+      @attributes
+    end
+
+    def get_additional_attribute_list
+      @additional_attributes
+    end
+
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
       raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
@@ -163,22 +171,38 @@ module AlgoliaSearch
       if not @serializer.nil?
         attributes = @serializer.new(object).attributes
       else
-        if @attributes.nil? || @attributes.length == 0
+        if @options[:primary_settings] && @options[:inherit_attributes]
+          attr = @options[:primary_settings].get_attribute_list
+          if attr.nil?
+            attr = @attributes
+          elsif not @attributes.nil?
+            attr.merge!(@attributes)
+          end
+        else
+          attr = @attributes
+        end
+
+        if attr.nil? || attr.length == 0
           # no `attribute ...` have been configured, use the default attributes of the model
           attributes = get_default_attributes(object)
         else
           # at least 1 `attribute ...` has been configured, therefore use ONLY the one configured
           if is_active_record?(object)
             object.class.unscoped do
-              attributes = attributes_to_hash(@attributes, object)
+              attributes = attributes_to_hash(attr, object)
             end
           else
-            attributes = attributes_to_hash(@attributes, object)
+            attributes = attributes_to_hash(attr, object)
           end
         end
       end
 
-      attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      additional_attr = {}
+      if @options[:primary_settings] && @options[:inherit_attributes]
+        additional_attr.merge!(attributes_to_hash(@options[:primary_settings].get_additional_attribute_list, object))
+      end
+      additional_attr.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
+      attributes.merge!(additional_attr)
 
       if @options[:sanitize]
         sanitizer = begin
@@ -272,19 +296,22 @@ module AlgoliaSearch
       @additional_indexes ||= {}
       raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
+
+      options.merge!({ :primary_settings => self }) if options[:inherit]
+
       @additional_indexes[options] = IndexSettings.new(options, Proc.new)
     end
 
     def add_replica(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :replica => true, :primary_settings => self }), &block)
+      add_index(index_name, options.merge({ :replica => true }), &block)
     end
 
     def add_slave(index_name, options = {}, &block)
       raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :slave => true, :primary_settings => self }), &block)
+      add_index(index_name, options.merge({ :slave => true }), &block)
     end
 
     def additional_indexes
@@ -536,49 +563,60 @@ module AlgoliaSearch
       nil
     end
 
-    # reindex whole database using a extra temporary index + move operation
+    # reindex whole database using a temporary index + move operation
     def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
+
       algolia_configurations.each do |options, settings|
+
         next if algolia_indexing_disabled?(options)
-        next if options[:slave] || options[:replica]
 
-        # fetch the master settings
-        master_index = algolia_ensure_init(options, settings)
-        master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
-        master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
+        if options[:primary_settings] && options[:inherit_settings]
+          final_settings_map = options[:primary_settings].to_settings
+          final_settings_map.merge!(settings.to_settings)
+        else
+          final_settings_map = settings.to_settings
+        end
 
-        # remove the replicas of the temporary index
-        master_settings.delete :slaves
-        master_settings.delete 'slaves'
-        master_settings.delete :replicas
-        master_settings.delete 'replicas'
+        # Always remove the replicas because the index is either:
+        #  - Temporary index (never set replicas to tmp index you're going to move)
+        #  - A replica itself so it cannot have replicas
+        final_settings_map.delete :slaves
+        final_settings_map.delete :replicas
+
+        # For replica, we set_settings in case they are different or if they have changed
+        if options[:slave] || options[:replica]
+          replicaIndex = SafeIndex.new(algolia_index_name(options), algoliasearch_options[:raise_on_failure])
+          replicaIndex.set_settings final_settings_map
+          next
+        end
+
+        src_index_name = algolia_index_name(options)
 
         # init temporary index
-        index_name = algolia_index_name(options)
-        tmp_options = options.merge({ :index_name => "#{index_name}.tmp" })
-        tmp_options.delete(:per_environment) # already included in the temporary index_name
-        tmp_settings = settings.dup
-        tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
+        ::Algolia::copy_index!(src_index_name, "#{src_index_name}.tmp", %w(settings synonyms rules))
+        tmp_index = SafeIndex.new("#{src_index_name}.tmp", !!options[:raise_on_failure])
+        tmp_index.set_settings final_settings_map
 
         algolia_find_in_batches(batch_size) do |group|
-          if algolia_conditional_index?(tmp_options)
+          if algolia_conditional_index?(options)
             # select only indexable objects
-            group = group.select { |o| algolia_indexable?(o, tmp_options) }
+            group = group.select { |o| algolia_indexable?(o, options) }
           end
-          objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
+          objects = group.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) }
           tmp_index.save_objects(objects)
         end
 
-        move_task = SafeIndex.move_index(tmp_index.name, index_name)
-        master_index.wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
+        move_task = SafeIndex.move_index(tmp_index.name, src_index_name)
+        # wait if synchronous
+        SafeIndex.new(src_index_name, !!options[:raise_on_failure]).wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
       end
       nil
     end
 
     def algolia_set_settings(synchronous = false)
       algolia_configurations.each do |options, settings|
-        if options[:primary_settings] && options[:inherit]
+        if options[:primary_settings] && (options[:inherit] || options[:inherit_settings])
           primary = options[:primary_settings].to_settings
           primary.delete :slaves
           primary.delete 'slaves'
