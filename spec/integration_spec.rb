@@ -90,6 +90,10 @@ ActiveRecord::Schema.define do
     t.boolean :premium
     t.boolean :released
   end
+  create_table :cars do |t|
+    t.string :name
+    t.boolean :domestic_sale_only
+  end
   create_table :disabled_booleans do |t|
     t.string :name
   end
@@ -401,6 +405,23 @@ class Ebook < ActiveRecord::Base
     # Consider dirty if published date is in the past
     # This doesn't make so much business sense but it's easy to test.
     self.published_at < self.current_time
+  end
+end
+
+class Car < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :index_name => safe_index_name("Cars") do
+    attributesToIndex [:name]
+
+    add_index safe_index_name('CarsForForeignBrand'), :ignore => :domestic_sale_only? do
+      attributesToIndex [:name]
+    end
+  end
+
+  private
+  def domestic_sale_only?
+    domestic_sale_only == true
   end
 end
 
@@ -1322,6 +1343,36 @@ describe 'Book' do
   it "should use the per_environment option in the additional index as well" do
     index = Book.index(safe_index_name('Book'))
     expect(index.name).to eq("#{safe_index_name('Book')}_#{Rails.env}")
+  end
+end
+
+describe 'Car' do
+  before(:all) do
+    Car.clear_index!(true)
+    Car.index(safe_index_name('CarsForForeignBrand')).clear
+  end
+
+  it 'should index the car in 1 of 2 indices' do
+    @mustang = Car.create! :name => 'mustang', :domestic_sale_only => true
+    results = Car.search('mustang')
+    expect(results.size).to eq(1)
+    results.should include(@mustang)
+
+    # domestic_sale_only -> not available for foreign index
+    index_car = Car.index(safe_index_name('CarsForForeignBrand'))
+    index_car.should_not be_nil
+    results = index_car.search('mustang')
+    results['hits'].length.should eq(0)
+  end
+
+  it 'should not send a delete request to the index where ignored' do
+    expect_any_instance_of(Algolia::Index).to_not receive(:delete_object!)
+    Car.create! :name => 'mustang', :domestic_sale_only => true
+  end
+
+  it 'should not send an add request to the index where ignored' do
+    expect_any_instance_of(Algolia::Index).to receive(:add_object!).exactly(:once)
+    Car.create! :name => 'mustang', :domestic_sale_only => true
   end
 end
 

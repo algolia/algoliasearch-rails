@@ -515,6 +515,9 @@ module AlgoliaSearch
         last_task = nil
 
         algolia_find_in_batches(batch_size) do |group|
+          # remove records that should be ignored
+          group = group.reject { |o| algolia_ignore?(o, options) }
+          next if group.empty?
           if algolia_conditional_index?(options)
             # delete non-indexable objects
             ids = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
@@ -618,7 +621,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:slave] || options[:replica] || algolia_ignore?(object, options)
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
           if synchronous || options[:synchronous]
@@ -897,6 +900,12 @@ module AlgoliaSearch
       if_passes = options[:if].blank? || algolia_constraint_passes?(object, options[:if])
       unless_passes = options[:unless].blank? || !algolia_constraint_passes?(object, options[:unless])
       if_passes && unless_passes
+    end
+
+    def algolia_ignore?(object, options = nil)
+      options ||= algoliasearch_options
+      return false if options[:ignore].blank?
+      algolia_constraint_passes?(object, options[:ignore])
     end
 
     def algolia_constraint_passes?(object, constraint)
