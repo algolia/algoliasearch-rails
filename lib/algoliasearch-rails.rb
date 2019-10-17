@@ -297,7 +297,8 @@ module AlgoliaSearch
     # lazy load the ActiveJob class to ensure the
     # queue is initialized before using it
     # see https://github.com/algolia/algoliasearch-rails/issues/69
-    autoload :AlgoliaJob, 'algoliasearch/algolia_job'
+    autoload :AlgoliaIndexJob, 'algoliasearch/algolia_index_job'
+    autoload :AlgoliaRemoveJob, 'algoliasearch/algolia_remove_job'
   end
 
   # this class wraps an Algolia::Index object ensuring all raised exceptions
@@ -412,7 +413,11 @@ module AlgoliaSearch
         raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
         proc = if options[:enqueue] == true
           Proc.new do |record, remove|
-            AlgoliaJob.perform_later(record, remove ? 'algolia_remove_from_index!' : 'algolia_index!')
+            if remove
+              AlgoliaRemoveJob.perform_later(algolia_object_id(record), record.model_name.to_s.gsub('::', '_'))
+            else
+              AlgoliaIndexJob.perform_later(record)
+            end
           end
         elsif options[:enqueue].respond_to?(:call)
           options[:enqueue]
