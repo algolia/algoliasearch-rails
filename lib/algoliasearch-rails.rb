@@ -654,7 +654,7 @@ module AlgoliaSearch
 
       algolia_remove_from_index_by_id!(
         object_id,
-        object.model_name.to_s.gsub('::', '_'),
+        object.class.name.to_s.gsub('::', '_'),
         synchronous
       )
     end
