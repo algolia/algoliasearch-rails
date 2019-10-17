@@ -409,12 +409,16 @@ module AlgoliaSearch
           after_validation :algolia_mark_synchronous if respond_to?(:after_validation)
         end
       end
+
       if options[:enqueue]
         raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
         proc = if options[:enqueue] == true
           Proc.new do |record, remove|
             if remove
-              AlgoliaRemoveJob.perform_later(algolia_object_id(record), record.model_name.to_s.gsub('::', '_'))
+              AlgoliaRemoveJob.perform_later(
+                algolia_object_id(record),
+                record.model_name.to_s.gsub('::', '_')
+              )
             else
               AlgoliaIndexJob.perform_later(record)
             end
@@ -430,6 +434,7 @@ module AlgoliaSearch
           proc.call(record, remove) unless algolia_without_auto_index_scope
         end
       end
+
       unless options[:auto_index] == false
         if defined?(::Sequel) && self < Sequel::Model
           class_eval do
@@ -477,6 +482,7 @@ module AlgoliaSearch
           end
         end
       end
+
       unless options[:auto_remove] == false
         if defined?(::Sequel) && self < Sequel::Model
           class_eval do
@@ -645,11 +651,16 @@ module AlgoliaSearch
 
     def algolia_remove_from_index!(object, synchronous = false)
       object_id = algolia_object_id_of(object)
-      algolia_remove_from_index_by_id!(object_id, object.model_name.to_s.gsub('::', '_'), synchronous)
+
+      algolia_remove_from_index_by_id!(
+        object_id,
+        object.model_name.to_s.gsub('::', '_'),
+        synchronous
+      )
     end
 
-    def algolia_remove_from_index_by_id!(object_id, record_model_name, synchronous = false)
-      return if algolia_without_auto_index_scope(record_model_name)
+    def algolia_remove_from_index_by_id!(object_id, object_model_name, synchronous = false)
+      return if algolia_without_auto_index_scope(object_model_name)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
 
       algolia_configurations.each do |options, settings|
