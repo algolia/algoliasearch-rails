@@ -639,9 +639,14 @@ module AlgoliaSearch
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
-      return if algolia_without_auto_index_scope
       object_id = algolia_object_id_of(object)
+      algolia_remove_from_index_by_id!(object_id, synchronous)
+    end
+
+    def algolia_remove_from_index_by_id!(object_id, record_model_name, synchronous = false)
+      return if algolia_without_auto_index_scope(record_model_name)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
+
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
