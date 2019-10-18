@@ -416,7 +416,7 @@ module AlgoliaSearch
           Proc.new do |record, remove|
             if remove
               AlgoliaRemoveJob.perform_later(
-                algolia_object_id(record),
+                algolia_object_id_of(record),
                 record.model_name.to_s.gsub('::', '_')
               )
             else
