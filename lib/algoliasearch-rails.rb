@@ -4,6 +4,7 @@ require 'algoliasearch/version'
 require 'algoliasearch/utilities'
 require 'algoliasearch/index_settings'
 require 'algoliasearch/safe_index'
+require 'algoliasearch/search_options'
 
 if defined? Rails
   begin
@@ -208,11 +209,11 @@ module AlgoliaSearch
     end
 
     def algolia_without_auto_index_scope=(value, model_name = self.model_name)
-      Thread.current["algolia_without_auto_index_scope_for_#{model_name}"] = value
+      SearchOptions.disable_auto_index(value, model_name)
     end
 
     def algolia_without_auto_index_scope(model_name = self.model_name)
-      Thread.current["algolia_without_auto_index_scope_for_#{model_name}"]
+      SearchOptions.auto_index_disabled?(model_name)
     end
 
     def algolia_reindex!(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
@@ -476,11 +477,11 @@ module AlgoliaSearch
       algolia_ensure_init
     end
 
-    def algolia_index_name(options = nil)
-      options ||= algoliasearch_options
-      name = options[:index_name] || model_name.to_s.gsub('::', '_')
-      name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
-      name
+    def algolia_index_name(options = algoliasearch_options)
+      unless options.instance_of?(SearchOptions)
+        options = SearchOptions.new(algolia_model_class_name, options)
+      end
+      options.index_name
     end
 
     def algolia_must_reindex?(object)
@@ -615,20 +616,11 @@ module AlgoliaSearch
       end
     end
 
-    def algolia_indexing_disabled?(options = nil)
-      options ||= algoliasearch_options
-      constraint = options[:disable_indexing] || options['disable_indexing']
-      case constraint
-      when nil
-        return false
-      when true, false
-        return constraint
-      when String, Symbol
-        return send(constraint)
-      else
-        return constraint.call if constraint.respond_to?(:call) # Proc
+    def algolia_indexing_disabled?(options = algoliasearch_options)
+      unless options.instance_of?(SearchOptions)
+        options = SearchOptions.new(algolia_model_class_name, options)
       end
-      raise ArgumentError, "Unknown constraint type: #{constraint} (#{constraint.class})"
+      options.indexing_disabled?
     end
 
     def algolia_find_in_batches(batch_size, &block)
@@ -692,6 +684,10 @@ module AlgoliaSearch
     def automatic_changed_method_deprecated?
       (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR >= 5 && ActiveRecord::VERSION::MINOR >= 1) ||
           (defined?(::ActiveRecord) && ActiveRecord::VERSION::MAJOR > 5)
+    end
+
+    def algolia_model_class_name
+      self.name.gsub('::', '_')
     end
   end
 
