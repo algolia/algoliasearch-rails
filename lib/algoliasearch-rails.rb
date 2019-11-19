@@ -1,10 +1,12 @@
 require 'algoliasearch'
 
-require 'algoliasearch/version'
-require 'algoliasearch/utilities'
+require 'algoliasearch/index_actions'
 require 'algoliasearch/index_settings'
 require 'algoliasearch/safe_index'
 require 'algoliasearch/search_options'
+require 'algoliasearch/utilities'
+require 'algoliasearch/version'
+require 'logger'
 
 if defined? Rails
   begin
@@ -18,8 +20,6 @@ begin
 rescue LoadError
   # no queue support, fine
 end
-
-require 'logger'
 
 module AlgoliaSearch
 
@@ -351,28 +351,15 @@ module AlgoliaSearch
     def algolia_remove_from_index!(object, synchronous = false)
       object_id = algolia_object_id_of(object)
 
-      algolia_remove_from_index_by_id!(
-        object_id,
-        object.class.name.to_s.gsub('::', '_'),
-        synchronous
-      )
-    end
-
-    def algolia_remove_from_index_by_id!(object_id, object_model_name, synchronous = false)
-      return if algolia_without_auto_index_scope(object_model_name)
+      return if algolia_without_auto_index_scope(algolia_model_class_name)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
 
-      algolia_configurations.each do |options, settings|
-        next if algolia_indexing_disabled?(options)
-        index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
-        if synchronous || options[:synchronous]
-          index.delete_object!(object_id)
-        else
-          index.delete_object(object_id)
-        end
-      end
-      nil
+      IndexActions.remove(
+        algolia_model_class_name,
+        object_id,
+        algolia_configurations,
+        synchronous
+      )
     end
 
     def algolia_clear_index!(synchronous = false)

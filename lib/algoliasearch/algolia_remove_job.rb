@@ -4,7 +4,12 @@ module AlgoliaSearch
 
     def perform(record_id, model_name)
       model_class = model_name.constantize
-      model_class.algolia_remove_from_index_by_id!(record_id, model_name)
+
+      IndexActions.remove(
+        model_name,
+        record_id,
+        model_class.algolia_configurations
+      )
     end
   end
 end
