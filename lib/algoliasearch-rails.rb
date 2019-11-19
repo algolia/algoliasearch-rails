@@ -208,11 +208,11 @@ module AlgoliaSearch
       end
     end
 
-    def algolia_without_auto_index_scope=(value, model_name = self.model_name)
+    def algolia_without_auto_index_scope=(value, model_name = algolia_model_class_name)
       SearchOptions.disable_auto_index(value, model_name)
     end
 
-    def algolia_without_auto_index_scope(model_name = self.model_name)
+    def algolia_without_auto_index_scope(model_name = algolia_model_class_name)
       SearchOptions.auto_index_disabled?(model_name)
     end
 
@@ -349,9 +349,8 @@ module AlgoliaSearch
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
+      return if algolia_without_auto_index_scope
       object_id = algolia_object_id_of(object)
-
-      return if algolia_without_auto_index_scope(algolia_model_class_name)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
 
       IndexActions.remove(
