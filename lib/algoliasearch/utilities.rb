@@ -38,6 +38,21 @@ module AlgoliaSearch
           klass.algolia_set_settings
         end
       end
+
+      def settings_changed?(prev, current)
+        return true if prev.nil?
+        current.each do |k, v|
+          prev_v = prev[k.to_s]
+          if v.is_a?(Array) and prev_v.is_a?(Array)
+            # compare array of strings, avoiding symbols VS strings comparison
+            return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
+          else
+            return true if prev_v != v
+          end
+        end
+        false
+      end
+
     end
   end
 end

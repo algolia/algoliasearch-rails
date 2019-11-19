@@ -328,7 +328,13 @@ module AlgoliaSearch
 
     def algoliasearch(options = {}, &block)
       self.algoliasearch_settings = IndexSettings.new(options, block_given? ? Proc.new : nil)
-      self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
+
+      self.algoliasearch_options = {
+          :type => algolia_full_const_get(model_name.to_s),
+          :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10,
+          :page => 1
+        }
+        .merge(options)
 
       attr_accessor :highlight_result, :snippet_result
 
@@ -763,36 +769,24 @@ module AlgoliaSearch
 
       return @algolia_indexes[settings] if @algolia_indexes[settings]
 
-      @algolia_indexes[settings] = SafeIndex.new(algolia_index_name(options), algoliasearch_options[:raise_on_failure])
-
-      current_settings = @algolia_indexes[settings].get_settings(:getVersion => 1) rescue nil # if the index doesn't exist
-
-      index_settings ||= settings.to_settings
-      index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
-
-      options[:check_settings] = true if options[:check_settings].nil?
-
-      if !algolia_indexing_disabled?(options) && options[:check_settings] && algoliasearch_settings_changed?(current_settings, index_settings)
-        used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
-        replicas = index_settings.delete(:replicas) ||
-                   index_settings.delete('replicas') ||
-                   index_settings.delete(:slaves) ||
-                   index_settings.delete('slaves')
-        index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil? || options[:inherit]
-        @algolia_indexes[settings].set_settings(index_settings)
-      end
-
-      @algolia_indexes[settings]
+      @algolia_indexes[settings] = IndexActions.ensure_init(
+        algolia_model_class_name,
+        options,
+        settings,
+        index_settings
+      )
     end
 
     private
 
     def algolia_configurations
       raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
+
       if @configurations.nil?
         @configurations = {}
         @configurations[algoliasearch_options] = algoliasearch_settings
-        algoliasearch_settings.additional_indexes.each do |k,v|
+
+        algoliasearch_settings.additional_indexes.each do |k, v|
           @configurations[k] = v
 
           if v.additional_indexes.any?
@@ -802,6 +796,7 @@ module AlgoliaSearch
           end
         end
       end
+
       @configurations
     end
 
@@ -820,17 +815,7 @@ module AlgoliaSearch
     end
 
     def algoliasearch_settings_changed?(prev, current)
-      return true if prev.nil?
-      current.each do |k, v|
-        prev_v = prev[k.to_s]
-        if v.is_a?(Array) and prev_v.is_a?(Array)
-          # compare array of strings, avoiding symbols VS strings comparison
-          return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
-        else
-          return true if prev_v != v
-        end
-      end
-      false
+      Utilities.settings_changed?(prev, current)
     end
 
     def algolia_full_const_get(name)
