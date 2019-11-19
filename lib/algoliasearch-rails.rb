@@ -89,8 +89,7 @@ module AlgoliaSearch
           :type => algolia_full_const_get(model_name.to_s),
           :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10,
           :page => 1
-        }
-        .merge(options)
+        }.merge(options)
 
       attr_accessor :highlight_result, :snippet_result
 
