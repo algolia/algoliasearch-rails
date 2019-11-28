@@ -35,7 +35,7 @@ group :test do
     gem 'net-http-persistent', '< 3.0'
   end
   gem 'rspec', '>= 2.5.0', '< 3.0'
-  gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
+  gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
   gem 'jdbc-sqlite3', :platform => :jruby
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
