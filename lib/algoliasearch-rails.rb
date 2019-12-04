@@ -539,6 +539,11 @@ module AlgoliaSearch
     # reindex whole database using a extra temporary index + move operation
     def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
+
+      temp_index_set = []
+      temp_index_src_name = []
+      temp_index_optoins = []
+      temp_master_index_set = []
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         next if options[:slave] || options[:replica]
@@ -561,24 +566,60 @@ module AlgoliaSearch
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
-        if options[:check_settings] == false
-          ::Algolia::copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
-          tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
-        else
-          tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
-        end
+        # if options[:check_settings] == false
+        #   ::Algolia::copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
+        #   tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
+        # else
+        #   tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
+        # end
 
           algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(options)
             # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, tmp_options) }
           end
-          objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
-          tmp_index.save_objects(objects)
-        end
+          objects = []
+          group.each do |o|
+            temp_hash = tmp_settings.get_attributes(o)
+            index_i = contains_index(temp_index_set, "organization_#{temp_hash[:organization_id]}")
+            temp_hash['objectID'] = algolia_object_id_of(o, tmp_options)
+            objects << temp_hash.dup
+            if index_i
+              index_i.save_objects(objects)
+            else
+              temp_index1 = nil
+              if options[:check_settings] == false
+                ::Algolia::copy_index!("organization_#{temp_hash[:organization_id]}", "organization_#{temp_hash[:organization_id]}", %w(settings synonyms rules))
+                tmp_index1 = SafeIndex.new("organization_#{temp_hash[:organization_id]}", !!options[:raise_on_failure])
+              else
+                tmp_options[:index_name] = "organization_#{temp_hash[:organization_id]}"
+                tmp_index1 = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
+              end
+              temp_index1.save_objects(objects)
+              temp_index_set << tmp_index1.dup
+              temp_index_src_name << "organization_#{temp_hash[:organization_id]}"
+              temp_index_optoins << options[:synchronous]
+            end
+          end
+            # objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
+            # tmp_index.save_objects(objects)
+          end
 
-        move_task = SafeIndex.move_index(tmp_index.name, src_index_name)
-        master_index.wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
+        # temp_index_set << tmp_index.dup
+        temp_master_index_set << master_index.dup
+      end
+      i = 0
+      while i < temp_index_src_name.size
+        move_task = SafeIndex.move_index(temp_master_index_set[i].name, temp_index_src_name[i])
+        temp_master_index_set[i].wait_task(move_task["taskID"]) if synchronous || temp_index_optoins[i]
+        i += 1
+      end
+      nil
+    end
+
+    def contains_index(index_set, name)
+      index_set.each do |index_i|
+        return index_i if index_i.name == name
       end
       nil
     end
