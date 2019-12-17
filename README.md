@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://www.algolia.com/doc/api-client/getting-started/install/go/" target="_blank">Documentation</a>  •
+  <a href="https://www.algolia.com/doc/framework-integration/rails/getting-started/setup/?language=ruby" target="_blank">Documentation</a>  •
   <a href="https://discourse.algolia.com" target="_blank">Community Forum</a>  •
   <a href="http://stackoverflow.com/questions/tagged/algolia" target="_blank">Stack Overflow</a>  •
   <a href="https://github.com/algolia/algoliasearch-rails/issues" target="_blank">Report a bug</a>  •
