@@ -538,7 +538,7 @@ unless OLD_RAILS
       Color.delete_all
     end
 
-    it "Throw an exception if the data is too big" do
+    it "should throw an exception if the data is too big" do
       expect {
         Color.create! :name => 'big' * 100000
       }.to raise_error(Algolia::AlgoliaProtocolError)
