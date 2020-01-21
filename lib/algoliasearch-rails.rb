@@ -92,7 +92,7 @@ module AlgoliaSearch
 
     def initialize(options, &block)
       @options = options
-      instance_exec(&block) if block
+      instance_exec(&block) if block_given?
     end
 
     def use_serializer(serializer)
