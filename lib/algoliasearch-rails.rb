@@ -90,7 +90,7 @@ module AlgoliaSearch
       end
     end
 
-    def initialize(options, block)
+    def initialize(options, &block)
       @options = options
       instance_exec(&block) if block
     end
