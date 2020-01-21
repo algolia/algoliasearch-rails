@@ -389,7 +389,7 @@ module AlgoliaSearch
     end
 
     def algoliasearch(options = {}, &block)
-      self.algoliasearch_settings = IndexSettings.new(options, block_given? ? Proc.new : nil)
+      self.algoliasearch_settings = IndexSettings.new(options, &block)
       self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result, :snippet_result
