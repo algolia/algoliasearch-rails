@@ -272,7 +272,7 @@ module AlgoliaSearch
       @additional_indexes ||= {}
       raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
-      @additional_indexes[options] = IndexSettings.new(options, Proc.new)
+      @additional_indexes[options] = IndexSettings.new(options, &block)
     end
 
     def add_replica(index_name, options = {}, &block)
