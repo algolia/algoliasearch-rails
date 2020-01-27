@@ -280,7 +280,7 @@ class City < ActiveRecord::Base
   serialize :gl_array
 
   def geoloc_array
-    lat.present? && lng.present? ? { lat: lat, lng: lng } : gl_array
+    lat.present? && lng.present? ? { :lat => lat, :lng => lng } : gl_array
   end
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
