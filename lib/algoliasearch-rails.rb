@@ -68,7 +68,7 @@ module AlgoliaSearch
       :disableTypoToleranceOnAttributes, :disableTypoToleranceOnWords, :separatorsToIndex,
       # Language
       :ignorePlurals, :removeStopWords, :camelCaseAttributes, :decompoundedAttributes,
-      :keepDiacriticsOnCharacters, :queryLanguages,
+      :keepDiacriticsOnCharacters, :queryLanguages, :indexLanguages,
       # Query Rules
       :enableRules,
       # Query Strategy
