@@ -1093,7 +1093,6 @@ describe 'Cities' do
     expect(City.index(safe_index_name('City_replica1')).get_settings['customRanking']).to eq(['asc(a)'])
     expect(City.index(safe_index_name('City_replica2')).get_settings['customRanking']).to eq(['asc(a)', 'desc(c)'])
   end
-
 end
 
 describe "FowardToReplicas" do
