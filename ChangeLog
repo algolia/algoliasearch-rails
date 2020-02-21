@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## [1.24.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.24.0) (2020-02-21)
+
+**Added**
+
+* Adds indexLanguages in index settings
+
 ## [1.23.2](https://github.com/algolia/algoliasearch-rails/releases/tag/1.23.2) (2019-06-26)
 
 **Fixed**
