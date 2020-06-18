@@ -482,7 +482,29 @@ end
 
 if defined?(ActiveModel::Serializer)
   class SerializedObjectSerializer < ActiveModel::Serializer
+    belongs_to :serialized_association_object
     attributes :name
+
+    def serialized_association_object
+      SerializedAssociationObject.new :name => 'test-association'
+    end
+  end
+
+  class SerializedAssociationObjectSerializer < ActiveModel::Serializer
+    attributes :name
+  end
+
+  class SerializedAssociationObject
+    alias :read_attribute_for_serialization :send
+    attr_accessor :name
+
+    def initialize(attributes)
+      @name = attributes[:name]
+    end
+
+    def self.model_name
+      @_model_name ||= ActiveModel::Name.new(self)
+    end
   end
 
   class SerializedObject < ActiveRecord::Base
@@ -507,7 +529,7 @@ if defined?(ActiveModel::Serializer)
     it "should push the name but not the other attribute" do
       o = SerializedObject.new :name => 'test', :skip => 'skip me'
       attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
-      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2']})
+      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2'], :audio_files => {:name => 'test-association'}})
     end
   end
 end

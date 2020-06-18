@@ -161,7 +161,7 @@ module AlgoliaSearch
       # If a serializer is set, we ignore attributes
       # everything should be done via the serializer
       if not @serializer.nil?
-        attributes = @serializer.new(object).attributes
+        attributes = @serializer.new(object).as_json
       else
         if @attributes.nil? || @attributes.length == 0
           # no `attribute ...` have been configured, use the default attributes of the model
