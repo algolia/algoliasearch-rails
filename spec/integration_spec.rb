@@ -126,6 +126,9 @@ ActiveRecord::Schema.define do
       t.string :name
       t.string :skip
     end
+    create_table :serialized_association_objects do |t|
+      t.string :name
+    end
   end
 end
 
@@ -481,30 +484,7 @@ class MisconfiguredBlock < ActiveRecord::Base
 end
 
 if defined?(ActiveModel::Serializer)
-  class SerializedObjectSerializer < ActiveModel::Serializer
-    belongs_to :serialized_association_object
-    attributes :name
-
-    def serialized_association_object
-      SerializedAssociationObject.new :name => 'test-association'
-    end
-  end
-
-  class SerializedAssociationObjectSerializer < ActiveModel::Serializer
-    attributes :name
-  end
-
-  class SerializedAssociationObject
-    alias :read_attribute_for_serialization :send
-    attr_accessor :name
-
-    def initialize(attributes)
-      @name = attributes[:name]
-    end
-
-    def self.model_name
-      @_model_name ||= ActiveModel::Name.new(self)
-    end
+  class SerializedAssociationObject < ActiveRecord::Base
   end
 
   class SerializedObject < ActiveRecord::Base
@@ -518,6 +498,19 @@ if defined?(ActiveModel::Serializer)
       end
     end
   end
+
+  class SerializedAssociationObjectSerializer < ActiveModel::Serializer
+    attributes :name
+  end
+
+  class SerializedObjectSerializer < ActiveModel::Serializer
+    belongs_to :serialized_association_object
+    attributes :name
+    
+    def serialized_association_object
+      SerializedAssociationObject.new(name: 'test')
+    end
+  end
 end
 
 if defined?(ActiveModel::Serializer)
@@ -529,7 +522,7 @@ if defined?(ActiveModel::Serializer)
     it "should push the name but not the other attribute" do
       o = SerializedObject.new :name => 'test', :skip => 'skip me'
       attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
-      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2'], :audio_files => {:name => 'test-association'}})
+      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2'], :serialized_association_object => {:name => 'test'}})
     end
   end
 end
