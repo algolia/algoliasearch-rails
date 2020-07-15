@@ -90,9 +90,9 @@ module AlgoliaSearch
       end
     end
 
-    def initialize(options, block)
+    def initialize(options, &block)
       @options = options
-      instance_exec(&block) if block
+      instance_exec(&block) if block_given?
     end
 
     def use_serializer(serializer)
@@ -272,7 +272,7 @@ module AlgoliaSearch
       @additional_indexes ||= {}
       raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
-      @additional_indexes[options] = IndexSettings.new(options, Proc.new)
+      @additional_indexes[options] = IndexSettings.new(options, &block)
     end
 
     def add_replica(index_name, options = {}, &block)
@@ -389,7 +389,7 @@ module AlgoliaSearch
     end
 
     def algoliasearch(options = {}, &block)
-      self.algoliasearch_settings = IndexSettings.new(options, block_given? ? Proc.new : nil)
+      self.algoliasearch_settings = IndexSettings.new(options, &block)
       self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result, :snippet_result
