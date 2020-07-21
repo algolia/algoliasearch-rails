@@ -20,6 +20,7 @@
   <a href="https://discourse.algolia.com" target="_blank">Community Forum</a>  •
   <a href="http://stackoverflow.com/questions/tagged/algolia" target="_blank">Stack Overflow</a>  •
   <a href="https://github.com/algolia/algoliasearch-rails/issues" target="_blank">Report a bug</a>  •
+  <a href="https://www.algolia.com/doc/framework-integration/rails/troubleshooting/faq/" target="_blank">FAQ</a>  •
   <a href="https://www.algolia.com/support" target="_blank">Support</a>
 </p>
 
@@ -82,6 +83,8 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 1. **[Testing](#testing)**
     * [Notes](#notes)
 
+1. **[Troubleshooting](#troubleshooting)**
+    * [Frequently asked questions](#frequently-asked-questions)
 
 
 
@@ -1180,5 +1183,13 @@ describe 'With a mocked client' do
 end
 ```
 
+
+
+# Troubleshooting
+
+
+## Frequently asked questions
+
+Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/framework-integration/rails/troubleshooting/faq/) where you will find answers for the most common issues and gotchas with the gem.
 
 
