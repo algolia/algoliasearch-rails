@@ -252,12 +252,14 @@ module AlgoliaSearch
         settings[:slaves] = additional_indexes.select { |opts, s| opts[:slave] }.map do |opts, s|
           name = opts[:index_name]
           name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
+          name = "virtual(#{name})" if opts[:virtual]
           name
         end
         settings.delete(:slaves) if settings[:slaves].empty?
         settings[:replicas] = additional_indexes.select { |opts, s| opts[:replica] }.map do |opts, s|
           name = opts[:index_name]
           name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
+          name = "virtual(#{name})" if opts[:virtual]
           name
         end
         settings.delete(:replicas) if settings[:replicas].empty?
