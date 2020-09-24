@@ -112,6 +112,9 @@ ActiveRecord::Schema.define do
   create_table :sub_replicas do |t|
     t.string :name
   end
+  create_table :virtual_replicas do |t|
+    t.string :name
+  end
   unless OLD_RAILS
     create_table :enqueued_objects do |t|
       t.string :name
@@ -439,6 +442,19 @@ class SubReplicas < ActiveRecord::Base
         attributesToIndex [:name]
         customRanking ["desc(name)"]
       end
+    end
+  end
+end
+
+class VirtualReplicas < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("VirtualReplica_primary") do
+    attributesToIndex [:name]
+    customRanking ["asc(name)"]
+
+    add_replica safe_index_name("VirtualReplica_replica"), virtual: true do
+      customRanking ["desc(name)"]
     end
   end
 end
@@ -1203,6 +1219,25 @@ describe "SubReplicas" do
 
   it "should be searchable through added indexes replica" do
     expect { SubReplicas.raw_search('something', :index => safe_index_name('Replica_Index')) }.not_to raise_error
+  end
+end
+
+describe "VirtualReplicas" do
+  before(:all) do
+    VirtualReplicas.clear_index!(true)
+  end
+
+  it "setup the replica" do
+    VirtualReplicas.send(:algolia_configurations).to_a.each do |v|
+      if v[0][:replica]
+        expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_replica"))
+        expect(v[0][:virtual]).to eq(true)
+        expect(v[1].to_settings[:replicas]).to be_nil
+      else
+        expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_primary"))
+        expect(v[1].to_settings[:replicas]).to match_array(["virtual(#{safe_index_name("VirtualReplica_replica")})"])
+      end
+    end
   end
 end
 
