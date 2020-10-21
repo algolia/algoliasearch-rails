@@ -660,7 +660,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave] || options[:replica]
-        synchronous || options[:synchronous] ? index.delete! : index.delete
+        synchronous || options[:synchronous] ? index.clear_objects! : index.clear_objects
         @algolia_indexes[settings] = nil
       end
       nil
