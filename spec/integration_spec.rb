@@ -633,7 +633,7 @@ end
 
 describe 'Namespaced::Model' do
   before(:all) do
-    Namespaced::Model.index.delete!
+    Namespaced::Model.index.clear_objects!
   end
 
   it "should have an index name without :: hierarchy" do
