@@ -13,7 +13,7 @@ require 'logger'
 require 'sequel'
 require 'active_model_serializers'
 
-AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
+AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :use_latest_settings => false, :symbolize_keys => false }
 
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
@@ -272,8 +272,8 @@ class NestedItem < ActiveRecord::Base
 end
 
 # create this index before the class actually loads, to ensure the customRanking is updated
-index = Algolia::Index.new(safe_index_name('City_replica2'))
-index.wait_task index.set_settings({'customRanking' => ['desc(d)']})['taskID']
+index = AlgoliaSearch.client.init_index(safe_index_name('City_replica2'))
+index.set_settings!({'customRanking' => ['desc(d)']})
 
 class City < ActiveRecord::Base
   include AlgoliaSearch
@@ -446,13 +446,13 @@ end
 class WithSlave < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :force_utf8_encoding => true, :index_name => safe_index_name("With slave") do
+  algoliasearch :force_utf8_encoding => true, :index_name => safe_index_name("WithSlave") do
     add_slave safe_index_name("WithSlave_slave") do
     end
   end
 
   # Ensure the index is indeed using slaves
-  algolia_index.set_settings({:slaves => [safe_index_name("WithSlave_slave")]})
+  algolia_index.set_settings!({:slaves => [safe_index_name("WithSlave_slave")]})
 end
 
 unless OLD_RAILS
@@ -551,7 +551,7 @@ unless OLD_RAILS
     it "should throw an exception if the data is too big" do
       expect {
         Color.create! :name => 'big' * 100000
-      }.to raise_error(Algolia::AlgoliaProtocolError)
+      }.to raise_error(Algolia::AlgoliaHttpError)
     end
 
   end
@@ -643,7 +643,7 @@ end
 
 describe 'Namespaced::Model' do
   before(:all) do
-    Namespaced::Model.index.clear_index!
+    Namespaced::Model.index.delete!
   end
 
   it "should have an index name without :: hierarchy" do
@@ -1087,7 +1087,7 @@ describe 'Cities' do
   it "should browse" do
     total = City.index.search('')['nbHits']
     n = 0
-    City.index.browse do |hit|
+    City.index.browse_objects do |hit|
       n += 1
     end
     expect(n).to eq(total)
@@ -1211,7 +1211,7 @@ describe "WithSlave" do
     WithSlave.clear_index!(true)
   end
 
-  let(:expected_indicies) { %w(WithSlave WithSlave_slave).map { |name| safe_index_name(name) } }
+  let(:expected_indices) { %w(WithSlave WithSlave_slave).map { |name| safe_index_name(name) } }
 
   it "should be searchable through added indexes slaves" do
     expect { WithSlave.raw_search('something', :index => safe_index_name('WithSlave_slave')) }.not_to raise_error
@@ -1271,8 +1271,8 @@ end
 describe 'Book' do
   before(:all) do
     Book.clear_index!(true)
-    Book.index(safe_index_name('BookAuthor')).clear
-    Book.index(safe_index_name('Book')).clear
+    Book.index(safe_index_name('BookAuthor')).clear_objects
+    Book.index(safe_index_name('Book')).clear_objects
   end
 
   it "should index the book in 2 indexes of 3" do
@@ -1383,9 +1383,9 @@ end
 
 describe 'Disabled' do
   before(:all) do
-    DisabledBoolean.index.clear_index!
-    DisabledProc.index.clear_index!
-    DisabledSymbol.index.clear_index!
+    DisabledBoolean.index.clear_objects!
+    DisabledProc.index.clear_objects!
+    DisabledSymbol.index.clear_objects!
   end
 
   it "should disable the indexing using a boolean" do

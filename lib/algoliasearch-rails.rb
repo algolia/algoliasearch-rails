@@ -1,4 +1,4 @@
-require 'algoliasearch'
+require 'algolia'
 
 require 'algoliasearch/version'
 require 'algoliasearch/utilities'
@@ -304,11 +304,11 @@ module AlgoliaSearch
   # are correctly logged or thrown depending on the `raise_on_failure` option
   class SafeIndex
     def initialize(name, raise_on_failure)
-      @index = ::Algolia::Index.new(name)
+      @index = AlgoliaSearch.client.init_index(name)
       @raise_on_failure = raise_on_failure.nil? || raise_on_failure
     end
 
-    ::Algolia::Index.instance_methods(false).each do |m|
+    ::Algolia::Search::Index.instance_methods(false).each do |m|
       define_method(m) do |*args, &block|
         SafeIndex.log_or_throw(m, @raise_on_failure) do
           @index.send(m, *args, &block)
@@ -329,7 +329,7 @@ module AlgoliaSearch
       SafeIndex.log_or_throw(:get_settings, @raise_on_failure) do
         begin
           @index.get_settings(*args)
-        rescue Algolia::AlgoliaError => e
+        rescue Algolia::AlgoliaHttpError => e
           return {} if e.code == 404 # not fatal
           raise e
         end
@@ -339,7 +339,7 @@ module AlgoliaSearch
     # expose move as well
     def self.move_index(old_name, new_name)
       SafeIndex.log_or_throw(:move_index, true) do
-        ::Algolia.move_index(old_name, new_name)
+        AlgoliaSearch.client.move_index(old_name, new_name)
       end
     end
 
@@ -531,7 +531,7 @@ module AlgoliaSearch
           end
           last_task = index.save_objects(objects)
         end
-        index.wait_task(last_task["taskID"]) if last_task and (synchronous || options[:synchronous])
+        index.wait_task(last_task.raw_response["taskID"]) if last_task and (synchronous || options[:synchronous])
       end
       nil
     end
@@ -562,7 +562,7 @@ module AlgoliaSearch
         tmp_settings = settings.dup
 
         if options[:check_settings] == false
-          ::Algolia::copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
+          @client.copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
           tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
         else
           tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
@@ -578,7 +578,7 @@ module AlgoliaSearch
         end
 
         move_task = SafeIndex.move_index(tmp_index.name, src_index_name)
-        master_index.wait_task(move_task["taskID"]) if synchronous || options[:synchronous]
+        master_index.wait_task(move_task.raw_response["taskID"]) if synchronous || options[:synchronous]
       end
       nil
     end
@@ -598,7 +598,7 @@ module AlgoliaSearch
 
         index = SafeIndex.new(algolia_index_name(options), true)
         task = index.set_settings(final_settings)
-        index.wait_task(task["taskID"]) if synchronous
+        index.wait_task(task.raw_response["taskID"]) if synchronous
       end
     end
 
@@ -608,7 +608,7 @@ module AlgoliaSearch
         index = algolia_ensure_init(options, settings)
         next if options[:slave] || options[:replica]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
-        index.wait_task(task["taskID"]) if synchronous || options[:synchronous]
+        index.wait_task(task.raw_response["taskID"]) if synchronous || options[:synchronous]
       end
     end
 
@@ -622,9 +622,9 @@ module AlgoliaSearch
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
           if synchronous || options[:synchronous]
-            index.add_object!(settings.get_attributes(object), object_id)
+            index.save_object!(settings.get_attributes(object).merge 'objectID' => algolia_object_id_of(object, options))
           else
-            index.add_object(settings.get_attributes(object), object_id)
+            index.save_object(settings.get_attributes(object).merge 'objectID' => algolia_object_id_of(object, options))
           end
         elsif algolia_conditional_index?(options) && !object_id.blank?
           # remove non-indexable objects
@@ -660,7 +660,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave] || options[:replica]
-        synchronous || options[:synchronous] ? index.clear! : index.clear
+        synchronous || options[:synchronous] ? index.delete! : index.delete
         @algolia_indexes[settings] = nil
       end
       nil
@@ -741,7 +741,7 @@ module AlgoliaSearch
                    params.delete('replicas')
       index = algolia_index(index_name)
       query = Hash[params.map { |k, v| [k.to_s, v.to_s] }]
-      index.search_facet(facet, text, query)['facetHits']
+      index.search_for_facet_values(facet, text, query)['facetHits']
     end
 
     # deprecated (renaming)
@@ -821,7 +821,7 @@ module AlgoliaSearch
                    index_settings.delete(:slaves) ||
                    index_settings.delete('slaves')
         index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil? || options[:inherit]
-        @algolia_indexes[settings].set_settings(index_settings)
+        @algolia_indexes[settings].set_settings!(index_settings)
       end
 
       @algolia_indexes[settings]
