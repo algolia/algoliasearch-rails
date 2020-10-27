@@ -614,7 +614,7 @@ module AlgoliaSearch
 
     def algolia_index!(object, synchronous = false)
       return if algolia_without_auto_index_scope
-      algolia_configurations.each do |options, settings|
+      algolia_configurations.map do |options, settings|
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
         index = algolia_ensure_init(options, settings)
@@ -635,7 +635,6 @@ module AlgoliaSearch
           end
         end
       end
-      nil
     end
 
     def algolia_remove_from_index!(object, synchronous = false)
