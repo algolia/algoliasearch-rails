@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
 gem 'json', '~> 1.8', '>= 1.8.6'
-gem 'algolia', '2.0.0.pre.beta.3'
+gem 'algolia', '< 3.0.0'
 
 if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
   gem 'rubysl', '~> 2.0', :platform => :rbx
@@ -35,7 +35,7 @@ group :test do
     gem 'net-http-persistent', '< 3.0'
   end
   gem 'rspec', '>= 2.5.0', '< 3.0'
-  gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
+  gem 'sqlite3', '> 1.4.0', :platform => [:rbx, :ruby]
   gem 'jdbc-sqlite3', :platform => :jruby
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
