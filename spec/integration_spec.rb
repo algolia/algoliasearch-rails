@@ -12,7 +12,7 @@ require 'logger'
 require 'sequel'
 require 'active_model_serializers'
 
-AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :use_latest_settings => false, :symbolize_keys => false }
+AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :symbolize_keys => false }
 
 FileUtils.rm( 'data.sqlite3' ) rescue nil
 ActiveRecord::Base.logger = Logger.new(STDOUT)
@@ -165,7 +165,7 @@ class Color < ActiveRecord::Base
   attr_accessor :not_indexed
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
-    attributesToIndex [:name]
+    searchableAttributes [:name]
     attributesForFaceting ['searchable(short_name)']
     customRanking ["asc(hex)"]
     tags do
@@ -282,7 +282,7 @@ class City < ActiveRecord::Base
     customRanking ['desc(b)']
 
     add_replica safe_index_name('City_replica1'), :per_environment => true do
-      attributesToIndex [:country]
+      searchableAttributes [:country]
       customRanking ['asc(a)']
     end
 
@@ -309,7 +309,7 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
     add_attribute :test
     add_attribute :test2
 
-    attributesToIndex [:name]
+    searchableAttributes [:name]
   end
 
   def after_create
@@ -368,17 +368,17 @@ class Book < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true, :sanitize => true do
-    attributesToIndex [:name]
+    searchableAttributes [:name]
     tags do
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
     end
 
     add_index safe_index_name('BookAuthor'), :per_environment => true do
-      attributesToIndex [:author]
+      searchableAttributes [:author]
     end
 
     add_index safe_index_name('Book'), :per_environment => true, :if => :public? do
-      attributesToIndex [:name]
+      searchableAttributes [:name]
     end
   end
 
@@ -393,7 +393,7 @@ class Ebook < ActiveRecord::Base
   attr_accessor :current_time, :published_at
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("eBooks")do
-    attributesToIndex [:name]
+    searchableAttributes [:name]
   end
 
   def algolia_dirty?
@@ -418,31 +418,19 @@ class SubReplicas < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SubReplicas") do
-    attributesToIndex [:name]
+    searchableAttributes [:name]
     customRanking ["asc(name)"]
 
     add_index safe_index_name("Additional_Index"), :per_environment => true do
-      attributesToIndex [:name]
+      searchableAttributes [:name]
       customRanking ["asc(name)"]
 
       add_replica safe_index_name("Replica_Index"), :per_environment => true do
-        attributesToIndex [:name]
+        searchableAttributes [:name]
         customRanking ["desc(name)"]
       end
     end
   end
-end
-
-class WithSlave < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch :force_utf8_encoding => true, :index_name => safe_index_name("WithSlave") do
-    add_slave safe_index_name("WithSlave_slave") do
-    end
-  end
-
-  # Ensure the index is indeed using slaves
-  algolia_index.set_settings!({:slaves => [safe_index_name("WithSlave_slave")]})
 end
 
 unless OLD_RAILS
@@ -551,15 +539,15 @@ describe 'Settings' do
 
   it "should detect settings changes" do
     Color.send(:algoliasearch_settings_changed?, nil, {}).should == true
-    Color.send(:algoliasearch_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should == true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should == true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {}, {"searchableAttributes" => ["name"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {"searchableAttributes" => ["name", "hex"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should == true
   end
 
   it "should not detect settings changes" do
     Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should == false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {:searchableAttributes => ["name"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
   end
 
 end
@@ -1094,7 +1082,7 @@ describe "FowardToReplicas" do
 
       algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
-        attributesToIndex %w(first_value)
+        searchableAttributes %w(first_value)
         attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica') do
@@ -1116,11 +1104,11 @@ describe "FowardToReplicas" do
     ForwardToReplicas.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['attributesToIndex']).to eq(%w(first_value))
+    expect(primary_settings['searchableAttributes']).to eq(%w(first_value))
     expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['attributesToIndex']).to eq(nil)
+    expect(replica_settings['searchableAttributes']).to eq(nil)
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
   end
 
@@ -1132,7 +1120,7 @@ describe "FowardToReplicas" do
 
       algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
-        attributesToIndex %w(second_value)
+        searchableAttributes %w(second_value)
         attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica'), :inherit => true do
@@ -1150,11 +1138,11 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(primary_settings['searchableAttributes']).to eq(%w(second_value))
     expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(replica_settings['searchableAttributes']).to eq(%w(second_value))
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
@@ -1187,59 +1175,6 @@ describe "SubReplicas" do
 
   it "should be searchable through added indexes replica" do
     expect { SubReplicas.raw_search('something', :index => safe_index_name('Replica_Index')) }.not_to raise_error
-  end
-end
-
-describe "WithSlave" do
-  before(:all) do
-    WithSlave.clear_index!(true)
-  end
-
-  let(:expected_indices) { %w(WithSlave WithSlave_slave).map { |name| safe_index_name(name) } }
-
-  it "should be searchable through added indexes slaves" do
-    expect { WithSlave.raw_search('something', :index => safe_index_name('WithSlave_slave')) }.not_to raise_error
-  end
-
-  it "should reindex with slaves in place" do
-    WithSlave.reindex!
-    expect(WithSlave.index.get_settings['slaves'].length).to eq(1)
-  end
-end
-
-describe "SlaveThenReplica" do
-  it 'should throw with add_slave then add_replica' do
-    test = lambda do
-      class SlaveThenReplica
-        include AlgoliaSearch
-
-        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SlaveThenReplica") do
-          add_slave safe_index_name("SlaveThenReplica_slave") do
-          end
-          add_replica safe_index_name("SlaveThenReplica_replica") do
-          end
-        end
-      end
-    end
-    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
-  end
-end
-
-describe "ReplicaThenSlave" do
-  it 'should throw with add_replice then add_slave' do
-    test = lambda do
-      class ReplicaThenSlave
-        include AlgoliaSearch
-
-        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("ReplicaThenSlave") do
-          add_replica safe_index_name("ReplicaThenSlave_replica") do
-          end
-          add_slave safe_index_name("ReplicaThenSlave_slave") do
-          end
-        end
-      end
-    end
-    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
   end
 end
 
