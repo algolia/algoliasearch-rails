@@ -53,7 +53,6 @@ module AlgoliaSearch
     OPTIONS = [
       # Attributes
       :searchableAttributes, :attributesForFaceting, :unretrievableAttributes, :attributesToRetrieve,
-      :attributesToIndex, #Legacy name of searchableAttributes
       # Ranking
       :ranking, :customRanking, # Replicas are handled via `add_replica`
       # Faceting
@@ -76,7 +75,6 @@ module AlgoliaSearch
       :disablePrefixOnAttributes, :disableExactOnAttributes, :exactOnSingleWordQuery, :alternativesAsExact,
       # Performance
       :numericAttributesForFiltering, :allowCompressionOfIntegerArray,
-      :numericAttributesToIndex, # Legacy name of numericAttributesForFiltering
       # Advanced
       :attributeForDistinct, :distinct, :replaceSynonymsInHighlight, :minProximity, :responseFields,
       :maxFacetHits,
@@ -102,7 +100,7 @@ module AlgoliaSearch
 
     def attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
-      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       @attributes ||= {}
       names.flatten.each do |name|
         @attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -112,7 +110,7 @@ module AlgoliaSearch
 
     def add_attribute(*names, &block)
       raise ArgumentError.new('Cannot pass multiple attribute names if block given') if block_given? and names.length > 1
-      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       @additional_attributes ||= {}
       names.each do |name|
         @additional_attributes[name.to_s] = block_given? ? Proc.new { |o| o.instance_eval(&block) } : Proc.new { |o| o.send(name) }
@@ -223,15 +221,15 @@ module AlgoliaSearch
       end
     end
 
-    def geoloc(lat_attr = nil, lng_attr = nil, &block)
-      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
+    def geoloc(lat_attr, lng_attr)
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       add_attribute :_geoloc do |o|
         block_given? ? o.instance_eval(&block) : { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 
     def tags(*args, &block)
-      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:replica]
       add_attribute :_tags do |o|
         v = block_given? ? o.instance_eval(&block) : args
         v.is_a?(Array) ? v : [v]
@@ -248,13 +246,7 @@ module AlgoliaSearch
         v = get_setting(k)
         settings[k] = v if !v.nil?
       end
-      if !@options[:slave] && !@options[:replica]
-        settings[:slaves] = additional_indexes.select { |opts, s| opts[:slave] }.map do |opts, s|
-          name = opts[:index_name]
-          name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
-          name
-        end
-        settings.delete(:slaves) if settings[:slaves].empty?
+      if !@options[:replica]
         settings[:replicas] = additional_indexes.select { |opts, s| opts[:replica] }.map do |opts, s|
           name = opts[:index_name]
           name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
@@ -266,11 +258,10 @@ module AlgoliaSearch
     end
 
     def add_index(index_name, options = {}, &block)
-      raise ArgumentError.new('Cannot specify additional index on a replica index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('Cannot specify additional index on a replica index') if @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
       @additional_indexes ||= {}
-      raise MixedSlavesAndReplicas.new('Cannot mix slaves and replicas in the same configuration (add_slave is deprecated)') if (options[:slave] && @additional_indexes.any? { |opts, _| opts[:replica] }) || (options[:replica] && @additional_indexes.any? { |opts, _| opts[:slave] })
       options[:index_name] = index_name
       @additional_indexes[options] = IndexSettings.new(options, &block)
     end
@@ -279,12 +270,6 @@ module AlgoliaSearch
       raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:slave] || @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
       add_index(index_name, options.merge({ :replica => true, :primary_settings => self }), &block)
-    end
-
-    def add_slave(index_name, options = {}, &block)
-      raise ArgumentError.new('Cannot specify additional slaves on a slave index') if @options[:slave] || @options[:replica]
-      raise ArgumentError.new('No block given') if !block_given?
-      add_index(index_name, options.merge({ :slave => true, :primary_settings => self }), &block)
     end
 
     def additional_indexes
