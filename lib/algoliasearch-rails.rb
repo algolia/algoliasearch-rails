@@ -561,14 +561,10 @@ module AlgoliaSearch
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
-        if options[:check_settings] == false
-          ::Algolia::copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
-          tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
-        else
-          tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
-        end
+        ::Algolia::copy_index!(src_index_name, tmp_index_name, %w(settings synonyms rules))
+        tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
 
-          algolia_find_in_batches(batch_size) do |group|
+        algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(options)
             # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, tmp_options) }

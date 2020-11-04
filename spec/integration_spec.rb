@@ -823,6 +823,11 @@ describe 'Colors' do
     expect(facets.first['highlighted']).to eq('<em>bl</em>a')
     expect(facets.first['count']).to eq(1)
   end
+
+  it "should reindex after settings change" do
+    Color.index.set_settings!(:searchableAttributes => [:short_name])
+    Color.reindex
+  end
 end
 
 describe 'An imaginary store' do
