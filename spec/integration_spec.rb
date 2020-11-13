@@ -826,7 +826,7 @@ describe 'Colors' do
 
   it "should reindex after settings change" do
     Color.index.set_settings!(:searchableAttributes => [:short_name])
-    Color.reindex
+    expect { Color.reindex }.to_not raise_error
   end
 end
 
