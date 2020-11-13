@@ -223,10 +223,10 @@ module AlgoliaSearch
       end
     end
 
-    def geoloc(lat_attr, lng_attr)
+    def geoloc(lat_attr = nil, lng_attr = nil, &block)
       raise ArgumentError.new('Cannot specify additional attributes on a replica index') if @options[:slave] || @options[:replica]
       add_attribute :_geoloc do |o|
-        { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
+        block_given? ? o.instance_eval(&block) : { :lat => o.send(lat_attr).to_f, :lng => o.send(lng_attr).to_f }
       end
     end
 

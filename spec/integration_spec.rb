@@ -72,6 +72,7 @@ ActiveRecord::Schema.define do
     t.string :country
     t.float :lat
     t.float :lng
+    t.string :gl_array
   end
   create_table :with_slaves do |t|
   end
@@ -276,8 +277,16 @@ index.wait_task index.set_settings({'customRanking' => ['desc(d)']})['taskID']
 class City < ActiveRecord::Base
   include AlgoliaSearch
 
+  serialize :gl_array
+
+  def geoloc_array
+    lat.present? && lng.present? ? { :lat => lat, :lng => lng } : gl_array
+  end
+
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
-    geoloc :lat, :lng
+    geoloc do
+      geoloc_array
+    end
     add_attribute :a_null_lat, :a_lng
     customRanking ['desc(b)']
 
@@ -1013,14 +1022,16 @@ describe 'Cities' do
   it "should index geo" do
     sf = City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
     mv = City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
+    sf_and_mv = City.create :name => 'San Francisco & Mountain View', :country => 'Hybrid', :gl_array => [{ :lat => 37.75, :lng => -122.68 }, { :lat => 37.38, :lng => -122.08 }]
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
-    expect(results.size).to eq(1)
-    results.should include(mv)
+    expect(results.size).to eq(2)
+    results.should include(mv, sf_and_mv)
 
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 500000 })
-    expect(results.size).to eq(2)
+    expect(results.size).to eq(3)
     results.should include(mv)
     results.should include(sf)
+    results.should include(sf_and_mv)
   end
 
   it "should be searchable using replica index" do
