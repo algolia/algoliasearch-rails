@@ -1184,12 +1184,11 @@ end
 ```
 
 
+## ❓ Troubleshooting
 
-# Troubleshooting
+Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/api-client/troubleshooting/faq/ruby/) where you will find answers for the most common issues and gotchas with the client.
 
+## Use the Dockerfile
 
-## Frequently asked questions
-
-Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/framework-integration/rails/troubleshooting/faq/) where you will find answers for the most common issues and gotchas with the gem.
-
+If you want to contribute to this project without installing all its dependencies, you can use our Docker image. Please check our [dedicated guide](DOCKER_README.MD) to learn more.
 

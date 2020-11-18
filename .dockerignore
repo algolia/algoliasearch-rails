@@ -1,0 +1,24 @@
+## MAC OS
+.DS_Store
+
+## TEXTMATE
+*.tmproj
+tmtags
+
+## EMACS
+*~
+\#*
+.\#*
+
+## VIM
+*.swp
+
+## PROJECT::GENERAL
+coverage
+rdoc
+pkg
+.rvmrc
+
+## PROJECT::SPECIFIC
+data.sqlite3
+sequel_data.sqlite3
