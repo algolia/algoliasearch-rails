@@ -8,8 +8,8 @@ if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
 end
 
 group :test do
-  rails_version = ENV["RAILS_VERSION"] ? "~> #{ENV["RAILS_VERSION"]}" : '>= 3.2.0'
-  gem 'rails', rails_version
+  rails_version = ENV["RAILS_VERSION"] ? "#{ENV["RAILS_VERSION"]}" : '5.2'
+  gem 'rails', "~> #{rails_version}"
   gem 'active_model_serializers'
   if defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
     gem 'i18n', '< 0.7'
@@ -34,8 +34,12 @@ group :test do
      Gem::Version.new(RUBY_VERSION) < Gem::Version.new('2.1')
     gem 'net-http-persistent', '< 3.0'
   end
+  if Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
+    gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
+  else
+    gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
+  end
   gem 'rspec', '>= 2.5.0', '< 3.0'
-  gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
   gem 'jdbc-sqlite3', :platform => :jruby
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
