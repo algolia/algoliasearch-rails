@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/1.25.0...master)
+
+## [1.25.0](https://github.com/algolia/algoliasearch-rails/compare/1.24.1...1.25.0) (2020-11-24)
+
+### Added
+- Pass array argument to geoloc ([#372](https://github.com/algolia/algoliasearch-rails/pull/372))
+- Containerize the repo ([#391](https://github.com/algolia/algoliasearch-rails/pull/391))
+
+### Fixed
+- Use Zeitwerk for loading models in Rails 6 ([#364](https://github.com/algolia/algoliasearch-rails/pull/364))
+
 ## [1.24.1](https://github.com/algolia/algoliasearch-rails/releases/tag/1.24.1) (2020-07-15)
 
 **Fixed**
