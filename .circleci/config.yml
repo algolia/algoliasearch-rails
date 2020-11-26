@@ -45,7 +45,7 @@ version: 2.1
 
 jobs:
   tests_rails_3:
-    description: Build, unit and integration tests for Ruby
+    description: Build, unit and integration tests
     parameters:
       version:
         type: string
@@ -57,14 +57,14 @@ jobs:
       - *default_docker_ruby_executor
     steps:
       - checkout
-      - run: *credentials
       - run: *check_bundler
-#      - restore_cache: *restore_cache
+      - restore_cache: *restore_cache
       - run: *install_bundler
       - save_cache: *save_cache
+      - run: *credentials
       - run: *run_tests
   tests_rails_4:
-    description: Build, unit and integration tests for Ruby
+    description: Build, unit and integration tests
     parameters:
       version:
         type: string
@@ -76,14 +76,14 @@ jobs:
       - *default_docker_ruby_executor
     steps:
       - checkout
-      - run: *credentials
       - run: *check_bundler
-#      - restore_cache: *restore_cache
+      - restore_cache: *restore_cache
       - run: *install_bundler
       - save_cache: *save_cache
+      - run: *credentials
       - run: *run_tests
   tests_rails_5:
-    description: Build, unit and integration tests for Ruby
+    description: Build, unit and integration tests
     parameters:
       version:
         type: string
@@ -95,14 +95,14 @@ jobs:
       - *default_docker_ruby_executor
     steps:
       - checkout
-      - run: *credentials
       - run: *check_bundler
-#      - restore_cache: *restore_cache
+      - restore_cache: *restore_cache
       - run: *install_bundler
       - save_cache: *save_cache
+      - run: *credentials
       - run: *run_tests
   tests_rails_6:
-    description: Build, unit and integration tests for Ruby
+    description: Build, unit and integration tests
     parameters:
       version:
         type: string
@@ -114,11 +114,11 @@ jobs:
       - *default_docker_ruby_executor
     steps:
       - checkout
-      - run: *credentials
       - run: *check_bundler
-#      - restore_cache: *restore_cache
+      - restore_cache: *restore_cache
       - run: *install_bundler
       - save_cache: *save_cache
+      - run: *credentials
       - run: *run_tests
 
 workflows:
@@ -131,24 +131,15 @@ workflows:
               version: ['2.2', '2.3', '2.4']
               rails-version: ['4.2']
               sequel-version: ['4.0']
-          filters:
-            tags:
-              only: /.*/
       - tests_rails_5:
           matrix:
             parameters:
               version: ['2.2', '2.3', '2.4', '2.5', '2.6', '2.7']
               rails-version: ['5.1']
               sequel-version: ['4.0', '5.0']
-          filters:
-            tags:
-              only: /.*/
       - tests_rails_6:
           matrix:
             parameters:
               version: ['2.5', '2.6', '2.7']
               rails-version: ['6.0']
               sequel-version: ['4.0', '5.0']
-          filters:
-            tags:
-              only: /.*/

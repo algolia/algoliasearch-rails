@@ -8,7 +8,7 @@ if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
 end
 
 group :test do
-  rails_version = ENV["RAILS_VERSION"] ? "#{ENV["RAILS_VERSION"]}" : '5.2'
+  rails_version = ENV["RAILS_VERSION"] || '5.2'
   gem 'rails', "~> #{rails_version}"
   gem 'active_model_serializers'
   if defined?(RUBY_VERSION) && RUBY_VERSION == "1.8.7"
