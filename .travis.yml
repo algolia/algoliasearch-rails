@@ -45,7 +45,6 @@ matrix:
       env: RAILS_VERSION=6.0 SEQUEL_VERSION=5.0
 
 before_install:
-  - wget http://api-key-dealer.herokuapp.com/clients/algolia-keys && chmod +x algolia-keys
   - which bundle || true
   - find /home/travis/.rvm -wholename "*/bundler-*.gemspec" -print -delete || true
   - bundle --version || true
@@ -59,4 +58,4 @@ install: rm -f Gemfile.lock && bundle install --without development
 cache: bundler
 
 script:
-  - eval $(./algolia-keys export) && bundle exec rake
+  - bundle exec rake
