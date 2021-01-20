@@ -1,9 +1,10 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
 OLD_RAILS = Gem.loaded_specs['rails'].version < Gem::Version.new('4.0')
+NEW_RAILS = Gem.loaded_specs['rails'].version >= Gem::Version.new('6.0')
 
 require 'active_record'
-unless OLD_RAILS
+unless OLD_RAILS || NEW_RAILS
   require 'active_job/test_helper'
   ActiveJob::Base.queue_adapter = :test
 end
@@ -705,7 +706,11 @@ describe 'NestedItem' do
     result = NestedItem.raw_search('')
     result['nbHits'].should == 1
 
-    @i2.update_attributes :hidden => false
+    if @i2.respond_to? :update_attributes
+      @i2.update_attributes :hidden => false
+    else
+      @i2.update :hidden => false
+    end
 
     result = NestedItem.raw_search('')
     result['nbHits'].should == 2
@@ -1323,7 +1328,11 @@ describe 'Book' do
     expect(results['hits'].size).to eq(1)
 
     # update the book and make it non-public anymore (not premium, not released)
-    book.update_attributes :released => false
+    if book.respond_to? :update_attributes
+      book.update_attributes :released => false
+    else
+      book.update :released => false
+    end
 
     # should be removed from the index
     results = index.search('Public book')

@@ -2,7 +2,7 @@ module AlgoliaSearch
   module Utilities
     class << self
       def get_model_classes
-        if defined?(Rails.autoloaders) && Rails.autoloaders.zeitwerk_enabled?
+        if Rails.application && defined?(Rails.autoloaders) && Rails.autoloaders.zeitwerk_enabled?
           Zeitwerk::Loader.eager_load_all
         elsif Rails.application
           Rails.application.eager_load!
