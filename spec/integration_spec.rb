@@ -1054,12 +1054,12 @@ describe 'Cities' do
 
   it "should reindex with replicas in place" do
     City.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings['replicas'].length).to eq(2)
+    expect(City.index.get_settings[:replicas].length).to eq(2)
   end
 
   it "should reindex with replicas using a temporary index" do
     City.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings['replicas'].length).to eq(2)
+    expect(City.index.get_settings[:replicas].length).to eq(2)
   end
 
   it "should not include the replicas setting on replicas" do
@@ -1082,9 +1082,9 @@ describe 'Cities' do
   end
 
   it "should have set the custom ranking on all indices" do
-    expect(City.index.get_settings['customRanking']).to eq(['desc(b)'])
-    expect(City.index(safe_index_name('City_replica1')).get_settings['customRanking']).to eq(['asc(a)'])
-    expect(City.index(safe_index_name('City_replica2')).get_settings['customRanking']).to eq(['asc(a)', 'desc(c)'])
+    expect(City.index.get_settings[:customRanking]).to eq(['desc(b)'])
+    expect(City.index(safe_index_name('City_replica1')).get_settings[:customRanking]).to eq(['asc(a)'])
+    expect(City.index(safe_index_name('City_replica2')).get_settings[:customRanking]).to eq(['asc(a)', 'desc(c)'])
   end
 
 end
@@ -1120,12 +1120,12 @@ describe "FowardToReplicas" do
     ForwardToReplicas.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['searchableAttributes']).to eq(%w(first_value))
-    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
+    expect(primary_settings[:searchableAttributes]).to eq(%w(first_value))
+    expect(primary_settings[:attributesToHighlight]).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['searchableAttributes']).to eq(nil)
-    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
+    expect(replica_settings[:searchableAttributes]).to eq(nil)
+    expect(replica_settings[:attributesToHighlight]).to eq(%w(replica_highlight))
   end
 
   it 'should update the replica settings when changed' do
@@ -1154,12 +1154,12 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['searchableAttributes']).to eq(%w(second_value))
-    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
+    expect(primary_settings[:searchableAttributes]).to eq(%w(second_value))
+    expect(primary_settings[:attributesToHighlight]).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['searchableAttributes']).to eq(%w(second_value))
-    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
+    expect(replica_settings[:searchableAttributes]).to eq(%w(second_value))
+    expect(replica_settings[:attributesToHighlight]).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
   end
