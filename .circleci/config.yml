@@ -2,7 +2,7 @@ aliases:
   - &credentials
     name: Retrieve temporary Algolia credentials if needed
     command: |
-      if [ -z "ALGOLIA_ADMIN_KEY_MCM" ]; then
+      if [ "$CIRCLE_PR_REPONAME" ]; then
         curl -s https://algoliasearch-client-keygen.herokuapp.com | sh >> $BASH_ENV
       fi
 
@@ -44,25 +44,6 @@ references:
 version: 2.1
 
 jobs:
-  tests_rails_3:
-    description: Build, unit and integration tests
-    parameters:
-      version:
-        type: string
-      rails-version:
-        type: string
-      sequel-version:
-        type: string
-    docker:
-      - *default_docker_ruby_executor
-    steps:
-      - checkout
-      - run: *check_bundler
-      - restore_cache: *restore_cache
-      - run: *install_bundler
-      - save_cache: *save_cache
-      - run: *credentials
-      - run: *run_tests
   tests_rails_4:
     description: Build, unit and integration tests
     parameters:
@@ -128,18 +109,18 @@ workflows:
       - tests_rails_4:
           matrix:
             parameters:
-              version: ['2.2', '2.3', '2.4']
-              rails-version: ['4.2']
-              sequel-version: ['4.0']
+              version: [ '2.4' ]
+              rails-version: [ '4.2' ]
+              sequel-version: [ '4.0', '5.0' ]
       - tests_rails_5:
           matrix:
             parameters:
-              version: ['2.2', '2.3', '2.4', '2.5', '2.6', '2.7']
+              version: ['2.4', '2.5', '2.6', '2.7', '3.0']
               rails-version: ['5.1']
               sequel-version: ['4.0', '5.0']
       - tests_rails_6:
           matrix:
             parameters:
-              version: ['2.5', '2.6', '2.7']
+              version: ['2.5', '2.6', '2.7', '3.0']
               rails-version: ['6.0']
-              sequel-version: ['4.0', '5.0']
+              sequel-version: ['5.0']

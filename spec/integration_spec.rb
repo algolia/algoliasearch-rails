@@ -167,7 +167,7 @@ class Color < ActiveRecord::Base
   attr_accessor :not_indexed
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
-    searchableAttributes [:name]
+    searchableAttributes ['name']
     attributesForFaceting ['searchable(short_name)']
     customRanking ["asc(hex)"]
     tags do
@@ -292,7 +292,7 @@ class City < ActiveRecord::Base
     customRanking ['desc(b)']
 
     add_replica safe_index_name('City_replica1'), :per_environment => true do
-      searchableAttributes [:country]
+      searchableAttributes ['country']
       customRanking ['asc(a)']
     end
 
@@ -319,7 +319,7 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
     add_attribute :test
     add_attribute :test2
 
-    searchableAttributes [:name]
+    searchableAttributes ['name']
   end
 
   def after_create
@@ -378,17 +378,17 @@ class Book < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true, :sanitize => true do
-    searchableAttributes [:name]
+    searchableAttributes ['name']
     tags do
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
     end
 
     add_index safe_index_name('BookAuthor'), :per_environment => true do
-      searchableAttributes [:author]
+      searchableAttributes ['author']
     end
 
     add_index safe_index_name('Book'), :per_environment => true, :if => :public? do
-      searchableAttributes [:name]
+      searchableAttributes ['name']
     end
   end
 
@@ -403,7 +403,7 @@ class Ebook < ActiveRecord::Base
   attr_accessor :current_time, :published_at
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("eBooks")do
-    searchableAttributes [:name]
+    searchableAttributes ['name']
   end
 
   def algolia_dirty?
@@ -428,15 +428,15 @@ class SubReplicas < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SubReplicas") do
-    searchableAttributes [:name]
+    searchableAttributes ['name']
     customRanking ["asc(name)"]
 
     add_index safe_index_name("Additional_Index"), :per_environment => true do
-      searchableAttributes [:name]
+      searchableAttributes ['name']
       customRanking ["asc(name)"]
 
       add_replica safe_index_name("Replica_Index"), :per_environment => true do
-        searchableAttributes [:name]
+        searchableAttributes ['name']
         customRanking ["desc(name)"]
       end
     end
@@ -459,7 +459,7 @@ unless OLD_RAILS
 
     algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
       :index_name => safe_index_name('EnqueuedObject') do
-      attributes [:name]
+      attributes ['name']
     end
   end
 
@@ -469,7 +469,7 @@ unless OLD_RAILS
     algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
       :index_name => safe_index_name('EnqueuedObject'),
       :disable_indexing => true) do
-      attributes [:name]
+      attributes ['name']
     end
   end
 end
@@ -1054,12 +1054,12 @@ describe 'Cities' do
 
   it "should reindex with replicas in place" do
     City.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings[:replicas].length).to eq(2)
+    expect(City.index.get_settings['replicas'].length).to eq(2)
   end
 
   it "should reindex with replicas using a temporary index" do
     City.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings[:replicas].length).to eq(2)
+    expect(City.index.get_settings['replicas'].length).to eq(2)
   end
 
   it "should not include the replicas setting on replicas" do
@@ -1082,9 +1082,9 @@ describe 'Cities' do
   end
 
   it "should have set the custom ranking on all indices" do
-    expect(City.index.get_settings[:customRanking]).to eq(['desc(b)'])
-    expect(City.index(safe_index_name('City_replica1')).get_settings[:customRanking]).to eq(['asc(a)'])
-    expect(City.index(safe_index_name('City_replica2')).get_settings[:customRanking]).to eq(['asc(a)', 'desc(c)'])
+    expect(City.index.get_settings['customRanking']).to eq(['desc(b)'])
+    expect(City.index(safe_index_name('City_replica1')).get_settings['customRanking']).to eq(['asc(a)'])
+    expect(City.index(safe_index_name('City_replica2')).get_settings['customRanking']).to eq(['asc(a)', 'desc(c)'])
   end
 
 end
@@ -1120,12 +1120,12 @@ describe "FowardToReplicas" do
     ForwardToReplicas.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings[:searchableAttributes]).to eq(%w(first_value))
-    expect(primary_settings[:attributesToHighlight]).to eq(%w(primary_highlight))
+    expect(primary_settings['searchableAttributes']).to eq(%w(first_value))
+    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings[:searchableAttributes]).to eq(nil)
-    expect(replica_settings[:attributesToHighlight]).to eq(%w(replica_highlight))
+    expect(replica_settings['searchableAttributes']).to eq(nil)
+    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
   end
 
   it 'should update the replica settings when changed' do
@@ -1154,12 +1154,12 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings[:searchableAttributes]).to eq(%w(second_value))
-    expect(primary_settings[:attributesToHighlight]).to eq(%w(primary_highlight))
+    expect(primary_settings['searchableAttributes']).to eq(%w(second_value))
+    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings[:searchableAttributes]).to eq(%w(second_value))
-    expect(replica_settings[:attributesToHighlight]).to eq(%w(replica_highlight))
+    expect(replica_settings['searchableAttributes']).to eq(%w(second_value))
+    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
   end
