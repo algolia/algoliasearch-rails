@@ -1,10 +1,9 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
-OLD_RAILS = Gem.loaded_specs['rails'].version < Gem::Version.new('4.0')
 NEW_RAILS = Gem.loaded_specs['rails'].version >= Gem::Version.new('6.0')
 
 require 'active_record'
-unless OLD_RAILS || NEW_RAILS
+unless NEW_RAILS
   require 'active_job/test_helper'
   ActiveJob::Base.queue_adapter = :test
 end
@@ -112,13 +111,11 @@ ActiveRecord::Schema.define do
   create_table :sub_replicas do |t|
     t.string :name
   end
-  unless OLD_RAILS
-    create_table :enqueued_objects do |t|
-      t.string :name
-    end
-    create_table :disabled_enqueued_objects do |t|
-      t.string :name
-    end
+  create_table :enqueued_objects do |t|
+    t.string :name
+  end
+  create_table :disabled_enqueued_objects do |t|
+    t.string :name
   end
   create_table :misconfigured_blocks do |t|
     t.string :name
@@ -443,34 +440,32 @@ class SubReplicas < ActiveRecord::Base
   end
 end
 
-unless OLD_RAILS
-  class EnqueuedObject < ActiveRecord::Base
-    include AlgoliaSearch
+class EnqueuedObject < ActiveRecord::Base
+  include AlgoliaSearch
 
-    include GlobalID::Identification
+  include GlobalID::Identification
 
-    def id
-      read_attribute(:id)
-    end
-
-    def self.find(id)
-      EnqueuedObject.first
-    end
-
-    algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
-      :index_name => safe_index_name('EnqueuedObject') do
-      attributes ['name']
-    end
+  def id
+    read_attribute(:id)
   end
 
-  class DisabledEnqueuedObject < ActiveRecord::Base
-    include AlgoliaSearch
+  def self.find(id)
+    EnqueuedObject.first
+  end
 
-    algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
-      :index_name => safe_index_name('EnqueuedObject'),
-      :disable_indexing => true) do
-      attributes ['name']
-    end
+  algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
+    :index_name => safe_index_name('EnqueuedObject') do
+    attributes ['name']
+  end
+end
+
+class DisabledEnqueuedObject < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
+    :index_name => safe_index_name('EnqueuedObject'),
+    :disable_indexing => true) do
+    attributes ['name']
   end
 end
 
@@ -525,24 +520,21 @@ describe 'Encoding' do
   end
 end
 
-# Rails 3.2 swallows exception in after_commit
-unless OLD_RAILS
-  describe 'Too big records' do
-    before(:all) do
-      Color.clear_index!(true)
-    end
-
-    after(:all) do
-      Color.delete_all
-    end
-
-    it "should throw an exception if the data is too big" do
-      expect {
-        Color.create! :name => 'big' * 100000
-      }.to raise_error(Algolia::AlgoliaHttpError)
-    end
-
+describe 'Too big records' do
+  before(:all) do
+    Color.clear_index!(true)
   end
+
+  after(:all) do
+    Color.delete_all
+  end
+
+  it "should throw an exception if the data is too big" do
+    expect {
+      Color.create! :name => 'big' * 100000
+    }.to raise_error(Algolia::AlgoliaHttpError)
+  end
+
 end
 
 describe 'Settings' do
@@ -1348,29 +1340,27 @@ describe 'NullableId' do
   end
 end
 
-unless OLD_RAILS
-  describe 'EnqueuedObject' do
-    it "should enqueue a job" do
-      expect {
-        EnqueuedObject.create! :name => 'test'
-      }.to raise_error("enqueued 1")
-    end
-
-    it "should not enqueue a job inside no index block" do
-      expect {
-        EnqueuedObject.without_auto_index do
-          EnqueuedObject.create! :name => 'test'
-        end
-      }.not_to raise_error
-    end
+describe 'EnqueuedObject' do
+  it "should enqueue a job" do
+    expect {
+      EnqueuedObject.create! :name => 'test'
+    }.to raise_error("enqueued 1")
   end
 
-  describe 'DisabledEnqueuedObject' do
-    it "should not try to enqueue a job" do
-      expect {
-        DisabledEnqueuedObject.create! :name => 'test'
-      }.not_to raise_error
-    end
+  it "should not enqueue a job inside no index block" do
+    expect {
+      EnqueuedObject.without_auto_index do
+        EnqueuedObject.create! :name => 'test'
+      end
+    }.not_to raise_error
+  end
+end
+
+describe 'DisabledEnqueuedObject' do
+  it "should not try to enqueue a job" do
+    expect {
+      DisabledEnqueuedObject.create! :name => 'test'
+    }.not_to raise_error
   end
 end
 
