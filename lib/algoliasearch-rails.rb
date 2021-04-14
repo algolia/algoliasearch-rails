@@ -267,7 +267,7 @@ module AlgoliaSearch
     end
 
     def add_replica(index_name, options = {}, &block)
-      raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:slave] || @options[:replica]
+      raise ArgumentError.new('Cannot specify additional replicas on a replica index') if @options[:replica]
       raise ArgumentError.new('No block given') if !block_given?
       add_index(index_name, options.merge({ :replica => true, :primary_settings => self }), &block)
     end
@@ -496,7 +496,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         last_task = nil
 
         algolia_find_in_batches(batch_size) do |group|
@@ -526,7 +526,7 @@ module AlgoliaSearch
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
 
         # fetch the master settings
         master_index = algolia_ensure_init(options, settings)
@@ -534,8 +534,6 @@ module AlgoliaSearch
         master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
 
         # remove the replicas of the temporary index
-        master_settings.delete :slaves
-        master_settings.delete 'slaves'
         master_settings.delete :replicas
         master_settings.delete 'replicas'
 
@@ -572,8 +570,6 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         if options[:primary_settings] && options[:inherit]
           primary = options[:primary_settings].to_settings
-          primary.delete :slaves
-          primary.delete 'slaves'
           primary.delete :replicas
           primary.delete 'replicas'
           final_settings = primary.merge(settings.to_settings)
@@ -591,7 +587,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
         index.wait_task(task.raw_response["taskID"]) if synchronous || options[:synchronous]
       end
@@ -603,7 +599,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         object_id = algolia_object_id_of(object, options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
           if synchronous || options[:synchronous]
@@ -630,7 +626,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         if synchronous || options[:synchronous]
           index.delete_object!(object_id)
         else
@@ -644,7 +640,7 @@ module AlgoliaSearch
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         synchronous || options[:synchronous] ? index.clear_objects! : index.clear_objects
         @algolia_indexes[settings] = nil
       end
@@ -654,8 +650,6 @@ module AlgoliaSearch
     def algolia_raw_search(q, params = {})
       index_name = params.delete(:index) ||
                    params.delete('index') ||
-                   params.delete(:slave) ||
-                   params.delete('slave') ||
                    params.delete(:replica) ||
                    params.delete('replica')
       index = algolia_index(index_name)
@@ -720,8 +714,6 @@ module AlgoliaSearch
     def algolia_search_for_facet_values(facet, text, params = {})
       index_name = params.delete(:index) ||
                    params.delete('index') ||
-                   params.delete(:slave) ||
-                   params.delete('slave') ||
                    params.delete(:replica) ||
                    params.delete('replicas')
       index = algolia_index(index_name)
@@ -755,7 +747,7 @@ module AlgoliaSearch
       # Loop over each index to see if a attribute used in records has changed
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        next if options[:slave] || options[:replica]
+        next if options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
           return true if algolia_attribute_changed?(object, k)
@@ -800,12 +792,9 @@ module AlgoliaSearch
       options[:check_settings] = true if options[:check_settings].nil?
 
       if !algolia_indexing_disabled?(options) && options[:check_settings] && algoliasearch_settings_changed?(current_settings, index_settings)
-        used_slaves = !current_settings.nil? && !current_settings['slaves'].nil?
         replicas = index_settings.delete(:replicas) ||
-                   index_settings.delete('replicas') ||
-                   index_settings.delete(:slaves) ||
-                   index_settings.delete('slaves')
-        index_settings[used_slaves ? :slaves : :replicas] = replicas unless replicas.nil? || options[:inherit]
+                   index_settings.delete('replicas')
+        index_settings[:replicas] = replicas unless replicas.nil? || options[:inherit]
         @algolia_indexes[settings].set_settings!(index_settings)
       end
 
