@@ -1,6 +1,13 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/1.25.0...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.0.0...master)
+
+## [2.0.0](https://github.com/algolia/algoliasearch-rails/compare/2.0.0...1.25.0)
+
+### Breaking changes
+- Adds support for `algolia` gem.
+- Drops support for Ruby < 2.4
+- Drops support for Rails < 5.1
 
 ## [1.25.0](https://github.com/algolia/algoliasearch-rails/compare/1.24.1...1.25.0) (2020-11-24)
 
