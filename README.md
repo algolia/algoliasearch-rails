@@ -6,7 +6,7 @@
   <h4 align="center">The perfect starting point to integrate <a href="https://algolia.com" target="_blank">Algolia</a> within your Rails project</h4>
 
   <p align="center">
-    <a href="https://travis-ci.org/algolia/algoliasearch-rails"><img src="https://img.shields.io/travis/algolia/algoliasearch-rails/master.svg" alt="Build Status"></img></a>
+    <a href="https://circleci.com/gh/algolia/algoliasearch-rails"><img src="https://circleci.com/gh/algolia/algoliasearch-rails.svg?style=shield" alt="CircleCI" /></a>
     <a href="http://badge.fury.io/rb/algoliasearch-rails"><img src="https://badge.fury.io/rb/algoliasearch-rails.svg" alt="Gem Version"></img></a>
     <a href="https://codeclimate.com/github/algolia/algoliasearch-rails"><img src="https://codeclimate.com/github/algolia/algoliasearch-rails.svg" alt="Code Climate"></img></a>
     <img src="https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square" alt="ActiveRecord"></img>
@@ -1184,12 +1184,11 @@ end
 ```
 
 
+## ❓ Troubleshooting
 
-# Troubleshooting
+Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/api-client/troubleshooting/faq/ruby/) where you will find answers for the most common issues and gotchas with the client.
 
+## Use the Dockerfile
 
-## Frequently asked questions
-
-Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/framework-integration/rails/troubleshooting/faq/) where you will find answers for the most common issues and gotchas with the gem.
-
+If you want to contribute to this project without installing all its dependencies, you can use our Docker image. Please check our [dedicated guide](DOCKER_README.MD) to learn more.
 

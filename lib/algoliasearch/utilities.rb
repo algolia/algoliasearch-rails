@@ -2,7 +2,11 @@ module AlgoliaSearch
   module Utilities
     class << self
       def get_model_classes
-        Rails.application.eager_load! if Rails.application # Ensure all models are loaded (not necessary in production when cache_classes is true).
+        if Rails.application && defined?(Rails.autoloaders) && Rails.autoloaders.zeitwerk_enabled?
+          Zeitwerk::Loader.eager_load_all
+        elsif Rails.application
+          Rails.application.eager_load!
+        end
         AlgoliaSearch.instance_variable_get :@included_in
       end
 
