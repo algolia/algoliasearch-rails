@@ -447,7 +447,7 @@ class VirtualReplicas < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("VirtualReplica_primary") do
-    attributesToIndex [:name]
+    searchableAttributes [:name]
     customRanking ["asc(name)"]
 
     add_replica safe_index_name("VirtualReplica_replica"), virtual: true do
