@@ -128,6 +128,9 @@ ActiveRecord::Schema.define do
       t.string :name
       t.string :skip
     end
+    create_table :serialized_association_objects do |t|
+      t.string :name
+    end
   end
 end
 
@@ -490,8 +493,7 @@ class MisconfiguredBlock < ActiveRecord::Base
 end
 
 if defined?(ActiveModel::Serializer)
-  class SerializedObjectSerializer < ActiveModel::Serializer
-    attributes :name
+  class SerializedAssociationObject < ActiveRecord::Base
   end
 
   class SerializedObject < ActiveRecord::Base
@@ -505,6 +507,19 @@ if defined?(ActiveModel::Serializer)
       end
     end
   end
+
+  class SerializedAssociationObjectSerializer < ActiveModel::Serializer
+    attributes :name
+  end
+
+  class SerializedObjectSerializer < ActiveModel::Serializer
+    belongs_to :serialized_association_object
+    attributes :name
+    
+    def serialized_association_object
+      SerializedAssociationObject.new(name: 'test')
+    end
+  end
 end
 
 if defined?(ActiveModel::Serializer)
@@ -516,7 +531,7 @@ if defined?(ActiveModel::Serializer)
     it "should push the name but not the other attribute" do
       o = SerializedObject.new :name => 'test', :skip => 'skip me'
       attributes = SerializedObject.algoliasearch_settings.get_attributes(o)
-      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2']})
+      expect(attributes).to eq({:name => 'test', "_tags" => ['tag1', 'tag2'], :serialized_association_object => {:name => 'test'}})
     end
   end
 end
