@@ -246,10 +246,12 @@ module AlgoliaSearch
         v = get_setting(k)
         settings[k] = v if !v.nil?
       end
+
       if !@options[:replica]
         settings[:replicas] = additional_indexes.select { |opts, s| opts[:replica] }.map do |opts, s|
           name = opts[:index_name]
           name = "#{name}_#{Rails.env.to_s}" if opts[:per_environment]
+          name = "virtual(#{name})" if opts[:virtual]
           name
         end
         settings.delete(:replicas) if settings[:replicas].empty?
