@@ -19,6 +19,8 @@ rdoc
 pkg
 .rvmrc
 Gemfile.lock
+debug.log
+.ruby-version
 
 ## PROJECT::SPECIFIC
 data.sqlite3
