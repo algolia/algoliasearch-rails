@@ -9,7 +9,7 @@ module AlgoliaSearch
     class Kaminari < ::Kaminari::PaginatableArray
 
       def initialize(array, options)
-        super(array, options)
+        super(array, **options)
       end
 
       def limit(num)
