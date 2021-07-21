@@ -1,6 +1,15 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.0.0...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...master)
+
+## [2.1.1](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...2.1.0)
+### Fixed
+- Error with Ruby 3 in regards to default splat behavior [`#400`](https://github.com/algolia/algoliasearch-rails/pull/400)
+
+## [2.1.0](https://github.com/algolia/algoliasearch-rails/compare/2.1.0...2.0.0)
+### Added
+- Add support for [virtual replicas](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#what-are-virtual-replicas) ([#386](https://github.com/algolia/algoliasearch-rails/pull/386))
+
 
 ## [2.0.0](https://github.com/algolia/algoliasearch-rails/compare/2.0.0...1.25.0)
 
