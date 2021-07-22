@@ -1,18 +1,18 @@
 <p align="center">
   <a href="https://www.algolia.com">
-    <img alt="Algolia for Rails" src="https://raw.githubusercontent.com/algolia/algoliasearch-client-common/master/banners/rails.png" >
+    <img alt="Algolia for Rails" src="https://raw.githubusercontent.com/algolia/algoliasearch-client-common/master/banners/rails.png"/>
   </a>
+</p>
 
-  <h4 align="center">The perfect starting point to integrate <a href="https://algolia.com" target="_blank">Algolia</a> within your Rails project</h4>
+<h4 align="center">The perfect starting point to integrate <a href="https://algolia.com" target="_blank">Algolia</a> within your Rails project</h4>
 
-  <p align="center">
-    <a href="https://circleci.com/gh/algolia/algoliasearch-rails"><img src="https://circleci.com/gh/algolia/algoliasearch-rails.svg?style=shield" alt="CircleCI" /></a>
-    <a href="http://badge.fury.io/rb/algoliasearch-rails"><img src="https://badge.fury.io/rb/algoliasearch-rails.svg" alt="Gem Version"></img></a>
-    <a href="https://codeclimate.com/github/algolia/algoliasearch-rails"><img src="https://codeclimate.com/github/algolia/algoliasearch-rails.svg" alt="Code Climate"></img></a>
-    <img src="https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square" alt="ActiveRecord"></img>
-    <img src="https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square" alt="Mongoid"></img>
-    <img src="https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square" alt="Sequel"></img>
-  </p>
+<p align="center">
+  <a href="https://circleci.com/gh/algolia/algoliasearch-rails"><img src="https://circleci.com/gh/algolia/algoliasearch-rails.svg?style=shield" alt="CircleCI" /></a>
+  <a href="http://badge.fury.io/rb/algoliasearch-rails"><img src="https://badge.fury.io/rb/algoliasearch-rails.svg" alt="Gem Version"/></a>
+  <a href="https://codeclimate.com/github/algolia/algoliasearch-rails"><img src="https://codeclimate.com/github/algolia/algoliasearch-rails.svg" alt="Code Climate"/></a>
+  <img src="https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square" alt="ActiveRecord"/>
+  <img src="https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square" alt="Mongoid"/>
+  <img src="https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square" alt="Sequel"/>
 </p>
 
 <p align="center">
@@ -1157,29 +1157,6 @@ class User < ActiveRecord::Base
 
   algoliasearch per_environment: true, disable_indexing: Proc.new { Rails.env.test? || more_complex_condition } do
   end
-end
-```
-
-Or you may want to mock Algolia's API calls. We provide a [WebMock](https://github.com/bblimke/webmock) sample configuration that you can use including `algolia/webmock`:
-
-```ruby
-require 'algolia/webmock'
-
-describe 'With a mocked client' do
-
-  before(:each) do
-    WebMock.enable!
-  end
-
-  it "shouldn't perform any API calls here" do
-    User.create(name: 'My Indexed User')  # mocked, no API call performed
-    User.search('').should == {}          # mocked, no API call performed
-  end
-
-  after(:each) do
-    WebMock.disable!
-  end
-
 end
 ```
 
