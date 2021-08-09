@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...master)
 
+## [2.1.2](https://github.com/algolia/algoliasearch-rails/compare/2.1.2...2.1.1)
+### Fixed
+- Error with keys that got symbolized by default [`#403`](https://github.com/algolia/algoliasearch-rails/pull/403)
+
 ## [2.1.1](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...2.1.0)
 ### Fixed
 - Error with Ruby 3 in regards to default splat behavior [`#400`](https://github.com/algolia/algoliasearch-rails/pull/400)
