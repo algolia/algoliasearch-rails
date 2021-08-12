@@ -607,7 +607,7 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         index = algolia_ensure_init(options, settings)
         next if options[:slave] || options[:replica]
-        task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
+        task = index.save_objects(objects.filter { |o| algolia_indexable?(o, options) && !algolia_object_id_of(o, options).blank? }.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
         index.wait_task(task["taskID"]) if synchronous || options[:synchronous]
       end
     end
