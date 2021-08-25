@@ -33,8 +33,16 @@ matrix:
       env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
     - rvm: 2.5.3
       env: RAILS_VERSION=5.1 SEQUEL_VERSION=5.0
+    - rvm: 2.5.3
+      env: RAILS_VERSION=6.0 SEQUEL_VERSION=5.0
     - rvm: 2.6.0
       env: RAILS_VERSION=5.2 SEQUEL_VERSION=5.0
+    - rvm: 2.6.0
+      env: RAILS_VERSION=6.0 SEQUEL_VERSION=5.0
+    - rvm: 2.7.0
+      env: RAILS_VERSION=5.2 SEQUEL_VERSION=5.0
+    - rvm: 2.7.0
+      env: RAILS_VERSION=6.0 SEQUEL_VERSION=5.0
 
 before_install:
   - wget http://api-key-dealer.herokuapp.com/clients/algolia-keys && chmod +x algolia-keys

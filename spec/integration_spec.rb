@@ -1,9 +1,9 @@
 require File.expand_path(File.join(File.dirname(__FILE__), 'spec_helper'))
 
-OLD_RAILS = Gem.loaded_specs['rails'].version < Gem::Version.new('4.0')
+NEW_RAILS = Gem.loaded_specs['rails'].version >= Gem::Version.new('6.0')
 
 require 'active_record'
-unless OLD_RAILS
+unless NEW_RAILS
   require 'active_job/test_helper'
   ActiveJob::Base.queue_adapter = :test
 end
@@ -72,6 +72,7 @@ ActiveRecord::Schema.define do
     t.string :country
     t.float :lat
     t.float :lng
+    t.string :gl_array
   end
   create_table :with_slaves do |t|
   end
@@ -110,13 +111,14 @@ ActiveRecord::Schema.define do
   create_table :sub_replicas do |t|
     t.string :name
   end
-  unless OLD_RAILS
-    create_table :enqueued_objects do |t|
-      t.string :name
-    end
-    create_table :disabled_enqueued_objects do |t|
-      t.string :name
-    end
+  create_table :virtual_replicas do |t|
+    t.string :name
+  end
+  create_table :enqueued_objects do |t|
+    t.string :name
+  end
+  create_table :disabled_enqueued_objects do |t|
+    t.string :name
   end
   create_table :misconfigured_blocks do |t|
     t.string :name
@@ -165,7 +167,7 @@ class Color < ActiveRecord::Base
   attr_accessor :not_indexed
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("Color"), :per_environment => true do
-    attributesToIndex [:name]
+    searchableAttributes ['name']
     attributesForFaceting ['searchable(short_name)']
     customRanking ["asc(hex)"]
     tags do
@@ -270,19 +272,27 @@ class NestedItem < ActiveRecord::Base
 end
 
 # create this index before the class actually loads, to ensure the customRanking is updated
-index = Algolia::Index.new(safe_index_name('City_replica2'))
-index.wait_task index.set_settings({'customRanking' => ['desc(d)']})['taskID']
+index = AlgoliaSearch.client.init_index(safe_index_name('City_replica2'))
+index.set_settings!({'customRanking' => ['desc(d)']})
 
 class City < ActiveRecord::Base
   include AlgoliaSearch
 
+  serialize :gl_array
+
+  def geoloc_array
+    lat.present? && lng.present? ? { :lat => lat, :lng => lng } : gl_array
+  end
+
   algoliasearch :synchronous => true, :index_name => safe_index_name("City"), :per_environment => true do
-    geoloc :lat, :lng
+    geoloc do
+      geoloc_array
+    end
     add_attribute :a_null_lat, :a_lng
     customRanking ['desc(b)']
 
     add_replica safe_index_name('City_replica1'), :per_environment => true do
-      attributesToIndex [:country]
+      searchableAttributes ['country']
       customRanking ['asc(a)']
     end
 
@@ -309,7 +319,7 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
     add_attribute :test
     add_attribute :test2
 
-    attributesToIndex [:name]
+    searchableAttributes ['name']
   end
 
   def after_create
@@ -368,17 +378,17 @@ class Book < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("SecuredBook"), :per_environment => true, :sanitize => true do
-    attributesToIndex [:name]
+    searchableAttributes ['name']
     tags do
       [premium ? 'premium' : 'standard', released ? 'public' : 'private']
     end
 
     add_index safe_index_name('BookAuthor'), :per_environment => true do
-      attributesToIndex [:author]
+      searchableAttributes ['author']
     end
 
     add_index safe_index_name('Book'), :per_environment => true, :if => :public? do
-      attributesToIndex [:name]
+      searchableAttributes ['name']
     end
   end
 
@@ -393,7 +403,7 @@ class Ebook < ActiveRecord::Base
   attr_accessor :current_time, :published_at
 
   algoliasearch :synchronous => true, :index_name => safe_index_name("eBooks")do
-    attributesToIndex [:name]
+    searchableAttributes ['name']
   end
 
   def algolia_dirty?
@@ -418,61 +428,60 @@ class SubReplicas < ActiveRecord::Base
   include AlgoliaSearch
 
   algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SubReplicas") do
-    attributesToIndex [:name]
+    searchableAttributes ['name']
     customRanking ["asc(name)"]
 
     add_index safe_index_name("Additional_Index"), :per_environment => true do
-      attributesToIndex [:name]
+      searchableAttributes ['name']
       customRanking ["asc(name)"]
 
       add_replica safe_index_name("Replica_Index"), :per_environment => true do
-        attributesToIndex [:name]
+        searchableAttributes ['name']
         customRanking ["desc(name)"]
       end
     end
   end
 end
 
-class WithSlave < ActiveRecord::Base
+class VirtualReplicas < ActiveRecord::Base
   include AlgoliaSearch
 
-  algoliasearch :force_utf8_encoding => true, :index_name => safe_index_name("With slave") do
-    add_slave safe_index_name("WithSlave_slave") do
+  algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("VirtualReplica_primary") do
+    searchableAttributes [:name]
+    customRanking ["asc(name)"]
+
+    add_replica safe_index_name("VirtualReplica_replica"), virtual: true do
+      customRanking ["desc(name)"]
     end
   end
-
-  # Ensure the index is indeed using slaves
-  algolia_index.set_settings({:slaves => [safe_index_name("WithSlave_slave")]})
 end
 
-unless OLD_RAILS
-  class EnqueuedObject < ActiveRecord::Base
-    include AlgoliaSearch
+class EnqueuedObject < ActiveRecord::Base
+  include AlgoliaSearch
 
-    include GlobalID::Identification
+  include GlobalID::Identification
 
-    def id
-      read_attribute(:id)
-    end
-
-    def self.find(id)
-      EnqueuedObject.first
-    end
-
-    algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
-      :index_name => safe_index_name('EnqueuedObject') do
-      attributes [:name]
-    end
+  def id
+    read_attribute(:id)
   end
 
-  class DisabledEnqueuedObject < ActiveRecord::Base
-    include AlgoliaSearch
+  def self.find(id)
+    EnqueuedObject.first
+  end
 
-    algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
-      :index_name => safe_index_name('EnqueuedObject'),
-      :disable_indexing => true) do
-      attributes [:name]
-    end
+  algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
+    :index_name => safe_index_name('EnqueuedObject') do
+    attributes ['name']
+  end
+end
+
+class DisabledEnqueuedObject < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch(:enqueue => Proc.new { |record| raise "enqueued" },
+    :index_name => safe_index_name('EnqueuedObject'),
+    :disable_indexing => true) do
+    attributes ['name']
   end
 end
 
@@ -527,39 +536,36 @@ describe 'Encoding' do
   end
 end
 
-# Rails 3.2 swallows exception in after_commit
-unless OLD_RAILS
-  describe 'Too big records' do
-    before(:all) do
-      Color.clear_index!(true)
-    end
-
-    after(:all) do
-      Color.delete_all
-    end
-
-    it "Throw an exception if the data is too big" do
-      expect {
-        Color.create! :name => 'big' * 100000
-      }.to raise_error(Algolia::AlgoliaProtocolError)
-    end
-
+describe 'Too big records' do
+  before(:all) do
+    Color.clear_index!(true)
   end
+
+  after(:all) do
+    Color.delete_all
+  end
+
+  it "should throw an exception if the data is too big" do
+    expect {
+      Color.create! :name => 'big' * 100000
+    }.to raise_error(Algolia::AlgoliaHttpError)
+  end
+
 end
 
 describe 'Settings' do
 
   it "should detect settings changes" do
     Color.send(:algoliasearch_settings_changed?, nil, {}).should == true
-    Color.send(:algoliasearch_settings_changed?, {}, {"attributesToIndex" => ["name"]}).should == true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"attributesToIndex" => ["name", "hex"]}).should == true
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {}, {"searchableAttributes" => ["name"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {"searchableAttributes" => ["name", "hex"]}).should == true
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {"customRanking" => ["asc(hex)"]}).should == true
   end
 
   it "should not detect settings changes" do
     Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"]}, {:attributesToIndex => ["name"]}).should == false
-    Color.send(:algoliasearch_settings_changed?, {"attributesToIndex" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {:searchableAttributes => ["name"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
   end
 
 end
@@ -633,7 +639,7 @@ end
 
 describe 'Namespaced::Model' do
   before(:all) do
-    Namespaced::Model.index.clear_index!
+    Namespaced::Model.index.clear_objects!
   end
 
   it "should have an index name without :: hierarchy" do
@@ -696,7 +702,11 @@ describe 'NestedItem' do
     result = NestedItem.raw_search('')
     result['nbHits'].should == 1
 
-    @i2.update_attributes :hidden => false
+    if @i2.respond_to? :update_attributes
+      @i2.update_attributes :hidden => false
+    else
+      @i2.update :hidden => false
+    end
 
     result = NestedItem.raw_search('')
     result['nbHits'].should == 2
@@ -1013,14 +1023,16 @@ describe 'Cities' do
   it "should index geo" do
     sf = City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
     mv = City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
+    sf_and_mv = City.create :name => 'San Francisco & Mountain View', :country => 'Hybrid', :gl_array => [{ :lat => 37.75, :lng => -122.68 }, { :lat => 37.38, :lng => -122.08 }]
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 50000 })
-    expect(results.size).to eq(1)
-    results.should include(mv)
+    expect(results.size).to eq(2)
+    results.should include(mv, sf_and_mv)
 
     results = City.search('', { :aroundLatLng => "37.33, -121.89", :aroundRadius => 500000 })
-    expect(results.size).to eq(2)
+    expect(results.size).to eq(3)
     results.should include(mv)
     results.should include(sf)
+    results.should include(sf_and_mv)
   end
 
   it "should be searchable using replica index" do
@@ -1071,7 +1083,7 @@ describe 'Cities' do
   it "should browse" do
     total = City.index.search('')['nbHits']
     n = 0
-    City.index.browse do |hit|
+    City.index.browse_objects do |hit|
       n += 1
     end
     expect(n).to eq(total)
@@ -1094,7 +1106,7 @@ describe "FowardToReplicas" do
 
       algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
-        attributesToIndex %w(first_value)
+        searchableAttributes %w(first_value)
         attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica') do
@@ -1116,11 +1128,11 @@ describe "FowardToReplicas" do
     ForwardToReplicas.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['attributesToIndex']).to eq(%w(first_value))
+    expect(primary_settings['searchableAttributes']).to eq(%w(first_value))
     expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['attributesToIndex']).to eq(nil)
+    expect(replica_settings['searchableAttributes']).to eq(nil)
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
   end
 
@@ -1132,7 +1144,7 @@ describe "FowardToReplicas" do
 
       algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
         attribute :name
-        attributesToIndex %w(second_value)
+        searchableAttributes %w(second_value)
         attributesToHighlight %w(primary_highlight)
 
         add_replica safe_index_name('ForwardToReplicas_replica'), :inherit => true do
@@ -1150,11 +1162,11 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.reindex!
 
     primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(primary_settings['searchableAttributes']).to eq(%w(second_value))
     expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
     replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['attributesToIndex']).to eq(%w(second_value))
+    expect(replica_settings['searchableAttributes']).to eq(%w(second_value))
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
@@ -1190,56 +1202,22 @@ describe "SubReplicas" do
   end
 end
 
-describe "WithSlave" do
+describe "VirtualReplicas" do
   before(:all) do
-    WithSlave.clear_index!(true)
+    VirtualReplicas.clear_index!(true)
   end
 
-  let(:expected_indicies) { %w(WithSlave WithSlave_slave).map { |name| safe_index_name(name) } }
-
-  it "should be searchable through added indexes slaves" do
-    expect { WithSlave.raw_search('something', :index => safe_index_name('WithSlave_slave')) }.not_to raise_error
-  end
-
-  it "should reindex with slaves in place" do
-    WithSlave.reindex!
-    expect(WithSlave.index.get_settings['slaves'].length).to eq(1)
-  end
-end
-
-describe "SlaveThenReplica" do
-  it 'should throw with add_slave then add_replica' do
-    test = lambda do
-      class SlaveThenReplica
-        include AlgoliaSearch
-
-        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("SlaveThenReplica") do
-          add_slave safe_index_name("SlaveThenReplica_slave") do
-          end
-          add_replica safe_index_name("SlaveThenReplica_replica") do
-          end
-        end
+  it "setup the replica" do
+    VirtualReplicas.send(:algolia_configurations).to_a.each do |v|
+      if v[0][:replica]
+        expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_replica"))
+        expect(v[0][:virtual]).to eq(true)
+        expect(v[1].to_settings[:replicas]).to be_nil
+      else
+        expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_primary"))
+        expect(v[1].to_settings[:replicas]).to match_array(["virtual(#{safe_index_name("VirtualReplica_replica")})"])
       end
     end
-    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
-  end
-end
-
-describe "ReplicaThenSlave" do
-  it 'should throw with add_replice then add_slave' do
-    test = lambda do
-      class ReplicaThenSlave
-        include AlgoliaSearch
-
-        algoliasearch :synchronous => true, :force_utf8_encoding => true, :index_name => safe_index_name("ReplicaThenSlave") do
-          add_replica safe_index_name("ReplicaThenSlave_replica") do
-          end
-          add_slave safe_index_name("ReplicaThenSlave_slave") do
-          end
-        end
-      end
-    end
-    expect(test).to raise_error(AlgoliaSearch::MixedSlavesAndReplicas)
   end
 end
 
@@ -1255,8 +1233,8 @@ end
 describe 'Book' do
   before(:all) do
     Book.clear_index!(true)
-    Book.index(safe_index_name('BookAuthor')).clear
-    Book.index(safe_index_name('Book')).clear
+    Book.index(safe_index_name('BookAuthor')).clear_objects
+    Book.index(safe_index_name('Book')).clear_objects
   end
 
   it "should index the book in 2 indexes of 3" do
@@ -1312,7 +1290,11 @@ describe 'Book' do
     expect(results['hits'].size).to eq(1)
 
     # update the book and make it non-public anymore (not premium, not released)
-    book.update_attributes :released => false
+    if book.respond_to? :update_attributes
+      book.update_attributes :released => false
+    else
+      book.update :released => false
+    end
 
     # should be removed from the index
     results = index.search('Public book')
@@ -1363,9 +1345,9 @@ end
 
 describe 'Disabled' do
   before(:all) do
-    DisabledBoolean.index.clear_index!
-    DisabledProc.index.clear_index!
-    DisabledSymbol.index.clear_index!
+    DisabledBoolean.index.clear_objects!
+    DisabledProc.index.clear_objects!
+    DisabledSymbol.index.clear_objects!
   end
 
   it "should disable the indexing using a boolean" do
@@ -1393,29 +1375,27 @@ describe 'NullableId' do
   end
 end
 
-unless OLD_RAILS
-  describe 'EnqueuedObject' do
-    it "should enqueue a job" do
-      expect {
-        EnqueuedObject.create! :name => 'test'
-      }.to raise_error("enqueued 1")
-    end
-
-    it "should not enqueue a job inside no index block" do
-      expect {
-        EnqueuedObject.without_auto_index do
-          EnqueuedObject.create! :name => 'test'
-        end
-      }.not_to raise_error
-    end
+describe 'EnqueuedObject' do
+  it "should enqueue a job" do
+    expect {
+      EnqueuedObject.create! :name => 'test'
+    }.to raise_error("enqueued 1")
   end
 
-  describe 'DisabledEnqueuedObject' do
-    it "should not try to enqueue a job" do
-      expect {
-        DisabledEnqueuedObject.create! :name => 'test'
-      }.not_to raise_error
-    end
+  it "should not enqueue a job inside no index block" do
+    expect {
+      EnqueuedObject.without_auto_index do
+        EnqueuedObject.create! :name => 'test'
+      end
+    }.not_to raise_error
+  end
+end
+
+describe 'DisabledEnqueuedObject' do
+  it "should not try to enqueue a job" do
+    expect {
+      DisabledEnqueuedObject.create! :name => 'test'
+    }.not_to raise_error
   end
 end
 

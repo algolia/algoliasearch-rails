@@ -1,25 +1,26 @@
 <p align="center">
   <a href="https://www.algolia.com">
-    <img alt="Algolia for Rails" src="https://raw.githubusercontent.com/algolia/algoliasearch-client-common/master/banners/rails.png" >
+    <img alt="Algolia for Rails" src="https://raw.githubusercontent.com/algolia/algoliasearch-client-common/master/banners/rails.png"/>
   </a>
+</p>
 
-  <h4 align="center">The perfect starting point to integrate <a href="https://algolia.com" target="_blank">Algolia</a> within your Rails project</h4>
+<h4 align="center">The perfect starting point to integrate <a href="https://algolia.com" target="_blank">Algolia</a> within your Rails project</h4>
 
-  <p align="center">
-    <a href="https://travis-ci.org/algolia/algoliasearch-rails"><img src="https://img.shields.io/travis/algolia/algoliasearch-rails/master.svg" alt="Build Status"></img></a>
-    <a href="http://badge.fury.io/rb/algoliasearch-rails"><img src="https://badge.fury.io/rb/algoliasearch-rails.svg" alt="Gem Version"></img></a>
-    <a href="https://codeclimate.com/github/algolia/algoliasearch-rails"><img src="https://codeclimate.com/github/algolia/algoliasearch-rails.svg" alt="Code Climate"></img></a>
-    <img src="https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square" alt="ActiveRecord"></img>
-    <img src="https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square" alt="Mongoid"></img>
-    <img src="https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square" alt="Sequel"></img>
-  </p>
+<p align="center">
+  <a href="https://circleci.com/gh/algolia/algoliasearch-rails"><img src="https://circleci.com/gh/algolia/algoliasearch-rails.svg?style=shield" alt="CircleCI" /></a>
+  <a href="http://badge.fury.io/rb/algoliasearch-rails"><img src="https://badge.fury.io/rb/algoliasearch-rails.svg" alt="Gem Version"/></a>
+  <a href="https://codeclimate.com/github/algolia/algoliasearch-rails"><img src="https://codeclimate.com/github/algolia/algoliasearch-rails.svg" alt="Code Climate"/></a>
+  <img src="https://img.shields.io/badge/ActiveRecord-yes-blue.svg?style=flat-square" alt="ActiveRecord"/>
+  <img src="https://img.shields.io/badge/Mongoid-yes-blue.svg?style=flat-square" alt="Mongoid"/>
+  <img src="https://img.shields.io/badge/Sequel-yes-blue.svg?style=flat-square" alt="Sequel"/>
 </p>
 
 <p align="center">
-  <a href="https://www.algolia.com/doc/api-client/getting-started/install/go/" target="_blank">Documentation</a>  •
+  <a href="https://www.algolia.com/doc/framework-integration/rails/getting-started/setup/?language=ruby" target="_blank">Documentation</a>  •
   <a href="https://discourse.algolia.com" target="_blank">Community Forum</a>  •
   <a href="http://stackoverflow.com/questions/tagged/algolia" target="_blank">Stack Overflow</a>  •
   <a href="https://github.com/algolia/algoliasearch-rails/issues" target="_blank">Report a bug</a>  •
+  <a href="https://www.algolia.com/doc/framework-integration/rails/troubleshooting/faq/" target="_blank">FAQ</a>  •
   <a href="https://www.algolia.com/support" target="_blank">Support</a>
 </p>
 
@@ -82,6 +83,8 @@ You can find the full reference on [Algolia's website](https://www.algolia.com/d
 1. **[Testing](#testing)**
     * [Notes](#notes)
 
+1. **[Troubleshooting](#troubleshooting)**
+    * [Frequently asked questions](#frequently-asked-questions)
 
 
 
@@ -1157,28 +1160,12 @@ class User < ActiveRecord::Base
 end
 ```
 
-Or you may want to mock Algolia's API calls. We provide a [WebMock](https://github.com/bblimke/webmock) sample configuration that you can use including `algolia/webmock`:
 
-```ruby
-require 'algolia/webmock'
+## ❓ Troubleshooting
 
-describe 'With a mocked client' do
+Encountering an issue? Before reaching out to support, we recommend heading to our [FAQ](https://www.algolia.com/doc/api-client/troubleshooting/faq/ruby/) where you will find answers for the most common issues and gotchas with the client.
 
-  before(:each) do
-    WebMock.enable!
-  end
+## Use the Dockerfile
 
-  it "shouldn't perform any API calls here" do
-    User.create(name: 'My Indexed User')  # mocked, no API call performed
-    User.search('').should == {}          # mocked, no API call performed
-  end
-
-  after(:each) do
-    WebMock.disable!
-  end
-
-end
-```
-
-
+If you want to contribute to this project without installing all its dependencies, you can use our Docker image. Please check our [dedicated guide](DOCKER_README.MD) to learn more.
 

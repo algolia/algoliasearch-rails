@@ -1,5 +1,48 @@
 # CHANGELOG
 
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...master)
+
+## [2.1.2](https://github.com/algolia/algoliasearch-rails/compare/2.1.2...2.1.1)
+### Fixed
+- Error with keys that got symbolized by default [`#403`](https://github.com/algolia/algoliasearch-rails/pull/403)
+
+## [2.1.1](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...2.1.0)
+### Fixed
+- Error with Ruby 3 in regards to default splat behavior [`#400`](https://github.com/algolia/algoliasearch-rails/pull/400)
+
+## [2.1.0](https://github.com/algolia/algoliasearch-rails/compare/2.1.0...2.0.0)
+### Added
+- Add support for [virtual replicas](https://www.algolia.com/doc/guides/managing-results/refine-results/sorting/in-depth/replicas/#what-are-virtual-replicas) ([#386](https://github.com/algolia/algoliasearch-rails/pull/386))
+
+
+## [2.0.0](https://github.com/algolia/algoliasearch-rails/compare/2.0.0...1.25.0)
+
+### Breaking changes
+- Adds support for `algolia` gem.
+- Drops support for Ruby < 2.4
+- Drops support for Rails < 5.1
+
+## [1.25.0](https://github.com/algolia/algoliasearch-rails/compare/1.24.1...1.25.0) (2020-11-24)
+
+### Added
+- Pass array argument to geoloc ([#372](https://github.com/algolia/algoliasearch-rails/pull/372))
+- Containerize the repo ([#391](https://github.com/algolia/algoliasearch-rails/pull/391))
+
+### Fixed
+- Use Zeitwerk for loading models in Rails 6 ([#364](https://github.com/algolia/algoliasearch-rails/pull/364))
+
+## [1.24.1](https://github.com/algolia/algoliasearch-rails/releases/tag/1.24.1) (2020-07-15)
+
+**Fixed**
+
+* Fixes ruby warning 'Proc.new is deprecated'
+
+## [1.24.0](https://github.com/algolia/algoliasearch-rails/releases/tag/1.24.0) (2020-02-21)
+
+**Added**
+
+* Adds indexLanguages in index settings
+
 ## [1.23.2](https://github.com/algolia/algoliasearch-rails/releases/tag/1.23.2) (2019-06-26)
 
 **Fixed**

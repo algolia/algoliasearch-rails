@@ -1,3 +1,3 @@
 module AlgoliaSearch
-  VERSION = '1.23.2'
+  VERSION = '2.1.2'
 end
