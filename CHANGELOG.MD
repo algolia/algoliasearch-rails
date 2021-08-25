@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.1...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.3...master)
+
+## [2.1.3](https://github.com/algolia/algoliasearch-rails/compare/2.1.3...2.1.2)
+### Fixed
+- Prevent an extra get_settings call even if `check_settings` is false [`#367`](https://github.com/algolia/algoliasearch-rails/pull/367)
 
 ## [2.1.2](https://github.com/algolia/algoliasearch-rails/compare/2.1.2...2.1.1)
 ### Fixed
