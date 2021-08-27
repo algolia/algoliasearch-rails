@@ -26,7 +26,7 @@
 
 
 This gem let you easily integrate the Algolia Search API to your favorite ORM. It's based on the [algoliasearch-client-ruby](https://github.com/algolia/algoliasearch-client-ruby) gem.
-Rails 3.x, 4.x and 5.x are all supported.
+Rails 5.x and 6.x are supported.
 
 You might be interested in the sample Ruby on Rails application providing a `autocomplete.js`-based auto-completion and `InstantSearch.js`-based instant search results page: [algoliasearch-rails-example](https://github.com/algolia/algoliasearch-rails-example/).
 
