@@ -1,6 +1,12 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/1.25.0...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/1.26.0...master)
+
+## [1.26.0](https://github.com/algolia/algoliasearch-rails/compare/1.25.0...1.26.0) (2021-09-03)
+
+### Added
+
+- Implement virtual replicas ([#409](https://github.com/algolia/algoliasearch-rails/pull/409))
 
 ## [1.25.0](https://github.com/algolia/algoliasearch-rails/compare/1.24.1...1.25.0) (2020-11-24)
 
