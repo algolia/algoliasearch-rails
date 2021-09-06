@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
   s.files = [
     ".document",
     ".rspec",
-    ".travis.yml",
     "CHANGELOG.MD",
     "Gemfile",
     "Gemfile.lock",
@@ -82,7 +81,6 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<algolia>, ["< 3.0.0"])
       s.add_development_dependency(%q<will_paginate>, [">= 2.3.15"])
       s.add_development_dependency(%q<kaminari>, [">= 0"])
-      s.add_development_dependency "travis"
       s.add_development_dependency "rake"
       s.add_development_dependency "rdoc"
     else
