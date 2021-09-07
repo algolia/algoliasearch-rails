@@ -162,6 +162,11 @@ end
 class Camera < Product
 end
 
+class Phone < Product
+  algolia_search :check_settings => false do
+  end
+end
+
 class Color < ActiveRecord::Base
   include AlgoliaSearch
   attr_accessor :not_indexed
@@ -871,6 +876,7 @@ describe 'An imaginary store' do
 
     # Subproducts
     @camera = Camera.create!(:name => 'canon eos rebel t3', :href => 'canon')
+    Phone.create!(:name => 'Samsung Galaxy s12', :href => 'samsung')
 
     100.times do ; Product.create!(:name => 'crapoola', :href => "crappy", :tags => ['crappy']) ; end
 
@@ -878,6 +884,10 @@ describe 'An imaginary store' do
 
     Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     sleep 5
+  end
+
+  it "should reindex with :check_settings set to false" do
+    Phone.reindex
   end
 
   it "should not be synchronous" do
