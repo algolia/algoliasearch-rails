@@ -553,7 +553,7 @@ module AlgoliaSearch
           tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
         end
 
-          algolia_find_in_batches(batch_size) do |group|
+        algolia_find_in_batches(batch_size) do |group|
           if algolia_conditional_index?(options)
             # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, tmp_options) }
