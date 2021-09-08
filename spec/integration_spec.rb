@@ -163,7 +163,7 @@ class Camera < Product
 end
 
 class Phone < Product
-  algolia_search :check_settings => false do
+  algoliasearch :check_settings => false do
   end
 end
 
