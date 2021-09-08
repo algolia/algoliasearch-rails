@@ -887,7 +887,7 @@ describe 'An imaginary store' do
   end
 
   it "should reindex with :check_settings set to false" do
-    Phone.reindex
+    Phone.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
   end
 
   it "should not be synchronous" do
