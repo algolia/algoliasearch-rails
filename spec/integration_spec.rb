@@ -49,6 +49,9 @@ ActiveRecord::Schema.define do
     t.text :description
     t.datetime :release_date
   end
+  create_table :phones do |t|
+    t.string :name
+  end
   create_table :colors do |t|
     t.string :name
     t.string :short_name
@@ -162,7 +165,8 @@ end
 class Camera < Product
 end
 
-class Phone < Product
+class Phone < ActiveRecord::Base
+  include AlgoliaSearch
   algoliasearch :check_settings => false do
   end
 end
@@ -876,7 +880,6 @@ describe 'An imaginary store' do
 
     # Subproducts
     @camera = Camera.create!(:name => 'canon eos rebel t3', :href => 'canon')
-    Phone.create!(:name => 'Samsung Galaxy s12', :href => 'samsung')
 
     100.times do ; Product.create!(:name => 'crapoola', :href => "crappy", :tags => ['crappy']) ; end
 
