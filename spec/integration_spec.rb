@@ -49,6 +49,9 @@ ActiveRecord::Schema.define do
     t.text :description
     t.datetime :release_date
   end
+  create_table :phones do |t|
+    t.string :name
+  end
   create_table :colors do |t|
     t.string :name
     t.string :short_name
@@ -160,6 +163,12 @@ class Product < ActiveRecord::Base
 end
 
 class Camera < Product
+end
+
+class Phone < ActiveRecord::Base
+  include AlgoliaSearch
+  algoliasearch :check_settings => false do
+  end
 end
 
 class Color < ActiveRecord::Base
@@ -878,6 +887,10 @@ describe 'An imaginary store' do
 
     Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
     sleep 5
+  end
+
+  it "should reindex with :check_settings set to false" do
+    Phone.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
   end
 
   it "should not be synchronous" do
