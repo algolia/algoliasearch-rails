@@ -100,6 +100,9 @@ ActiveRecord::Schema.define do
   create_table :disabled_procs do |t|
     t.string :name
   end
+  create_table :disabled_indexings do |t|
+    t.string :name
+  end
   create_table :disabled_symbols do |t|
     t.string :name
   end
@@ -131,6 +134,13 @@ ActiveRecord::Schema.define do
       t.string :name
       t.string :skip
     end
+  end
+end
+
+class DisabledIndexing < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :disable_indexing => true, :check_settings => true do
   end
 end
 
@@ -346,6 +356,13 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
   private
   def public?
     released && !premium
+  end
+end
+
+describe 'DisabledIndexing' do
+  it 'should not call get_settings' do
+    expect_any_instance_of(Algolia::Search::Index).not_to receive(:get_settings)
+    DisabledIndexing.send(:algolia_ensure_init)
   end
 end
 
