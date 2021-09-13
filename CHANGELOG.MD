@@ -1,6 +1,15 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.3...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...master)
+
+## [2.1.4](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...2.1.3)
+### Fixed
+- File formatting [`#414`](https://github.com/algolia/algoliasearch-rails/pull/414)
+- Document supported Rails versions [`#407`](https://github.com/algolia/algoliasearch-rails/pull/407)
+- Fixed error when using `:check_settings => false` [`#413`](https://github.com/algolia/algoliasearch-rails/pull/413)
+
+### Removed
+- Old references to TravisCI [`#408`](https://github.com/algolia/algoliasearch-rails/pull/408)
 
 ## [2.1.3](https://github.com/algolia/algoliasearch-rails/compare/2.1.3...2.1.2)
 ### Fixed
