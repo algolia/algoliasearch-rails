@@ -791,7 +791,7 @@ module AlgoliaSearch
 
       options[:check_settings] = true if options[:check_settings].nil?
 
-      current_settings = if options[:check_settings]
+      current_settings = if options[:check_settings] && !algolia_indexing_disabled?(options)
                            @algolia_indexes[settings].get_settings(:getVersion => 1) rescue nil # if the index doesn't exist
                          end
 
