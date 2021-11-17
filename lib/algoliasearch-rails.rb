@@ -211,7 +211,7 @@ module AlgoliaSearch
     def encode_attributes(v)
       case v
       when String
-        v.force_encoding('utf-8')
+        v.dup.force_encoding('utf-8')
       when Hash
         v.each { |key, value| v[key] = encode_attributes(value) }
       when Array
