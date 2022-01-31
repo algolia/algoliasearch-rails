@@ -517,7 +517,7 @@ class MySidekiqWorker
     if remove
       # the record has likely already been removed from your database so we cannot
       # use ActiveRecord#find to load it
-      index = Algolia::Index.new("index_name")
+      index = AlgoliaSearch.client.init_index("index_name")
       index.delete_object(id)
     else
       # the record should be present
@@ -550,7 +550,7 @@ class MySidekiqWorker
     if remove
       # the record has likely already been removed from your database so we cannot
       # use ActiveRecord#find to load it
-      index = Algolia::Index.new("index_name")
+      index = AlgoliaSearch.client.init_index("index_name")
       index.delete_object(id)
     else
       # the record should be present
