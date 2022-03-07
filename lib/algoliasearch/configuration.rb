@@ -15,6 +15,14 @@ module AlgoliaSearch
       )
     end
 
+    def client_opts
+      @@opts ||= {}
+    end
+
+    def client_opts=(opts)
+      @@opts = opts
+    end
+
     def client
       if @client.nil?
         setup_client
@@ -24,7 +32,7 @@ module AlgoliaSearch
     end
 
     def setup_client
-      @client = Algolia::Search::Client.create_with_config(Algolia::Search::Config.new(@@configuration))
+      @client = Algolia::Search::Client.new(Algolia::Search::Config.new(@@configuration), client_opts)
     end
   end
 end
