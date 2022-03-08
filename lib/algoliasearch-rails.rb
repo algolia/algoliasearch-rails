@@ -533,6 +533,7 @@ module AlgoliaSearch
         # fetch the master settings
         master_index = algolia_ensure_init(options, settings)
         master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
+        master_exists = master_settings != {}
         master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
 
         # remove the replicas of the temporary index
@@ -546,7 +547,7 @@ module AlgoliaSearch
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
-        if options[:check_settings] == false && master_settings != {}
+        if options[:check_settings] == false && master_exists
           AlgoliaSearch.client.copy_index!(src_index_name, tmp_index_name, { scope: %w[settings synonyms rules] })
           tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
         else
