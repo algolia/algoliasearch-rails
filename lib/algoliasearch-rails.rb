@@ -546,7 +546,7 @@ module AlgoliaSearch
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
-        if options[:check_settings] == false
+        if options[:check_settings] == false && master_settings != {}
           AlgoliaSearch.client.copy_index!(src_index_name, tmp_index_name, { scope: %w[settings synonyms rules] })
           tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
         else
