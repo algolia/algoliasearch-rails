@@ -334,7 +334,7 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
 
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true, :check_settings => true do
     add_attribute :test
     add_attribute :test2
 
@@ -369,6 +369,11 @@ end
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)
+  end
+
+  it 'should call get_settings' do
+    expect_any_instance_of(Algolia::Search::Index).to receive(:get_settings)
+    SequelBook.send(:algolia_ensure_init)
   end
 
   it "should index the book" do
