@@ -908,7 +908,6 @@ describe 'An imaginary store' do
     @products_in_database = Product.all
 
     Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    sleep 5
   end
 
   it "should reindex with :check_settings set to false" do
