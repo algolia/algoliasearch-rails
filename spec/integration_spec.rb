@@ -177,7 +177,7 @@ end
 
 class Phone < ActiveRecord::Base
   include AlgoliaSearch
-  algoliasearch :check_settings => false do
+  algoliasearch :check_settings => false, :index_name => safe_index_name("Phone") do
   end
 end
 
