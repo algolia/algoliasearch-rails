@@ -100,6 +100,9 @@ ActiveRecord::Schema.define do
   create_table :disabled_procs do |t|
     t.string :name
   end
+  create_table :disabled_indexings do |t|
+    t.string :name
+  end
   create_table :disabled_symbols do |t|
     t.string :name
   end
@@ -131,6 +134,13 @@ ActiveRecord::Schema.define do
       t.string :name
       t.string :skip
     end
+  end
+end
+
+class DisabledIndexing < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :disable_indexing => true, :check_settings => true do
   end
 end
 
@@ -167,7 +177,7 @@ end
 
 class Phone < ActiveRecord::Base
   include AlgoliaSearch
-  algoliasearch :check_settings => false do
+  algoliasearch :check_settings => false, :index_name => safe_index_name("Phone") do
   end
 end
 
@@ -324,7 +334,7 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
 
   include AlgoliaSearch
 
-  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true do
+  algoliasearch :synchronous => true, :index_name => safe_index_name("SequelBook"), :per_environment => true, :sanitize => true, :check_settings => true do
     add_attribute :test
     add_attribute :test2
 
@@ -349,9 +359,21 @@ class SequelBook < Sequel::Model(SEQUEL_DB)
   end
 end
 
+describe 'DisabledIndexing' do
+  it 'should not call get_settings' do
+    expect_any_instance_of(Algolia::Search::Index).not_to receive(:get_settings)
+    DisabledIndexing.send(:algolia_ensure_init)
+  end
+end
+
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)
+  end
+
+  it 'should call get_settings' do
+    expect_any_instance_of(Algolia::Search::Index).to receive(:get_settings)
+    SequelBook.send(:algolia_ensure_init)
   end
 
   it "should index the book" do
@@ -886,7 +908,6 @@ describe 'An imaginary store' do
     @products_in_database = Product.all
 
     Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    sleep 5
   end
 
   it "should reindex with :check_settings set to false" do
