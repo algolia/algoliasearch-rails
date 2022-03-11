@@ -211,7 +211,7 @@ module AlgoliaSearch
     def encode_attributes(v)
       case v
       when String
-        v.force_encoding('utf-8')
+        v.dup.force_encoding('utf-8')
       when Hash
         v.each { |key, value| v[key] = encode_attributes(value) }
       when Array
@@ -534,6 +534,7 @@ module AlgoliaSearch
         # fetch the master settings
         master_index = algolia_ensure_init(options, settings)
         master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
+        master_exists = master_settings != {}
         master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
 
         # remove the replicas of the temporary index
@@ -547,7 +548,7 @@ module AlgoliaSearch
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
-        if options[:check_settings] == false
+        if options[:check_settings] == false && master_exists
           AlgoliaSearch.client.copy_index!(src_index_name, tmp_index_name, { scope: %w[settings synonyms rules] })
           tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
         else
@@ -792,7 +793,7 @@ module AlgoliaSearch
 
       options[:check_settings] = true if options[:check_settings].nil?
 
-      current_settings = if options[:check_settings]
+      current_settings = if options[:check_settings] && !algolia_indexing_disabled?(options)
                            @algolia_indexes[settings].get_settings(:getVersion => 1) rescue nil # if the index doesn't exist
                          end
 
