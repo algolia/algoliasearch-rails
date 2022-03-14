@@ -1440,3 +1440,19 @@ describe 'Misconfigured Block' do
     }.to raise_error(ArgumentError)
   end
 end
+
+describe 'algolia_remove_from_index!' do
+  it "allows passing in the id as well" do
+    # index a Product
+    nokia = Product.create!(:name => 'nokia', :href => "google", :tags => ['decent'])
+    Product.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
+    sleep 5
+
+    # verify it was indexed
+    expect(Product.search('nokia').size).to eq(1)
+
+    # remove from index by passing in id rather than the record
+    Product.algolia_remove_from_index!(nokia.id, true)
+    expect(Product.search('nokia').size).to eq(0)
+  end
+end
