@@ -2,6 +2,15 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...master)
 
+## [2.2.0](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...2.2.0)
+### Added
+* Support to pass Algolia API client options [`#420`](https://github.com/algolia/algoliasearch-rails/pull/420)
+
+### Fixed
+* Issue with `FrozenError` for newer Ruby versions [`#418`](https://github.com/algolia/algoliasearch-rails/pull/418)
+* Only check index settings when indexing is enabled [`#416`](https://github.com/algolia/algoliasearch-rails/pull/416)
+* Index intialization documentation [`#419`](https://github.com/algolia/algoliasearch-rails/pull/419)
+
 ## [2.1.4](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...2.1.3)
 ### Fixed
 - File formatting [`#414`](https://github.com/algolia/algoliasearch-rails/pull/414)
