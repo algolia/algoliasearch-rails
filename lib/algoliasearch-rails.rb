@@ -847,6 +847,8 @@ module AlgoliaSearch
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
           return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
+        elsif v.blank? # blank? check is needed to compare [] and null
+          return true unless prev_v.blank?
         else
           return true if prev_v != v
         end
