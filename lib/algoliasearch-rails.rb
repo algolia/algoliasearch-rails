@@ -800,7 +800,8 @@ module AlgoliaSearch
         replicas = index_settings.delete(:replicas) ||
                    index_settings.delete('replicas')
         index_settings[:replicas] = replicas unless replicas.nil? || options[:inherit]
-        @algolia_indexes[settings].set_settings!(index_settings)
+        set_settings_method = options[:synchronous] ? :set_settings! : :set_settings
+        @algolia_indexes[settings].send(set_settings_method, index_settings)
       end
 
       @algolia_indexes[settings]
