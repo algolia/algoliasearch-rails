@@ -144,6 +144,20 @@ class DisabledIndexing < ActiveRecord::Base
   end
 end
 
+class EnableCheckSettingsSynchronously < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :check_settings => true, :synchronous => true do
+  end
+end
+
+class EnableCheckSettingsAsynchronously < ActiveRecord::Base
+  include AlgoliaSearch
+
+  algoliasearch :check_settings => true, :synchronous => false do
+  end
+end
+
 class Product < ActiveRecord::Base
   include AlgoliaSearch
 
@@ -363,6 +377,74 @@ describe 'DisabledIndexing' do
   it 'should not call get_settings' do
     expect_any_instance_of(Algolia::Search::Index).not_to receive(:get_settings)
     DisabledIndexing.send(:algolia_ensure_init)
+  end
+end
+
+describe 'EnableCheckSettingsSynchronously' do
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting!' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings!)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting!' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+end
+
+describe 'EnableCheckSettingsAsynchronously' do
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+
+    it 'should not call set_setting!' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting!' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
   end
 end
 
