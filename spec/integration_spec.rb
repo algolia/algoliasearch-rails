@@ -597,6 +597,7 @@ describe 'Settings' do
     Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
     Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {:searchableAttributes => ["name"]}).should == false
     Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"customRanking" => nil}, {"customRanking" => []}).should == false
   end
 
 end
