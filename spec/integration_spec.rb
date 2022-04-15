@@ -144,20 +144,6 @@ class DisabledIndexing < ActiveRecord::Base
   end
 end
 
-class EnableCheckSettingsSynchronously < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch :check_settings => true, :synchronous => true do
-  end
-end
-
-class EnableCheckSettingsAsynchronously < ActiveRecord::Base
-  include AlgoliaSearch
-
-  algoliasearch :check_settings => true, :synchronous => false do
-  end
-end
-
 class Product < ActiveRecord::Base
   include AlgoliaSearch
 
@@ -381,6 +367,19 @@ describe 'DisabledIndexing' do
 end
 
 describe 'EnableCheckSettingsSynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsSynchronously) if Object.constants.include?(:EnableCheckSettingsSynchronously)
+    class EnableCheckSettingsSynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => true do
+      end
+    end
+  end
+
   describe 'has settings changes' do
     before(:each) do
       allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
@@ -391,8 +390,8 @@ describe 'EnableCheckSettingsSynchronously' do
       EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
 
-    it 'should not call set_setting' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+    it 'should call set_setting' do # NOTE: set_setting! call set_setting internally.
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original
       EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
   end
@@ -415,18 +414,31 @@ describe 'EnableCheckSettingsSynchronously' do
 end
 
 describe 'EnableCheckSettingsAsynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsAsynchronously) if Object.constants.include?(:EnableCheckSettingsAsynchronously)
+    class EnableCheckSettingsAsynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => false do
+      end
+    end
+  end
+
   describe 'has settings changes' do
     before(:each) do
       allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
     end
 
-    it 'should call set_setting' do
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
+    it 'should not call set_setting!' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
       EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
 
-    it 'should not call set_setting!' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+    it 'should call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original
       EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
   end
