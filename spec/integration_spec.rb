@@ -1241,6 +1241,10 @@ describe "FowardToReplicas" do
         add_replica safe_index_name('ForwardToReplicas_replica') do
           attributesToHighlight %w(replica_highlight)
         end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
       end
     end
   end
@@ -1279,6 +1283,10 @@ describe "FowardToReplicas" do
         add_replica safe_index_name('ForwardToReplicas_replica'), :inherit => true do
           attributesToHighlight %w(replica_highlight)
         end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
       end
     end
 
@@ -1299,6 +1307,42 @@ describe "FowardToReplicas" do
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
+  end
+
+  it "shouldn't update the replica settings if there is no change" do
+    Object.send(:remove_const, :ForwardToReplicasTwo) if Object.constants.include?(:ForwardToReplicasTwo)
+
+    class ForwardToReplicasTwo < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
+        attribute :name
+        searchableAttributes %w(first_value)
+        attributesToHighlight %w(primary_highlight)
+
+        add_replica safe_index_name('ForwardToReplicas_replica') do
+          attributesToHighlight %w(replica_highlight)
+        end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
+      end
+    end
+
+    ForwardToReplicas.send :algolia_ensure_init
+
+    # Hacky way to hook replica settings update
+    ForwardToReplicas.create(:name => 'val')
+    ForwardToReplicas.reindex!
+
+    expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
+
+    ForwardToReplicasTwo.send :algolia_ensure_init
+
+    # Hacky way to hook replica settings update
+    ForwardToReplicasTwo.create(:name => 'val2')
+    ForwardToReplicasTwo.reindex!
   end
 end
 
