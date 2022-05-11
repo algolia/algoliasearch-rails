@@ -385,13 +385,9 @@ describe 'EnableCheckSettingsSynchronously' do
       allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
     end
 
-    it 'should call set_setting!' do
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings!)
-      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
-    end
-
-    it 'should call set_setting' do # NOTE: set_setting! call set_setting internally.
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original
+    it 'should call set_setting with wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original # wait_task use this return val
+      expect_any_instance_of(Algolia::Search::Index).to receive(:wait_task)
       EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
   end
@@ -399,11 +395,6 @@ describe 'EnableCheckSettingsSynchronously' do
   describe 'has no settings changes' do
     before(:each) do
       allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
-    end
-
-    it 'should not call set_setting!' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
-      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
 
     it 'should not call set_setting' do
@@ -432,13 +423,9 @@ describe 'EnableCheckSettingsAsynchronously' do
       allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
     end
 
-    it 'should not call set_setting!' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
-      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
-    end
-
-    it 'should call set_setting' do
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original
+    it 'should call set_setting without wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:wait_task)
       EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
   end
@@ -446,11 +433,6 @@ describe 'EnableCheckSettingsAsynchronously' do
   describe 'has no settings changes' do
     before(:each) do
       allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
-    end
-
-    it 'should not call set_setting!' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
-      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
 
     it 'should not call set_setting' do
