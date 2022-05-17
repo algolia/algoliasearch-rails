@@ -366,6 +366,82 @@ describe 'DisabledIndexing' do
   end
 end
 
+describe 'EnableCheckSettingsSynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsSynchronously) if Object.constants.include?(:EnableCheckSettingsSynchronously)
+    class EnableCheckSettingsSynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => true do
+      end
+    end
+  end
+
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting with wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original # wait_task use this return val
+      expect_any_instance_of(Algolia::Search::Index).to receive(:wait_task)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+end
+
+describe 'EnableCheckSettingsAsynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsAsynchronously) if Object.constants.include?(:EnableCheckSettingsAsynchronously)
+    class EnableCheckSettingsAsynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => false do
+      end
+    end
+  end
+
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting without wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:wait_task)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+  end
+end
+
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)

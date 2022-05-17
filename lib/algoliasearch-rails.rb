@@ -800,7 +800,8 @@ module AlgoliaSearch
                          end
 
       if !algolia_indexing_disabled?(options) && options[:check_settings] && algoliasearch_settings_changed?(current_settings, index_settings)
-        @algolia_indexes[settings].set_settings!(index_settings)
+        set_settings_method = options[:synchronous] ? :set_settings! : :set_settings
+        @algolia_indexes[settings].send(set_settings_method, index_settings)
       end
 
       @algolia_indexes[settings]
