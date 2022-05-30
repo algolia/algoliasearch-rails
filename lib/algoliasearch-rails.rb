@@ -54,7 +54,7 @@ module AlgoliaSearch
       # Attributes
       :searchableAttributes, :attributesForFaceting, :unretrievableAttributes, :attributesToRetrieve,
       # Ranking
-      :ranking, :customRanking, # Replicas are handled via `add_replica`
+      :ranking, :customRanking, :relevancyStrictness, # Replicas are handled via `add_replica`
       # Faceting
       :maxValuesPerFacet, :sortFacetValuesBy,
       # Highlighting / Snippeting
