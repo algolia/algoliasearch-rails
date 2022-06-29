@@ -1,6 +1,6 @@
 module AlgoliaSearch
   module Configuration
-    def initiliaze
+    def initialize
       @client = nil
     end
 
