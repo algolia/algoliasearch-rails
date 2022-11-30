@@ -54,7 +54,7 @@ module AlgoliaSearch
       # Attributes
       :searchableAttributes, :attributesForFaceting, :unretrievableAttributes, :attributesToRetrieve,
       # Ranking
-      :ranking, :customRanking, # Replicas are handled via `add_replica`
+      :ranking, :customRanking, :relevancyStrictness, # Replicas are handled via `add_replica`
       # Faceting
       :maxValuesPerFacet, :sortFacetValuesBy,
       # Highlighting / Snippeting
@@ -790,6 +790,9 @@ module AlgoliaSearch
 
       index_settings ||= settings.to_settings
       index_settings = options[:primary_settings].to_settings.merge(index_settings) if options[:inherit]
+      replicas = index_settings.delete(:replicas) ||
+                 index_settings.delete('replicas')
+      index_settings[:replicas] = replicas unless replicas.nil? || options[:inherit]
 
       options[:check_settings] = true if options[:check_settings].nil?
 
@@ -798,10 +801,8 @@ module AlgoliaSearch
                          end
 
       if !algolia_indexing_disabled?(options) && options[:check_settings] && algoliasearch_settings_changed?(current_settings, index_settings)
-        replicas = index_settings.delete(:replicas) ||
-                   index_settings.delete('replicas')
-        index_settings[:replicas] = replicas unless replicas.nil? || options[:inherit]
-        @algolia_indexes[settings].set_settings!(index_settings)
+        set_settings_method = options[:synchronous] ? :set_settings! : :set_settings
+        @algolia_indexes[settings].send(set_settings_method, index_settings)
       end
 
       @algolia_indexes[settings]
@@ -848,6 +849,8 @@ module AlgoliaSearch
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
           return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }
+        elsif v.blank? # blank? check is needed to compare [] and null
+          return true unless prev_v.blank?
         else
           return true if prev_v != v
         end

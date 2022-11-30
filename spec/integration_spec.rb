@@ -366,6 +366,82 @@ describe 'DisabledIndexing' do
   end
 end
 
+describe 'EnableCheckSettingsSynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsSynchronously) if Object.constants.include?(:EnableCheckSettingsSynchronously)
+    class EnableCheckSettingsSynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => true do
+      end
+    end
+  end
+
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting with wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original # wait_task use this return val
+      expect_any_instance_of(Algolia::Search::Index).to receive(:wait_task)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsSynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+    end
+  end
+end
+
+describe 'EnableCheckSettingsAsynchronously' do
+  before(:each) do
+    # NOTE:
+    #   Redefine below class *each* time to avoid the cache in the class.
+    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    Object.send(:remove_const, :EnableCheckSettingsAsynchronously) if Object.constants.include?(:EnableCheckSettingsAsynchronously)
+    class EnableCheckSettingsAsynchronously < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :check_settings => true, :synchronous => false do
+      end
+    end
+  end
+
+  describe 'has settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(true)
+    end
+
+    it 'should call set_setting without wait_task(sync)' do
+      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:wait_task)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+  end
+
+  describe 'has no settings changes' do
+    before(:each) do
+      allow(EnableCheckSettingsAsynchronously).to receive(:algoliasearch_settings_changed?).and_return(false)
+    end
+
+    it 'should not call set_setting' do
+      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+    end
+  end
+end
+
 describe 'SequelBook' do
   before(:all) do
     SequelBook.clear_index!(true)
@@ -597,6 +673,7 @@ describe 'Settings' do
     Color.send(:algoliasearch_settings_changed?, {}, {}).should == false
     Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"]}, {:searchableAttributes => ["name"]}).should == false
     Color.send(:algoliasearch_settings_changed?, {"searchableAttributes" => ["name"], "customRanking" => ["asc(hex)"]}, {"customRanking" => ["asc(hex)"]}).should == false
+    Color.send(:algoliasearch_settings_changed?, {"customRanking" => nil}, {"customRanking" => []}).should == false
   end
 
 end
@@ -1146,6 +1223,10 @@ describe "FowardToReplicas" do
         add_replica safe_index_name('ForwardToReplicas_replica') do
           attributesToHighlight %w(replica_highlight)
         end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
       end
     end
   end
@@ -1184,6 +1265,10 @@ describe "FowardToReplicas" do
         add_replica safe_index_name('ForwardToReplicas_replica'), :inherit => true do
           attributesToHighlight %w(replica_highlight)
         end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
       end
     end
 
@@ -1204,6 +1289,42 @@ describe "FowardToReplicas" do
     expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
 
     expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
+  end
+
+  it "shouldn't update the replica settings if there is no change" do
+    Object.send(:remove_const, :ForwardToReplicasTwo) if Object.constants.include?(:ForwardToReplicasTwo)
+
+    class ForwardToReplicasTwo < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
+        attribute :name
+        searchableAttributes %w(first_value)
+        attributesToHighlight %w(primary_highlight)
+
+        add_replica safe_index_name('ForwardToReplicas_replica') do
+          attributesToHighlight %w(replica_highlight)
+        end
+
+        add_replica safe_index_name('ForwardToReplicas_replica_inherited'), :inherit => true do
+          attributesToHighlight %w(replica_highlight)
+        end
+      end
+    end
+
+    ForwardToReplicas.send :algolia_ensure_init
+
+    # Hacky way to hook replica settings update
+    ForwardToReplicas.create(:name => 'val')
+    ForwardToReplicas.reindex!
+
+    expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
+
+    ForwardToReplicasTwo.send :algolia_ensure_init
+
+    # Hacky way to hook replica settings update
+    ForwardToReplicasTwo.create(:name => 'val2')
+    ForwardToReplicasTwo.reindex!
   end
 end
 

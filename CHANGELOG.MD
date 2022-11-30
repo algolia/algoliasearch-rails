@@ -1,6 +1,24 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
+
+## [2.2.1](https://github.com/algolia/algoliasearch-rails/compare/2.2.0...2.2.1)
+### Fixed
+* fix:settings changes detection issue with empty array [`#424`](https://github.com/algolia/algoliasearch-rails/pull/424)
+* fix: settings changes detection issue for replica indexes with inherit option [`#426`](https://github.com/algolia/algoliasearch-rails/pull/426)
+* fix: make sync opt to be selectable for auto setting update logic [`#425`](https://github.com/algolia/algoliasearch-rails/pull/425)
+
+### Added
+* Add relevancyStrictness to IndexSettings [`#427`](https://github.com/algolia/algoliasearch-rails/pull/427)
+
+## [2.2.0](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...2.2.0)
+### Added
+* Support to pass Algolia API client options [`#420`](https://github.com/algolia/algoliasearch-rails/pull/420)
+
+### Fixed
+* Issue with `FrozenError` for newer Ruby versions [`#418`](https://github.com/algolia/algoliasearch-rails/pull/418)
+* Only check index settings when indexing is enabled [`#416`](https://github.com/algolia/algoliasearch-rails/pull/416)
+* Index intialization documentation [`#419`](https://github.com/algolia/algoliasearch-rails/pull/419)
 
 ## [2.1.4](https://github.com/algolia/algoliasearch-rails/compare/2.1.4...2.1.3)
 ### Fixed
