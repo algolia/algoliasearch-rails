@@ -27,7 +27,8 @@ group :test do
 end
 
 group :development do
-  gem 'rake', '>= 10.1.0'
+  rake_version = ENV['RAKE_VERSION'] ? "~> #{ENV['RAKE_VERSION']}" : '~> 10.1.0'
+  gem 'rake', rake_version
   gem 'rdoc'
 end
 
