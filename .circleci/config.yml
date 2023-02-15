@@ -18,7 +18,7 @@ aliases:
   - &restore_cache
     name: Restore Bundler cache
     keys:
-      - rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-{{ checksum "Gemfile" }}
+      - rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-gemfile-{{ checksum "Gemfile" }}
       - rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-
 
   - &install_bundler
