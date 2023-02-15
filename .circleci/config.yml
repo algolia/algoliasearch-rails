@@ -1,4 +1,9 @@
 aliases:
+  - &image_setup
+    name: Install image libraries
+    command: |
+      sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
+
   - &credentials
     name: Retrieve temporary Algolia credentials if needed
     command: |
@@ -59,6 +64,7 @@ jobs:
     docker:
       - *default_docker_ruby_executor
     steps:
+      - run: *image_setup
       - checkout
       - run: *check_bundler
       - restore_cache: *restore_cache
