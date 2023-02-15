@@ -54,6 +54,8 @@ jobs:
         type: string
       sequel-version:
         type: string
+      rake-version:
+        type: string
     docker:
       - *default_docker_ruby_executor
     steps:
