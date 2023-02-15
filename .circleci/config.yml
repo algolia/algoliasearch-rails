@@ -77,12 +77,14 @@ workflows:
               version: ['2.4', '2.5', '2.6']
               rails-version: ['5.1']
               sequel-version: ['5.0']
+              rake-version: ['10.1.0']
       - test:
           matrix:
             parameters:
               version: ['2.5', '2.6', '2.7', '3.0']
               rails-version: ['6.0', '6.1']
               sequel-version: ['5.0']
+              rake-version: ['10.1.0']
       - test:
           matrix:
             parameters:
