@@ -10,6 +10,7 @@ end
 group :test do
   rails_version = ENV["RAILS_VERSION"] || '6.1'
   gem 'rails', "~> #{rails_version}"
+  gem 'rails-html-sanitizer'
   gem 'active_model_serializers'
   if Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
     gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
