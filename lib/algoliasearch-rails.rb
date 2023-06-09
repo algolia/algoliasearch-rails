@@ -741,6 +741,7 @@ module AlgoliaSearch
       options ||= algoliasearch_options
       name = options[:index_name] || model_name.to_s.gsub('::', '_')
       name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
+      name = "#{options[:per_tenant].call}_#{name}" if options[:per_tenant]
       name
     end
 
