@@ -2,6 +2,11 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
 
+## [2.2.2](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...2.2.2)
+### Fixed
+* fix: wrong method name [`#429`](https://github.com/algolia/algoliasearch-rails/pull/429)
+* fix: check if `Sequel::Model` is defined [`#433`](https://github.com/algolia/algoliasearch-rails/pull/433)
+
 ## [2.2.1](https://github.com/algolia/algoliasearch-rails/compare/2.2.0...2.2.1)
 ### Fixed
 * fix:settings changes detection issue with empty array [`#424`](https://github.com/algolia/algoliasearch-rails/pull/424)
