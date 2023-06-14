@@ -123,7 +123,7 @@ module AlgoliaSearch
     end
 
     def is_sequel?(object)
-      defined?(::Sequel) && object.class < ::Sequel::Model
+      defined?(::Sequel) && defined?(::Sequel::Model) && object.class < ::Sequel::Model
     end
 
     def is_active_record?(object)
@@ -382,7 +382,7 @@ module AlgoliaSearch
       attr_accessor :highlight_result, :snippet_result
 
       if options[:synchronous] == true
-        if defined?(::Sequel) && self < Sequel::Model
+        if defined?(::Sequel) && defined?(::Sequel::Model) && self < Sequel::Model
           class_eval do
             copy_after_validation = instance_method(:after_validation)
             define_method(:after_validation) do |*args|
@@ -413,7 +413,7 @@ module AlgoliaSearch
         end
       end
       unless options[:auto_index] == false
-        if defined?(::Sequel) && self < Sequel::Model
+        if defined?(::Sequel) && defined?(::Sequel::Model) && self < Sequel::Model
           class_eval do
             copy_after_validation = instance_method(:after_validation)
             copy_before_save = instance_method(:before_save)
@@ -460,7 +460,7 @@ module AlgoliaSearch
         end
       end
       unless options[:auto_remove] == false
-        if defined?(::Sequel) && self < Sequel::Model
+        if defined?(::Sequel) && defined?(::Sequel::Model) && self < Sequel::Model
           class_eval do
             copy_after_destroy = instance_method(:after_destroy)
 
@@ -918,7 +918,7 @@ module AlgoliaSearch
     def algolia_find_in_batches(batch_size, &block)
       if (defined?(::ActiveRecord) && ancestors.include?(::ActiveRecord::Base)) || respond_to?(:find_in_batches)
         find_in_batches(:batch_size => batch_size, &block)
-      elsif defined?(::Sequel) && self < Sequel::Model
+      elsif defined?(::Sequel) && defined?(::Sequel::Model) && self < Sequel::Model
         dataset.extension(:pagination).each_page(batch_size, &block)
       else
         # don't worry, mongoid has its own underlying cursor/streaming mechanism
@@ -1031,7 +1031,7 @@ module AlgoliaSearch
       # algolia_must_reindex flag is reset after every commit as part. If we must reindex at any point in
       # a stransaction, keep flag set until it is explicitly unset
       @algolia_must_reindex ||=
-       if defined?(::Sequel) && is_a?(Sequel::Model)
+       if defined?(::Sequel) && defined?(::Sequel::Model) && is_a?(Sequel::Model)
          new? || self.class.algolia_must_reindex?(self)
        else
          new_record? || self.class.algolia_must_reindex?(self)
