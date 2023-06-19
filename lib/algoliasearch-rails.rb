@@ -399,7 +399,8 @@ module AlgoliaSearch
         raise ArgumentError.new("Cannot use a enqueue if the `synchronous` option if set") if options[:synchronous]
         proc = if options[:enqueue] == true
           Proc.new do |record, remove|
-            AlgoliaJob.perform_later(record, remove ? 'algolia_remove_from_index!' : 'algolia_index!')
+            record_or_object_id = remove ? algolia_object_id_of(record) : record
+            AlgoliaJob.perform_later(record.class.to_s, record_or_object_id, remove)
           end
         elsif options[:enqueue].respond_to?(:call)
           options[:enqueue]
@@ -624,7 +625,7 @@ module AlgoliaSearch
 
     def algolia_remove_from_index!(object, synchronous = false)
       return if algolia_without_auto_index_scope
-      object_id = algolia_object_id_of(object)
+      object_id = (object.is_a?(String) || object.is_a?(Numeric)) ? object : algolia_object_id_of(object)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
