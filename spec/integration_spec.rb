@@ -1326,6 +1326,35 @@ describe "FowardToReplicas" do
     ForwardToReplicasTwo.create(:name => 'val2')
     ForwardToReplicasTwo.reindex!
   end
+
+  it 'should forward the customRanking setting correctly' do
+    Object.send(:remove_const, :ForwardToReplicas) if Object.constants.include?(:ForwardToReplicas)
+
+    class ForwardToReplicas < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :synchronous => true, :index_name => safe_index_name('ForwardToReplicas') do
+        attribute :name
+        searchableAttributes [:name]
+        customRanking ["asc(name)"]
+
+        add_replica safe_index_name('ForwardToReplicas_replica_name_desc'), inherit: true, per_environment: true do
+          customRanking ["desc(name)"]
+        end
+      end
+    end
+
+    ForwardToReplicas.send :algolia_ensure_init
+
+    ForwardToReplicas.create(:name => 'val')
+    ForwardToReplicas.reindex!
+
+    primary_settings = ForwardToReplicas.index.get_settings
+    expect(primary_settings['customRanking']).to eq(%w[asc(name)])
+
+    replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica_name_desc')).get_settings
+    expect(replica_settings['customRanking']).to eq(%w[desc(name)])
+  end
 end
 
 describe "SubReplicas" do
