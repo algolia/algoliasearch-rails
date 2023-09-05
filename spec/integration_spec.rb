@@ -1561,3 +1561,47 @@ describe 'Misconfigured Block' do
     }.to raise_error(ArgumentError)
   end
 end
+
+describe 'Attribute change detection' do
+  before(:each) do
+    Object.send(:remove_const, :Book) if Object.constants.include?(:Book)
+
+    class Book < ActiveRecord::Base
+      include AlgoliaSearch
+
+      algoliasearch :synchronous => true, :index_name => safe_index_name("OtherBook") do
+        attribute :title do self.name end
+        attribute :author
+      end
+
+      def title_changed?
+        false
+      end
+
+      def algolia_id
+        return 1
+      end
+
+    end
+  end
+
+  let(:book) {
+    book = Book.create! :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
+    book
+  }
+
+  it "should not assume objectID changes by default" do
+    expect(Book.send(:algolia_object_id_changed?, book)).to eq(false)
+    expect(Book.send(:algolia_must_reindex?, book)).to eq(false)
+  end
+
+  it "should not detect changes to excluded attributes" do
+    book.premium = false
+    expect(Book.send(:algolia_must_reindex?, book)).to eq(false)
+  end
+
+  it "should detect changes to included attributes" do
+    book.author = "John doe"
+    expect(Book.send(:algolia_must_reindex?, book)).to eq(true)
+  end
+end
