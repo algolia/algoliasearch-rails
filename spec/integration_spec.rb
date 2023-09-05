@@ -1569,7 +1569,7 @@ describe 'Attribute change detection' do
     class Book < ActiveRecord::Base
       include AlgoliaSearch
 
-      algoliasearch :synchronous => true, :index_name => safe_index_name("OtherBook") do
+      algoliasearch :synchronous => true, :index_name => safe_index_name("OtherBook"), id: :algolia_id do
         attribute :title do self.name end
         attribute :author
       end
