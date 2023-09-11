@@ -753,14 +753,13 @@ module AlgoliaSearch
         next if options[:replica]
         return true if algolia_object_id_changed?(object, options)
         settings.get_attribute_names(object).each do |k|
-          return true if algolia_attribute_changed?(object, k)
-          # return true if !object.respond_to?(changed_method) || object.send(changed_method)
+          return true if algolia_attribute_changed?(object, k, true)
         end
         [options[:if], options[:unless]].each do |condition|
           case condition
           when nil
           when String, Symbol
-            return true if algolia_attribute_changed?(object, condition)
+            return true if algolia_attribute_changed?(object, condition, true)
           else
             # if the :if, :unless condition is a anything else,
             # we have no idea whether we should reindex or not
@@ -837,7 +836,7 @@ module AlgoliaSearch
     end
 
     def algolia_object_id_changed?(o, options = nil)
-      changed = algolia_attribute_changed?(o, algolia_object_id_method(options))
+      changed = algolia_attribute_changed?(o, algolia_object_id_method(options), false)
       changed.nil? ? false : changed
     end
 
@@ -934,7 +933,7 @@ module AlgoliaSearch
       end
     end
 
-    def algolia_attribute_changed?(object, attr_name)
+    def algolia_attribute_changed?(object, attr_name, default)
       # if one of two method is implemented, we return its result
       # true/false means whether it has changed or not
       # +#{attr_name}_changed?+ always defined for automatic attributes but deprecated after Rails 5.2
@@ -963,8 +962,8 @@ module AlgoliaSearch
         return object.send("will_save_change_to_#{attr_name}?")
       end
 
-      # We don't know if the attribute has changed, so conservatively assume it has
-      true
+      # We don't know if the attribute has changed, so return the default passed
+      default
     end
 
     def automatic_changed_method?(object, method_name)
