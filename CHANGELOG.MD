@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
 
+## [2.2.2](https://github.com/algolia/algoliasearch-rails/compare/2.2.2...2.3.0)
+### Fixed
+* bugfix: don't consider objectID changed when using custom ID through method [`#436`](https://github.com/algolia/algoliasearch-rails/pull/436)
+
 ## [2.2.2](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...2.2.2)
 ### Fixed
 * fix: wrong method name [`#429`](https://github.com/algolia/algoliasearch-rails/pull/429)
