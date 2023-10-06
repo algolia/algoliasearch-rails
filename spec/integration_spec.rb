@@ -123,6 +123,9 @@ ActiveRecord::Schema.define do
   create_table :enqueued_objects do |t|
     t.string :name
   end
+  create_table :working_enqueued_objects do |t|
+    t.string :name
+  end
   create_table :disabled_enqueued_objects do |t|
     t.string :name
   end
@@ -578,6 +581,24 @@ class EnqueuedObject < ActiveRecord::Base
 
   algoliasearch :enqueue => Proc.new { |record| raise "enqueued #{record.id}" },
     :index_name => safe_index_name('EnqueuedObject') do
+    attributes ['name']
+  end
+end
+
+class WorkingEnqueuedObject < ActiveRecord::Base
+  include AlgoliaSearch
+
+  include GlobalID::Identification
+
+  def id
+    read_attribute(:id)
+  end
+
+  def self.find(id)
+    WorkingEnqueuedObject.first
+  end
+
+  algoliasearch :enqueue => true, :index_name => safe_index_name('WorkingEnqueuedObject') do
     attributes ['name']
   end
 end
@@ -1543,6 +1564,32 @@ describe 'EnqueuedObject' do
         EnqueuedObject.create! :name => 'test'
       end
     }.not_to raise_error
+  end
+end
+
+describe 'WorkingEnqueuedObject' do
+  before do
+    ActiveJob::Base.queue_adapter = :test
+  end
+
+  context "when using `enqueue: true`" do
+    it "uses the default queue name" do
+      WorkingEnqueuedObject.create! :name => 'test'
+      enqueued_job = ActiveJob::Base.queue_adapter.enqueued_jobs.first
+      expect(enqueued_job[:queue]).to eq("algoliasearch")
+    end
+
+    context "and the default queue name has been set" do
+      before do
+        AlgoliaSearch.configuration[:queue_name] = "something_else"
+      end
+
+      it "respects queue name overrides" do
+        WorkingEnqueuedObject.create! :name => 'test'
+        enqueued_job = ActiveJob::Base.queue_adapter.enqueued_jobs.first
+        expect(enqueued_job[:queue]).to eq("something_else")
+      end
+    end
   end
 end
 

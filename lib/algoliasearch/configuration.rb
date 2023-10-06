@@ -42,7 +42,9 @@ module AlgoliaSearch
     end
 
     def default_configuration
-      {}
+      {
+        queue_name: 'algoliasearch'
+      }
     end
   end
 end
