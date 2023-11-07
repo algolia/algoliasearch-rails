@@ -1,7 +1,7 @@
 module AlgoliaSearch
   module Configuration
     REQUIRED_CONFIGURATION = {
-      user_agent: "Algolia for Rails (#{AlgoliaSearch::VERSION}); Rails (#{Rails::VERSION::STRING})",
+      user_agent: "Algolia for Rails (#{AlgoliaSearch::VERSION}); Rails (#{defined?(::Rails::VERSION::STRING) ? ::Rails::VERSION::STRING : 'unknown'})",
       symbolize_keys: false
     }
 
