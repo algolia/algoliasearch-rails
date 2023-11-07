@@ -1,5 +1,10 @@
 module AlgoliaSearch
   module Configuration
+    REQUIRED_CONFIGURATION = {
+      user_agent: "Algolia for Rails (#{AlgoliaSearch::VERSION}); Rails (#{Rails::VERSION::STRING})",
+      symbolize_keys: false
+    }
+
     def initialize
       @client = nil
     end
@@ -9,10 +14,11 @@ module AlgoliaSearch
     end
 
     def configuration=(configuration)
-      @@configuration = configuration.merge(
-        :user_agent => "Algolia for Rails (#{AlgoliaSearch::VERSION}); Rails (#{Rails::VERSION::STRING})",
-        :symbolize_keys => false
-      )
+      user_agent = [REQUIRED_CONFIGURATION[:user_agent], configuration[:append_to_user_agent]].compact.join('; ')
+      @@configuration = default_configuration
+                        .merge(configuration)
+                        .merge(REQUIRED_CONFIGURATION)
+                        .merge({ user_agent: user_agent })
     end
 
     def client_opts
@@ -33,6 +39,10 @@ module AlgoliaSearch
 
     def setup_client
       @client = Algolia::Search::Client.new(Algolia::Search::Config.new(@@configuration), client_opts)
+    end
+
+    def default_configuration
+      {}
     end
   end
 end

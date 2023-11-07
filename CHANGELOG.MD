@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
+* Allow users to override default options, including user agent [`#438`](https://github.com/algolia/algoliasearch-rails/pull/438)
 
 ## [2.2.2](https://github.com/algolia/algoliasearch-rails/compare/2.2.2...2.3.0)
 ### Fixed
