@@ -15,6 +15,8 @@ raise "missing ALGOLIA_APPLICATION_ID or ALGOLIA_API_KEY environment variables" 
 
 Thread.current[:algolia_hosts] = nil
 
+GlobalID.app = 'algoiasearch-rails'
+
 RSpec.configure do |c|
   c.mock_with :rspec
   c.filter_run :focus => true
