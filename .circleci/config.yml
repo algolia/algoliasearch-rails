@@ -13,8 +13,8 @@ aliases:
   - &restore_cache
     name: Restore Bundler cache
     keys:
-      - rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-{{ checksum "Gemfile" }}
-      - rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-
+      - rails-gem-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-{{ checksum "Gemfile" }}
+      - rails-gem-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-
 
   - &install_bundler
     name: Bundle Install
@@ -22,7 +22,7 @@ aliases:
 
   - &save_cache
     name: Save Bundler cache
-    key: rails-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-{{ checksum "Gemfile" }}
+    key: rails-gem-cache-<< parameters.version >>-<< parameters.rails-version >>-<< parameters.sequel-version >>-{{ checksum "Gemfile" }}
     paths:
       - vendor/bundle
 
