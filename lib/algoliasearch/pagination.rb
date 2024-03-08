@@ -3,6 +3,7 @@ module AlgoliaSearch
 
     autoload :WillPaginate, 'algoliasearch/pagination/will_paginate'
     autoload :Kaminari, 'algoliasearch/pagination/kaminari'
+    autoload :Pagy, 'algoliasearch/pagination/pagy'
 
     def self.create(results, total_hits, options = {})
       return results if AlgoliaSearch.configuration[:pagination_backend].nil?

@@ -1519,6 +1519,23 @@ describe 'Will_paginate' do
   end
 end
 
+describe 'Pagy' do
+  before(:all) do
+    require 'pagy'
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :pagy }
+  end
+
+  it "should paginate" do
+    pagy, cities = City.search '', :hitsPerPage => 2
+    pagy[:page].should eq(1)
+    pagy[:items].should eq(2)
+    pagy[:count].should eq(City.raw_search('')['nbHits'])
+    cities.length.should eq(2)
+    cities.should be_an(Array)
+  end
+end
+
+
 describe 'Disabled' do
   before(:all) do
     DisabledBoolean.index.clear_objects!

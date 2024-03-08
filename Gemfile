@@ -34,5 +34,6 @@ end
 group :test, :development do
   gem 'will_paginate', '>= 2.3.15'
   gem 'kaminari', '< 1'
+  gem 'pagy'
 end
 

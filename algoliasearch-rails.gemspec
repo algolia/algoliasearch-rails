@@ -33,6 +33,7 @@ Gem::Specification.new do |s|
     "lib/algoliasearch/configuration.rb",
     "lib/algoliasearch/pagination.rb",
     "lib/algoliasearch/pagination/kaminari.rb",
+    "lib/algoliasearch/pagination/pagy.rb",
     "lib/algoliasearch/pagination/will_paginate.rb",
     "lib/algoliasearch/railtie.rb",
     "lib/algoliasearch/tasks/algoliasearch.rake",
@@ -81,6 +82,7 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<algolia>, ["< 3.0.0"])
       s.add_development_dependency(%q<will_paginate>, [">= 2.3.15"])
       s.add_development_dependency(%q<kaminari>, [">= 0"])
+      s.add_development_dependency(%q<pagy>, [">= 0"])
       s.add_development_dependency "rake"
       s.add_development_dependency "rdoc"
     else
