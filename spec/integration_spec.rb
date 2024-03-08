@@ -1523,13 +1523,15 @@ describe 'Pagy' do
   before(:all) do
     require 'pagy'
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :pagy }
+    City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
   end
 
   it "should paginate" do
     pagy, cities = City.search '', :hitsPerPage => 2
-    pagy[:page].should eq(1)
-    pagy[:items].should eq(2)
-    pagy[:count].should eq(City.raw_search('')['nbHits'])
+    pagy.vars[:page].should eq(1)
+    pagy.vars[:items].should eq(2)
+    pagy.vars[:count].should eq(City.raw_search('')['nbHits'])
     cities.length.should eq(2)
     cities.should be_an(Array)
   end
