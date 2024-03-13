@@ -1527,6 +1527,11 @@ describe 'Pagy' do
     City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
   end
 
+  after(:all) do
+    # Reset the configuration to avoid conflicts with other tests
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
+  end
+
   it "should paginate" do
     pagy, cities = City.search '', :hitsPerPage => 2
     pagy.page.should eq(1)
