@@ -683,7 +683,7 @@ module AlgoliaSearch
 
     def algolia_search(q, params = {})
       if AlgoliaSearch.configuration[:pagination_backend]
-        # kaminari and will_paginate start pagination at 1, Algolia starts at 0
+        # kaminari, will_paginate, and pagy start pagination at 1, Algolia starts at 0
         params[:page] = (params.delete('page') || params.delete(:page)).to_i
         params[:page] -= 1 if params[:page].to_i > 0
       end

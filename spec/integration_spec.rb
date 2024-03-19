@@ -1519,6 +1519,30 @@ describe 'Will_paginate' do
   end
 end
 
+describe 'Pagy' do
+  before(:all) do
+    require 'pagy'
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :pagy }
+    City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
+  end
+
+  after(:all) do
+    # Reset the configuration to avoid conflicts with other tests
+    AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
+  end
+
+  it "should paginate" do
+    pagy, cities = City.search '', :hitsPerPage => 2
+    pagy.page.should eq(1)
+    pagy.items.should eq(2)
+    pagy.count.should eq(City.raw_search('')['nbHits'])
+    cities.length.should eq(2)
+    cities.should be_an(Array)
+  end
+end
+
+
 describe 'Disabled' do
   before(:all) do
     DisabledBoolean.index.clear_objects!
