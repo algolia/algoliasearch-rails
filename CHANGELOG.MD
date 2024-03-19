@@ -2,6 +2,10 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
 
+## [2.3.2](https://github.com/algolia/algoliasearch-rails/compare/2.3.1...2.3.2)
+### Added
+* Support for Pagy pagination provider [`#443`](https://github.com/algolia/algoliasearch-rails/pull/443)
+
 ## [2.3.1](https://github.com/algolia/algoliasearch-rails/compare/2.3.0...2.3.1)
 ### Added
 * Allow ActiveJob queue configuration [`#439`](https://github.com/algolia/algoliasearch-rails/pull/439)
