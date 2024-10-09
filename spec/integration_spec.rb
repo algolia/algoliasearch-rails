@@ -1411,8 +1411,11 @@ end
 describe 'Book' do
   before(:all) do
     Book.clear_index!(true)
-    Book.index(safe_index_name('BookAuthor')).clear_objects
-    Book.index(safe_index_name('Book')).clear_objects
+    index_name_author =  Book.index_name(nil, safe_index_name('BookAuthor'))
+    index_name_book =  Book.index_name(nil, safe_index_name('Book'))
+
+    AlgoliaSearch.client.wait_for_task(index_name_author, AlgoliaSearch.client.clear_objects(index_name_author).task_id)
+    AlgoliaSearch.client.wait_for_task(index_name_book, AlgoliaSearch.client.clear_objects(index_name_book).task_id)
   end
 
   it "should index the book in 2 indexes of 3" do
@@ -1421,39 +1424,35 @@ describe 'Book' do
     expect(results.size).to eq(1)
     results.should include(@steve_jobs)
 
-    index_author = Book.index(safe_index_name('BookAuthor'))
-    index_author.should_not be_nil
-    results = index_author.search('steve')
-    results['hits'].length.should eq(0)
-    results = index_author.search('walter')
-    results['hits'].length.should eq(1)
+    results = Book.search("steve", index: safe_index_name('BookAuthor'))
+    results.length.should eq(0)
+    results = Book.search("walter", index: safe_index_name('BookAuthor'))
+    results.length.should eq(1)
 
     # premium -> not part of the public index
-    index_book = Book.index(safe_index_name('Book'))
-    index_book.should_not be_nil
-    results = index_book.search('steve')
-    results['hits'].length.should eq(0)
+    results = Book.search("steve", index: safe_index_name('Book'))
+    results.length.should eq(0)
   end
 
   it "should sanitize attributes" do
     @hack = Book.create! :name => "\"><img src=x onerror=alert(1)> hack0r", :author => "<script type=\"text/javascript\">alert(1)</script>", :premium => true, :released => true
     b = Book.raw_search('hack')
-    expect(b['hits'].length).to eq(1)
+    expect(b[:hits].length).to eq(1)
     begin
-      expect(b['hits'][0]['name']).to eq('"> hack0r')
-      expect(b['hits'][0]['author']).to eq('alert(1)')
-      expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('"> <em>hack</em>0r')
+      expect(b[:hits][0][:name]).to eq('"> hack0r')
+      expect(b[:hits][0][:author]).to eq('alert(1)')
+      expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
     rescue
       # rails 4.2's sanitizer
       begin
-        expect(b['hits'][0]['name']).to eq('&quot;&gt; hack0r')
-        expect(b['hits'][0]['author']).to eq('')
-        expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('&quot;&gt; <em>hack</em>0r')
+        expect(b[:hits][0][:name]).to eq('&quot;&gt; hack0r')
+        expect(b[:hits][0][:author]).to eq('')
+        expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
       rescue
         # jruby
-        expect(b['hits'][0]['name']).to eq('"&gt; hack0r')
-        expect(b['hits'][0]['author']).to eq('')
-        expect(b['hits'][0]['_highlightResult']['name']['value']).to eq('"&gt; <em>hack</em>0r')
+        expect(b[:hits][0][:name]).to eq('"&gt; hack0r')
+        expect(b[:hits][0][:author]).to eq('')
+        expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"&gt; <em>hack</em>0r')
       end
     end
   end
@@ -1463,9 +1462,8 @@ describe 'Book' do
     book = Book.create! :name => 'Public book', :author => 'me', :premium => false, :released => true
 
     # should be searchable in the 'Book' index
-    index = Book.index(safe_index_name('Book'))
-    results = index.search('Public book')
-    expect(results['hits'].size).to eq(1)
+    results = Book.search("Public book", index: safe_index_name('Book'))
+    expect(results.size).to eq(1)
 
     # update the book and make it non-public anymore (not premium, not released)
     if book.respond_to? :update_attributes
@@ -1475,13 +1473,13 @@ describe 'Book' do
     end
 
     # should be removed from the index
-    results = index.search('Public book')
-    expect(results['hits'].size).to eq(0)
+    results = Book.search("Public book", index: safe_index_name('Book'))
+    expect(results.size).to eq(0)
   end
 
   it "should use the per_environment option in the additional index as well" do
-    index = Book.index(safe_index_name('Book'))
-    expect(index.name).to eq("#{safe_index_name('Book')}_#{Rails.env}")
+    index_name = Book.index_name(nil, safe_index_name('Book'))
+    expect(index_name).to eq("#{safe_index_name('Book')}_#{Rails.env}")
   end
 end
 
