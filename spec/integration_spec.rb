@@ -1487,21 +1487,28 @@ describe 'Kaminari' do
   before(:all) do
     require 'kaminari'
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :kaminari }
+
+    City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
+  end
+
+  after(:all) do
+    City.clear_index!(true)
   end
 
   it "should paginate" do
     pagination = City.search ''
-    pagination.total_count.should eq(City.raw_search('')['nbHits'])
+    pagination.total_count.should eq(City.raw_search('')[:nbHits])
 
     p1 = City.search '', :page => 1, :hitsPerPage => 1
     p1.size.should eq(1)
     p1[0].should eq(pagination[0])
-    p1.total_count.should eq(City.raw_search('')['nbHits'])
+    p1.total_count.should eq(City.raw_search('')[:nbHits])
 
     p2 = City.search '', :page => 2, :hitsPerPage => 1
     p2.size.should eq(1)
     p2[0].should eq(pagination[1])
-    p2.total_count.should eq(City.raw_search('')['nbHits'])
+    p2.total_count.should eq(City.raw_search('')[:nbHits])
   end
 end
 
@@ -1509,13 +1516,19 @@ describe 'Will_paginate' do
   before(:all) do
     require 'will_paginate'
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'], :pagination_backend => :will_paginate }
+    City.create :name => 'San Francisco', :country => 'USA', :lat => 37.75, :lng => -122.68
+    City.create :name => 'Mountain View', :country => 'No man\'s land', :lat => 37.38, :lng => -122.08
+  end
+
+  after(:all) do
+    City.clear_index!(true)
   end
 
   it "should paginate" do
     p1 = City.search '', :hitsPerPage => 2
     p1.length.should eq(2)
     p1.per_page.should eq(2)
-    p1.total_entries.should eq(City.raw_search('')['nbHits'])
+    p1.total_entries.should eq(City.raw_search('')[:nbHits])
   end
 end
 
@@ -1530,13 +1543,14 @@ describe 'Pagy' do
   after(:all) do
     # Reset the configuration to avoid conflicts with other tests
     AlgoliaSearch.configuration = { :application_id => ENV['ALGOLIA_APPLICATION_ID'], :api_key => ENV['ALGOLIA_API_KEY'] }
+    City.clear_index!(true)
   end
 
   it "should paginate" do
     pagy, cities = City.search '', :hitsPerPage => 2
     pagy.page.should eq(1)
     pagy.items.should eq(2)
-    pagy.count.should eq(City.raw_search('')['nbHits'])
+    pagy.count.should eq(City.raw_search('')[:nbHits])
     cities.length.should eq(2)
     cities.should be_an(Array)
   end
