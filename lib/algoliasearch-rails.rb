@@ -95,7 +95,6 @@ module AlgoliaSearch
 
     def use_serializer(serializer)
       @serializer = serializer
-      # instance_variable_set("@serializer", serializer)
     end
 
     def attribute(*names, &block)
@@ -240,11 +239,16 @@ module AlgoliaSearch
       instance_variable_get("@#{name}")
     end
 
+    # TODO
     def to_settings
+      Algolia::Search::IndexSettings.new(to_hash)
+    end
+
+    def to_hash
       settings = {}
       OPTIONS.each do |k|
         v = get_setting(k)
-        settings[k] = v if !v.nil?
+        settings[setting_name(k)] = v if !v.nil?
       end
 
       if !@options[:replica]
@@ -256,7 +260,16 @@ module AlgoliaSearch
         end
         settings.delete(:replicas) if settings[:replicas].empty?
       end
+
       settings
+    end
+
+    def setting_name(name)
+      name.to_s.gsub(/::/, '/').
+          gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+          gsub(/([a-z\d])([A-Z])/,'\1_\2').
+          tr("-", "_").
+          downcase
     end
 
     def add_index(index_name, options = {}, &block)
@@ -289,19 +302,20 @@ module AlgoliaSearch
 
   # this class wraps an Algolia::Index object ensuring all raised exceptions
   # are correctly logged or thrown depending on the `raise_on_failure` option
+  # TODO
   class SafeIndex
     def initialize(name, raise_on_failure)
       @index = AlgoliaSearch.client.init_index(name)
       @raise_on_failure = raise_on_failure.nil? || raise_on_failure
     end
 
-    ::Algolia::Search::Index.instance_methods(false).each do |m|
-      define_method(m) do |*args, &block|
-        SafeIndex.log_or_throw(m, @raise_on_failure) do
-          @index.send(m, *args, &block)
-        end
-      end
-    end
+    # ::Algolia::Search::Index.instance_methods(false).each do |m|
+    #   define_method(m) do |*args, &block|
+    #     SafeIndex.log_or_throw(m, @raise_on_failure) do
+    #       @index.send(m, *args, &block)
+    #     end
+    #   end
+    # end
 
     # special handling of wait_task to handle null task_id
     def wait_task(task_id)
@@ -493,11 +507,13 @@ module AlgoliaSearch
       Thread.current["algolia_without_auto_index_scope_for_#{self.model_name}"]
     end
 
+    # TODO
     def algolia_reindex!(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        index = algolia_ensure_init(options, settings)
+        ensure_init_new(options, settings)
+        index_name = algolia_index_name(options)
         next if options[:replica]
         last_task = nil
 
@@ -505,7 +521,7 @@ module AlgoliaSearch
           if algolia_conditional_index?(options)
             # delete non-indexable objects
             ids = group.select { |o| !algolia_indexable?(o, options) }.map { |o| algolia_object_id_of(o, options) }
-            index.delete_objects(ids.select { |id| !id.blank? })
+            AlgoliaSearch.client.delete_objects(index_name, ids.select { |id| !id.blank? })
             # select only indexable objects
             group = group.select { |o| algolia_indexable?(o, options) }
           end
@@ -516,13 +532,14 @@ module AlgoliaSearch
             end
             attributes.merge 'objectID' => algolia_object_id_of(o, options)
           end
-          last_task = index.save_objects(objects)
+          last_task = AlgoliaSearch.client.save_objects(index_name, objects).last.task_id
         end
-        index.wait_task(last_task.raw_response["taskID"]) if last_task and (synchronous || options[:synchronous])
+        AlgoliaSearch.client.wait_for_task(index_name, last_task) if last_task and (synchronous || options[:synchronous])
       end
       nil
     end
 
+    # TODO
     # reindex whole database using a extra temporary index + move operation
     def algolia_reindex(batch_size = AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, synchronous = false)
       return if algolia_without_auto_index_scope
@@ -530,28 +547,31 @@ module AlgoliaSearch
         next if algolia_indexing_disabled?(options)
         next if options[:replica]
 
+        ensure_init_new(options, settings)
+        index_name = algolia_index_name(options)
+
         # fetch the master settings
-        master_index = algolia_ensure_init(options, settings)
-        master_settings = master_index.get_settings rescue {} # if master doesn't exist yet
+
+        master_settings = AlgoliaSearch.client.get_settings(index_name).to_hash rescue {} # if master doesn't exist yet
         master_exists = master_settings != {}
-        master_settings.merge!(JSON.parse(settings.to_settings.to_json)) # convert symbols to strings
+        master_settings.merge!(settings.to_hash)
 
         # remove the replicas of the temporary index
         master_settings.delete :replicas
         master_settings.delete 'replicas'
 
         # init temporary index
-        src_index_name = algolia_index_name(options)
-        tmp_index_name = "#{src_index_name}.tmp"
+        tmp_index_name = "#{index_name}.tmp"
         tmp_options = options.merge({ :index_name => tmp_index_name })
         tmp_options.delete(:per_environment) # already included in the temporary index_name
         tmp_settings = settings.dup
 
         if options[:check_settings] == false && master_exists
-          AlgoliaSearch.client.copy_index!(src_index_name, tmp_index_name, { scope: %w[settings synonyms rules] })
-          tmp_index = SafeIndex.new(tmp_index_name, !!options[:raise_on_failure])
-        else
-          tmp_index = algolia_ensure_init(tmp_options, tmp_settings, master_settings)
+          task_id = AlgoliaSearch.client.operation_index(
+            index_name,
+            Algolia::Search::OperationIndexParams.new(operation: "copy", destination: tmp_index_name, scope: %w[settings synonyms rules])
+          ).task_id
+          AlgoliaSearch.client.wait_for_task(index_name, task_id)
         end
 
         algolia_find_in_batches(batch_size) do |group|
@@ -560,15 +580,20 @@ module AlgoliaSearch
             group = group.select { |o| algolia_indexable?(o, tmp_options) }
           end
           objects = group.map { |o| tmp_settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, tmp_options) }
-          tmp_index.save_objects(objects)
+
+          AlgoliaSearch.client.save_objects(tmp_index_name, objects)
         end
 
-        move_task = SafeIndex.move_index(tmp_index.name, src_index_name)
-        master_index.wait_task(move_task.raw_response["taskID"]) if synchronous || options[:synchronous]
+        task_id = AlgoliaSearch.client.operation_index(
+          tmp_index_name,
+          Algolia::Search::OperationIndexParams.new(operation: "move", destination: index_name)
+        ).task_id
+        AlgoliaSearch.client.wait_for_task(index_name, task_id) if synchronous || options[:synchronous]
       end
       nil
     end
 
+    # TODO
     def algolia_set_settings(synchronous = false)
       algolia_configurations.each do |options, settings|
         if options[:primary_settings] && options[:inherit]
@@ -586,77 +611,94 @@ module AlgoliaSearch
       end
     end
 
+    # TODO
     def algolia_index_objects(objects, synchronous = false)
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        index = algolia_ensure_init(options, settings)
+        ensure_init_new(options, settings)
+        index_name = algolia_index_name(options)
+
         next if options[:replica]
-        task = index.save_objects(objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
-        index.wait_task(task.raw_response["taskID"]) if synchronous || options[:synchronous]
+        tasks = AlgoliaSearch.client.save_objects(index_name, objects.map { |o| settings.get_attributes(o).merge 'objectID' => algolia_object_id_of(o, options) })
+        tasks.each do |task|
+          AlgoliaSearch.client.wait_for_task(index_name, task.task_id) if synchronous || options[:synchronous]
+        end
       end
     end
 
+    # TODO
     def algolia_index!(object, synchronous = false)
       return if algolia_without_auto_index_scope
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
+
         object_id = algolia_object_id_of(object, options)
-        index = algolia_ensure_init(options, settings)
+        index_name = algolia_index_name(options)
+        ensure_init_new(options, settings)
         next if options[:replica]
+
         if algolia_indexable?(object, options)
           raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
+          resp = AlgoliaSearch.client.save_object(index_name, settings.get_attributes(object).merge({ 'objectID' => algolia_object_id_of(object, options) }))
           if synchronous || options[:synchronous]
-            index.save_object!(settings.get_attributes(object).merge 'objectID' => algolia_object_id_of(object, options))
-          else
-            index.save_object(settings.get_attributes(object).merge 'objectID' => algolia_object_id_of(object, options))
+            AlgoliaSearch.client.wait_for_task(index_name, resp.task_id)
           end
         elsif algolia_conditional_index?(options) && !object_id.blank?
           # remove non-indexable objects
+          resp = AlgoliaSearch.client.delete_object(index_name, object_id)
           if synchronous || options[:synchronous]
-            index.delete_object!(object_id)
-          else
-            index.delete_object(object_id)
+            AlgoliaSearch.client.wait_for_task(index_name, resp.task_id)
           end
         end
       end
       nil
     end
 
+    # TODO
     def algolia_remove_from_index!(object, synchronous = false)
       return if algolia_without_auto_index_scope
       object_id = algolia_object_id_of(object)
       raise ArgumentError.new("Cannot index a record with a blank objectID") if object_id.blank?
       algolia_configurations.each do |options, settings|
         next if algolia_indexing_disabled?(options)
-        index = algolia_ensure_init(options, settings)
+        ensure_init_new(options, settings)
+        index_name = algolia_index_name(options)
+
         next if options[:replica]
+
+        resp = AlgoliaSearch.client.delete_object(index_name, object_id)
         if synchronous || options[:synchronous]
-          index.delete_object!(object_id)
-        else
-          index.delete_object(object_id)
+          AlgoliaSearch.client.wait_for_task(index_name, resp.task_id)
         end
       end
       nil
     end
 
+    # TODO
     def algolia_clear_index!(synchronous = false)
       algolia_configurations.each do |options, settings|
-        next if algolia_indexing_disabled?(options)
-        index = algolia_ensure_init(options, settings)
-        next if options[:replica]
-        synchronous || options[:synchronous] ? index.clear_objects! : index.clear_objects
-        @algolia_indexes[settings] = nil
+        next if algolia_indexing_disabled?(options) || options[:replica]
+
+        ensure_init_new(options, settings)
+        index_name = algolia_index_name(options)
+        res = AlgoliaSearch.client.clear_objects(index_name)
+
+        if synchronous || options[:synchronous]
+          AlgoliaSearch.client.wait_for_task(index_name, res.task_id)
+        end
       end
       nil
     end
 
+    # TODO
+
     def algolia_raw_search(q, params = {})
-      index_name = params.delete(:index) ||
+      index_name_base = params.delete(:index) ||
                    params.delete('index') ||
                    params.delete(:replica) ||
                    params.delete('replica')
-      index = algolia_index(index_name)
-      index.search(q, Hash[params.map { |k,v| [k.to_s, v.to_s] }])
+      index_name = algolia_index_name(algoliasearch_options, index_name_base)
+      AlgoliaSearch.client.search_single_index(index_name,Hash[params.to_h.map { |k,v| [k.to_s, v.to_s] }].merge({query: q})).to_hash
     end
 
     module AdditionalMethods
@@ -672,7 +714,7 @@ module AlgoliaSearch
       end
 
       def algolia_facets
-        @algolia_json['facets']
+        @algolia_json[:facets]
       end
 
       private
@@ -681,6 +723,7 @@ module AlgoliaSearch
       end
     end
 
+    # TODO
     def algolia_search(q, params = {})
       if AlgoliaSearch.configuration[:pagination_backend]
         # kaminari, will_paginate, and pagy start pagination at 1, Algolia starts at 0
@@ -688,7 +731,7 @@ module AlgoliaSearch
         params[:page] -= 1 if params[:page].to_i > 0
       end
       json = algolia_raw_search(q, params)
-      hit_ids = json['hits'].map { |hit| hit['objectID'] }
+      hit_ids = json[:hits].map { |hit| hit[:objectID] }
       if defined?(::Mongoid::Document) && self.include?(::Mongoid::Document)
         condition_key = algolia_object_id_method.in
       else
@@ -697,36 +740,39 @@ module AlgoliaSearch
       results_by_id = algoliasearch_options[:type].where(condition_key => hit_ids).index_by do |hit|
         algolia_object_id_of(hit)
       end
-      results = json['hits'].map do |hit|
-        o = results_by_id[hit['objectID'].to_s]
+      results = json[:hits].map do |hit|
+        o = results_by_id[hit[:objectID].to_s]
         if o
-          o.highlight_result = hit['_highlightResult']
-          o.snippet_result = hit['_snippetResult']
+          o.highlight_result = hit[:_highlightResult]
+          o.snippet_result = hit[:_snippetResult]
           o
         end
       end.compact
       # Algolia has a default limit of 1000 retrievable hits
-      total_hits = json['nbHits'].to_i < json['nbPages'].to_i * json['hitsPerPage'].to_i ?
-        json['nbHits'].to_i: json['nbPages'].to_i * json['hitsPerPage'].to_i
-      res = AlgoliaSearch::Pagination.create(results, total_hits, algoliasearch_options.merge({ :page => json['page'].to_i + 1, :per_page => json['hitsPerPage'] }))
+      total_hits = json[:nbHits].to_i < json[:nbPages].to_i * json[:hitsPerPage].to_i ?
+        json[:nbHits].to_i: json[:nbPages].to_i * json[:hitsPerPage].to_i
+      res = AlgoliaSearch::Pagination.create(results, total_hits, algoliasearch_options.merge({ :page => json[:page].to_i + 1, :per_page => json[:hitsPerPage] }))
       res.extend(AdditionalMethods)
       res.send(:algolia_init_raw_answer, json)
       res
     end
 
+    # TODO
     def algolia_search_for_facet_values(facet, text, params = {})
       index_name = params.delete(:index) ||
                    params.delete('index') ||
                    params.delete(:replica) ||
                    params.delete('replicas')
-      index = algolia_index(index_name)
-      query = Hash[params.map { |k, v| [k.to_s, v.to_s] }]
-      index.search_for_facet_values(facet, text, query)['facetHits']
+      index_name ||= algolia_index_name(algoliasearch_options)
+      req = Algolia::Search::SearchForFacetValuesRequest.new({facet_query: text, params: params.to_query})
+
+      AlgoliaSearch.client.search_for_facet_values(index_name, facet, req).facet_hits
     end
 
     # deprecated (renaming)
     alias :algolia_search_facet :algolia_search_for_facet_values
 
+    # TODO
     def algolia_index(name = nil)
       if name
         algolia_configurations.each do |o, s|
@@ -737,9 +783,19 @@ module AlgoliaSearch
       algolia_ensure_init
     end
 
-    def algolia_index_name(options = nil)
+    def ensure_algolia_index(name = nil)
+      if name
+        algolia_configurations.each do |o, s|
+          return ensure_init_new(o, s) if o[:index_name].to_s == name.to_s
+        end
+        raise ArgumentError.new("Invalid index/replica name: #{name}")
+      end
+      ensure_init_new
+    end
+
+    def algolia_index_name(options = nil, index_name = nil)
       options ||= algoliasearch_options
-      name = options[:index_name] || model_name.to_s.gsub('::', '_')
+      name = index_name || options[:index_name] || model_name.to_s.gsub('::', '_')
       name = "#{name}_#{Rails.env.to_s}" if options[:per_environment]
       name
     end
@@ -774,6 +830,7 @@ module AlgoliaSearch
 
     protected
 
+    # TODO - deprecate
     def algolia_ensure_init(options = nil, settings = nil, index_settings = nil)
       raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
 
@@ -806,8 +863,51 @@ module AlgoliaSearch
       @algolia_indexes[settings]
     end
 
+    def ensure_init_new(options = nil, settings = nil, index_settings_hash = nil)
+      raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
+
+      @algolia_indexes_init ||= {}
+
+      options ||= algoliasearch_options
+      settings ||= algoliasearch_settings
+
+      return if @algolia_indexes_init[settings]
+
+      index_name = algolia_index_name(options)
+
+
+      index_settings_hash ||= settings.to_settings.to_hash
+      index_settings_hash = options[:primary_settings].to_settings.to_hash.merge(index_settings_hash) if options[:inherit]
+      replicas = index_settings_hash.delete(:replicas) || index_settings_hash.delete('replicas')
+      index_settings_hash[:replicas] = replicas unless replicas.nil? || options[:inherit]
+
+      options[:check_settings] = true if options[:check_settings].nil?
+
+      current_settings = if options[:check_settings] && !algolia_indexing_disabled?(options)
+                           AlgoliaSearch.client.get_settings(index_name, {:getVersion => 1}).to_hash rescue nil # if the index doesn't exist
+                         end
+
+      if !algolia_indexing_disabled?(options) && options[:check_settings] && algoliasearch_settings_changed?(current_settings, index_settings_hash)
+        s = index_settings_hash.map do |k, v|
+          [settings.setting_name(k), v]
+        end.to_h
+
+        synonyms = s.delete("synonyms") || s.delete(:synonyms)
+        unless synonyms.nil? || synonyms.empty?
+          resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
+          AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if options[:synchronous]
+        end
+
+        resp = AlgoliaSearch.client.set_settings(index_name, Algolia::Search::IndexSettings.new(s))
+        AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if options[:synchronous]
+      end
+
+      return
+    end
+
     private
 
+    # TODO
     def algolia_configurations
       raise ArgumentError.new('No `algoliasearch` block found in your model.') if algoliasearch_settings.nil?
       if @configurations.nil?
@@ -843,7 +943,7 @@ module AlgoliaSearch
     def algoliasearch_settings_changed?(prev, current)
       return true if prev.nil?
       current.each do |k, v|
-        prev_v = prev[k.to_s]
+        prev_v = prev[k.to_sym]
         if v.is_a?(Array) and prev_v.is_a?(Array)
           # compare array of strings, avoiding symbols VS strings comparison
           return true if v.map { |x| x.to_s } != prev_v.map { |x| x.to_s }

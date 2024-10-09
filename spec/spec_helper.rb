@@ -32,8 +32,8 @@ RSpec.configure do |c|
   # Remove all indexes setup in this run in local or CI
   c.after(:suite) do
     safe_index_list.each do |i|
-      index = AlgoliaSearch.client.init_index(i['name'])
-      index.delete!
+      res = AlgoliaSearch.client.delete_index(i.name)
+      AlgoliaSearch.client.wait_for_task(i.name, res.task_id)
     end
   end
 end
@@ -48,7 +48,7 @@ end
 
 # get a list of safe indexes in local or CI
 def safe_index_list
-  list = AlgoliaSearch.client.list_indexes['items']
-  list = list.select { |index| index["name"].include?(SAFE_INDEX_PREFIX) }
-  list.sort_by { |index| index["primary"] || "" }
+  list = AlgoliaSearch.client.list_indices.items
+  list = list.select { |index| index.name.include?(SAFE_INDEX_PREFIX) }
+  list.sort_by { |index| index.primary || "" }
 end

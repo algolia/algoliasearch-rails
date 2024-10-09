@@ -37,8 +37,9 @@ module AlgoliaSearch
       @client
     end
 
+    # TODO
     def setup_client
-      @client = Algolia::Search::Client.new(Algolia::Search::Config.new(@@configuration), client_opts)
+      @client = Algolia::SearchClient.create(@@configuration[:application_id], @@configuration[:api_key])
     end
 
     def default_configuration

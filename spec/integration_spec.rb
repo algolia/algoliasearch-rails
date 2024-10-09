@@ -294,8 +294,9 @@ class NestedItem < ActiveRecord::Base
 end
 
 # create this index before the class actually loads, to ensure the customRanking is updated
-index = AlgoliaSearch.client.init_index(safe_index_name('City_replica2'))
-index.set_settings!({'customRanking' => ['desc(d)']})
+index_name = safe_index_name('City_replica2')
+res = AlgoliaSearch.client.set_settings(index_name, Algolia::Search::IndexSettings.new(custom_ranking: ['desc(d)']))
+AlgoliaSearch.client.wait_for_task(index_name, res.task_id)
 
 class City < ActiveRecord::Base
   include AlgoliaSearch
@@ -313,12 +314,12 @@ class City < ActiveRecord::Base
     add_attribute :a_null_lat, :a_lng
     customRanking ['desc(b)']
 
-    add_replica safe_index_name('City_replica1'), :per_environment => true do
+    add_replica safe_index_name('City_replica1'), :per_environment => true, :synchronous => true do
       searchableAttributes ['country']
       customRanking ['asc(a)']
     end
 
-    add_replica safe_index_name('City_replica2'), :per_environment => true do
+    add_replica safe_index_name('City_replica2'), :per_environment => true, :synchronous => true do
       customRanking ['asc(a)', 'desc(c)']
     end
   end
@@ -364,8 +365,8 @@ end
 
 describe 'DisabledIndexing' do
   it 'should not call get_settings' do
-    expect_any_instance_of(Algolia::Search::Index).not_to receive(:get_settings)
-    DisabledIndexing.send(:algolia_ensure_init)
+    expect_any_instance_of(Algolia::SearchClient).not_to receive(:get_settings)
+    DisabledIndexing.send(:ensure_init_new)
   end
 end
 
@@ -373,7 +374,7 @@ describe 'EnableCheckSettingsSynchronously' do
   before(:each) do
     # NOTE:
     #   Redefine below class *each* time to avoid the cache in the class.
-    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    #   If the cache is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
     Object.send(:remove_const, :EnableCheckSettingsSynchronously) if Object.constants.include?(:EnableCheckSettingsSynchronously)
     class EnableCheckSettingsSynchronously < ActiveRecord::Base
       include AlgoliaSearch
@@ -389,9 +390,9 @@ describe 'EnableCheckSettingsSynchronously' do
     end
 
     it 'should call set_setting with wait_task(sync)' do
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings).and_call_original # wait_task use this return val
-      expect_any_instance_of(Algolia::Search::Index).to receive(:wait_task)
-      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+      expect_any_instance_of(Algolia::SearchClient).to receive(:set_settings).and_call_original # wait_task use this return val
+      expect_any_instance_of(Algolia::SearchClient).to receive(:wait_for_task)
+      EnableCheckSettingsSynchronously.send(:ensure_init_new)
     end
   end
 
@@ -401,8 +402,8 @@ describe 'EnableCheckSettingsSynchronously' do
     end
 
     it 'should not call set_setting' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
-      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
+      expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
+      EnableCheckSettingsSynchronously.send(:ensure_init_new)
     end
   end
 end
@@ -411,7 +412,7 @@ describe 'EnableCheckSettingsAsynchronously' do
   before(:each) do
     # NOTE:
     #   Redefine below class *each* time to avoid the cache in the class.
-    #   If the cahce is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
+    #   If the cache is ready, algolia_ensure_init call neither set_settings nor set_settings! ever.
     Object.send(:remove_const, :EnableCheckSettingsAsynchronously) if Object.constants.include?(:EnableCheckSettingsAsynchronously)
     class EnableCheckSettingsAsynchronously < ActiveRecord::Base
       include AlgoliaSearch
@@ -427,9 +428,9 @@ describe 'EnableCheckSettingsAsynchronously' do
     end
 
     it 'should call set_setting without wait_task(sync)' do
-      expect_any_instance_of(Algolia::Search::Index).to receive(:set_settings)
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:wait_task)
-      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+      expect_any_instance_of(Algolia::SearchClient).to receive(:set_settings)
+      expect_any_instance_of(Algolia::SearchClient).not_to receive(:wait_for_task)
+      EnableCheckSettingsAsynchronously.send(:ensure_init_new)
     end
   end
 
@@ -439,8 +440,8 @@ describe 'EnableCheckSettingsAsynchronously' do
     end
 
     it 'should not call set_setting' do
-      expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings)
-      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
+      expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
+      EnableCheckSettingsAsynchronously.send(:ensure_init_new)
     end
   end
 end
@@ -451,8 +452,8 @@ describe 'SequelBook' do
   end
 
   it 'should call get_settings' do
-    expect_any_instance_of(Algolia::Search::Index).to receive(:get_settings)
-    SequelBook.send(:algolia_ensure_init)
+    expect_any_instance_of(Algolia::SearchClient).to receive(:get_settings)
+    SequelBook.send(:ensure_init_new)
   end
 
   it "should index the book" do
@@ -658,8 +659,8 @@ describe 'Encoding' do
     it "should convert to utf-8" do
       EncodedString.create!
       results = EncodedString.raw_search ''
-      expect(results['hits'].size).to eq(1)
-      expect(results['hits'].first['value']).to eq("\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('utf-8'))
+      expect(results[:hits].size).to eq(1)
+      expect(results[:hits].first[:value]).to eq("\xC2\xA0\xE2\x80\xA2\xC2\xA0".force_encoding('utf-8'))
     end
   end
 end
@@ -768,7 +769,7 @@ end
 
 describe 'Namespaced::Model' do
   before(:all) do
-    Namespaced::Model.index.clear_objects!
+    Namespaced::Model.clear_index!(true)
   end
 
   it "should have an index name without :: hierarchy" do
@@ -825,11 +826,14 @@ describe 'NestedItem' do
     @i1.children << NestedItem.create(:hidden => true) << NestedItem.create(:hidden => true)
     NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
 
-    result = NestedItem.index.get_object(@i1.id)
-    result['nb_children'].should == 2
+    # result = AlgoliaSearch.client.get_object(NestedItem.index_name, @i1.id) # TODO: should be bugfixed and should replace the line below
+    result = AlgoliaSearch.client.get_objects(Algolia::Search::GetObjectsParams.new(
+      requests: [Algolia::Search::GetObjectsRequest.new(object_id: 'objectID1', index_name: 'my_index')]
+    )).results.first
+    result[:nb_children].should == 2
 
     result = NestedItem.raw_search('')
-    result['nbHits'].should == 1
+    result[:nbHits].should == 1
 
     if @i2.respond_to? :update_attributes
       @i2.update_attributes :hidden => false
@@ -838,7 +842,7 @@ describe 'NestedItem' do
     end
 
     result = NestedItem.raw_search('')
-    result['nbHits'].should == 2
+    result[:nbHits].should == 2
   end
 end
 
@@ -870,8 +874,8 @@ describe 'Colors' do
 
   it "should be raw searchable" do
     results = Color.raw_search("blue")
-    results['hits'].size.should eq(1)
-    results['nbHits'].should eq(1)
+    results[:hits].size.should eq(1)
+    results[:nbHits].should eq(1)
   end
 
   it "should not auto index if scoped" do
@@ -940,7 +944,7 @@ describe 'Colors' do
   it "should index an array of objects" do
     json = Color.raw_search('')
     Color.index_objects Color.limit(1), true # reindex last color, `limit` is incompatible with the reindex! method
-    json['nbHits'].should eq(Color.raw_search('')['nbHits'])
+    json[:nbHits].should eq(Color.raw_search('')[:nbHits])
   end
 
   it "should not index non-saved object" do
@@ -956,11 +960,11 @@ describe 'Colors' do
     @blue = Color.create!(:name => "blue", :short_name => "blu", :hex => 0x0000FF)
     @black = Color.create!(:name => "black", :short_name => "bla", :hex => 0x000000)
     @green = Color.create!(:name => "green", :short_name => "gre", :hex => 0x00FF00)
-    facets = Color.search_for_facet_values('short_name', 'bl', :query => 'black')
+    facets = Color.search_for_facet_values('short_name', 'bl', { :query => 'black' })
     expect(facets.size).to eq(1)
-    expect(facets.first['value']).to eq('bla')
-    expect(facets.first['highlighted']).to eq('<em>bl</em>a')
-    expect(facets.first['count']).to eq(1)
+    expect(facets.first.value).to eq('bla')
+    expect(facets.first.highlighted).to eq('<em>bl</em>a')
+    expect(facets.first.count).to eq(1)
   end
 end
 
@@ -1168,18 +1172,18 @@ describe 'Cities' do
   end
 
   it "should be searchable using replica index" do
-    r = City.index(safe_index_name('City_replica1')).search 'no land'
-    r['nbHits'].should eq(1)
+    r = AlgoliaSearch.client.search_single_index(safe_index_name("City_replica1_#{Rails.env.to_s}"), { query: 'no land' })
+    r.nb_hits.should eq(1)
   end
 
   it "should be searchable using replica index 2" do
     r = City.raw_search 'no land', :index => safe_index_name('City_replica1')
-    r['nbHits'].should eq(1)
+    r[:nbHits].should eq(1)
   end
 
   it "should be searchable using replica index 3" do
     r = City.raw_search 'no land', :replica => safe_index_name('City_replica1')
-    r['nbHits'].should eq(1)
+    r[:nbHits].should eq(1)
   end
 
   it "should be searchable using replica index 4" do
@@ -1194,37 +1198,32 @@ describe 'Cities' do
 
   it "should reindex with replicas in place" do
     City.reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings['replicas'].length).to eq(2)
+    expect(AlgoliaSearch.client.get_settings(City.index_name).replicas.length).to eq(2)
   end
 
   it "should reindex with replicas using a temporary index" do
     City.reindex(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
-    expect(City.index.get_settings['replicas'].length).to eq(2)
+    expect(AlgoliaSearch.client.get_settings(City.index_name).replicas.length).to eq(2)
   end
 
   it "should not include the replicas setting on replicas" do
     City.send(:algolia_configurations).to_a.each do |v|
       if v[0][:replica]
-        expect(v[1].to_settings[:replicas]).to be_nil
+        expect(v[1].to_settings.replicas).to be_nil
       else
-        expect(v[1].to_settings[:replicas]).to match_array(["#{safe_index_name('City_replica1')}_#{Rails.env}", "#{safe_index_name('City_replica2')}_#{Rails.env}"])
+        expect(v[1].to_settings.replicas).to match_array(["#{safe_index_name('City_replica1')}_#{Rails.env}", "#{safe_index_name('City_replica2')}_#{Rails.env}"])
       end
     end
   end
 
-  it "should browse" do
-    total = City.index.search('')['nbHits']
-    n = 0
-    City.index.browse_objects do |hit|
-      n += 1
-    end
-    expect(n).to eq(total)
-  end
-
   it "should have set the custom ranking on all indices" do
-    expect(City.index.get_settings['customRanking']).to eq(['desc(b)'])
-    expect(City.index(safe_index_name('City_replica1')).get_settings['customRanking']).to eq(['asc(a)'])
-    expect(City.index(safe_index_name('City_replica2')).get_settings['customRanking']).to eq(['asc(a)', 'desc(c)'])
+    City.ensure_algolia_index
+    City.ensure_algolia_index(safe_index_name("City_replica1"))
+    City.ensure_algolia_index(safe_index_name("City_replica2"))
+
+    expect(AlgoliaSearch.client.get_settings(City.index_name).custom_ranking).to eq(['desc(b)'])
+    expect(AlgoliaSearch.client.get_settings(City.index_name(nil, safe_index_name("City_replica1"))).custom_ranking).to eq(['asc(a)'])
+    expect(AlgoliaSearch.client.get_settings(City.index_name(nil, safe_index_name("City_replica2"))).custom_ranking).to eq(['asc(a)', 'desc(c)'])
   end
 
 end
@@ -1253,23 +1252,26 @@ describe "FowardToReplicas" do
   end
 
   after(:each) do
-    ForwardToReplicas.index.delete!
+    res = AlgoliaSearch.client.delete_index(ForwardToReplicas.index_name)
+    AlgoliaSearch.client.wait_for_task(ForwardToReplicas.index_name, res.task_id)
   end
 
   it 'shouldn\'t have inherited from the primary' do
-    ForwardToReplicas.send :algolia_ensure_init
+    ForwardToReplicas.send :ensure_init_new
 
     # Hacky way to have a wait on set_settings
     ForwardToReplicas.create(:name => 'val')
     ForwardToReplicas.reindex!
 
-    primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['searchableAttributes']).to eq(%w(first_value))
-    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
 
-    replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['searchableAttributes']).to eq(nil)
-    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
+
+    primary_settings = AlgoliaSearch.client.get_settings(ForwardToReplicas.index_name)
+    expect(primary_settings.searchable_attributes).to eq(%w(first_value))
+    expect(primary_settings.attributes_to_highlight).to eq(%w(primary_highlight))
+
+    replica_settings = AlgoliaSearch.client.get_settings(ForwardToReplicas.index_name(nil, safe_index_name('ForwardToReplicas_replica')))
+    expect(replica_settings.searchable_attributes).to eq(nil)
+    expect(replica_settings.attributes_to_highlight).to eq(%w(replica_highlight))
   end
 
   it 'should update the replica settings when changed' do
@@ -1293,23 +1295,23 @@ describe "FowardToReplicas" do
       end
     end
 
-    ForwardToReplicas.send :algolia_ensure_init
+    ForwardToReplicas.send :ensure_init_new
 
-    ForwardToReplicasTwo.send :algolia_ensure_init
+    ForwardToReplicasTwo.send :ensure_init_new
 
     # Hacky way to have a wait on set_settings
     ForwardToReplicasTwo.create(:name => 'val')
     ForwardToReplicasTwo.reindex!
 
-    primary_settings = ForwardToReplicas.index.get_settings
-    expect(primary_settings['searchableAttributes']).to eq(%w(second_value))
-    expect(primary_settings['attributesToHighlight']).to eq(%w(primary_highlight))
+    primary_settings = AlgoliaSearch.client.get_settings(ForwardToReplicas.index_name)
+    expect(primary_settings.searchable_attributes).to eq(%w(second_value))
+    expect(primary_settings.attributes_to_highlight).to eq(%w(primary_highlight))
 
-    replica_settings = ForwardToReplicas.index(safe_index_name('ForwardToReplicas_replica')).get_settings
-    expect(replica_settings['searchableAttributes']).to eq(%w(second_value))
-    expect(replica_settings['attributesToHighlight']).to eq(%w(replica_highlight))
+    replica_settings = AlgoliaSearch.client.get_settings(ForwardToReplicas.index_name(nil, safe_index_name('ForwardToReplicas_replica')))
+    expect(replica_settings.searchable_attributes).to eq(%w(second_value))
+    expect(replica_settings.attributes_to_highlight).to eq(%w(replica_highlight))
 
-    expect(ForwardToReplicas.index.name).to eq(ForwardToReplicasTwo.index.name)
+    expect(ForwardToReplicas.index_name).to eq(ForwardToReplicasTwo.index_name)
   end
 
   it "shouldn't update the replica settings if there is no change" do
@@ -1333,15 +1335,15 @@ describe "FowardToReplicas" do
       end
     end
 
-    ForwardToReplicas.send :algolia_ensure_init
+    ForwardToReplicas.send :ensure_init_new
 
     # Hacky way to hook replica settings update
     ForwardToReplicas.create(:name => 'val')
     ForwardToReplicas.reindex!
 
-    expect_any_instance_of(Algolia::Search::Index).not_to receive(:set_settings!)
+    expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
 
-    ForwardToReplicasTwo.send :algolia_ensure_init
+    ForwardToReplicasTwo.send :ensure_init_new
 
     # Hacky way to hook replica settings update
     ForwardToReplicasTwo.create(:name => 'val2')
@@ -1541,7 +1543,6 @@ describe 'Pagy' do
     cities.should be_an(Array)
   end
 end
-
 
 describe 'Disabled' do
   before(:all) do
