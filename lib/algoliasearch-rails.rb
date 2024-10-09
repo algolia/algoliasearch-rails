@@ -697,7 +697,18 @@ module AlgoliaSearch
                    params.delete('index') ||
                    params.delete(:replica) ||
                    params.delete('replica')
-      index_name = algolia_index_name(algoliasearch_options, index_name_base)
+
+      opts = algoliasearch_options
+      unless index_name_base.nil?
+        algolia_configurations.each do |o, s|
+          if o[:index_name].to_s == index_name_base.to_s
+            opts = o
+            ensure_algolia_index(index_name_base)
+          end
+        end
+      end
+
+      index_name = algolia_index_name(opts, index_name_base)
       AlgoliaSearch.client.search_single_index(index_name,Hash[params.to_h.map { |k,v| [k.to_s, v.to_s] }].merge({query: q})).to_hash
     end
 

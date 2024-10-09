@@ -542,11 +542,11 @@ class SubReplicas < ActiveRecord::Base
     searchableAttributes ['name']
     customRanking ["asc(name)"]
 
-    add_index safe_index_name("Additional_Index"), :per_environment => true do
+    add_index safe_index_name("Additional_Index"), :per_environment => true, :synchronous => true do
       searchableAttributes ['name']
       customRanking ["asc(name)"]
 
-      add_replica safe_index_name("Replica_Index"), :per_environment => true do
+      add_replica safe_index_name("Replica_Index"), :per_environment => true, :synchronous => true do
         searchableAttributes ['name']
         customRanking ["desc(name)"]
       end
