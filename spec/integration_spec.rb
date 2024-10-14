@@ -826,10 +826,7 @@ describe 'NestedItem' do
     @i1.children << NestedItem.create(:hidden => true) << NestedItem.create(:hidden => true)
     NestedItem.where(:id => [@i1.id, @i2.id]).reindex!(AlgoliaSearch::IndexSettings::DEFAULT_BATCH_SIZE, true)
 
-    # result = AlgoliaSearch.client.get_object(NestedItem.index_name, @i1.id) # TODO: should be bugfixed and should replace the line below
-    result = AlgoliaSearch.client.get_objects(Algolia::Search::GetObjectsParams.new(
-      requests: [Algolia::Search::GetObjectsRequest.new(object_id: 'objectID1', index_name: 'my_index')]
-    )).results.first
+    result = AlgoliaSearch.client.get_object(NestedItem.index_name, @i1.id.to_s)
     result[:nb_children].should == 2
 
     result = NestedItem.raw_search('')
