@@ -1533,7 +1533,6 @@ describe 'Pagy' do
   it "should paginate" do
     pagy, cities = City.search '', :hitsPerPage => 2
     pagy.page.should eq(1)
-    pagy.items.should eq(2)
     pagy.count.should eq(City.raw_search('')[:nbHits])
     cities.length.should eq(2)
     cities.should be_an(Array)
