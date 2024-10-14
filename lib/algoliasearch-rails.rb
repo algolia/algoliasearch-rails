@@ -378,7 +378,6 @@ module AlgoliaSearch
         alias_method :raw_search, :algolia_raw_search unless method_defined? :raw_search
         alias_method :search_facet, :algolia_search_facet unless method_defined? :search_facet
         alias_method :search_for_facet_values, :algolia_search_for_facet_values unless method_defined? :search_for_facet_values
-        alias_method :index, :algolia_index unless method_defined? :index
         alias_method :index_name, :algolia_index_name unless method_defined? :index_name
         alias_method :must_reindex?, :algolia_must_reindex? unless method_defined? :must_reindex?
       end
@@ -779,17 +778,6 @@ module AlgoliaSearch
 
     # deprecated (renaming)
     alias :algolia_search_facet :algolia_search_for_facet_values
-
-    # TODO
-    def algolia_index(name = nil)
-      if name
-        algolia_configurations.each do |o, s|
-          return algolia_ensure_init(o, s) if o[:index_name].to_s == name.to_s
-        end
-        raise ArgumentError.new("Invalid index/replica name: #{name}")
-      end
-      algolia_ensure_init
-    end
 
     def ensure_algolia_index(name = nil)
       if name
