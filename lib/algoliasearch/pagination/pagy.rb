@@ -13,7 +13,13 @@ module AlgoliaSearch
           items: options[:per_page]
         }
 
-        pagy = ::Pagy.new(vars)
+        pagy_version = Gem::Version.new(::Pagy::VERSION)
+        pagy = if pagy_version >= 9
+                 ::Pagy.new(**vars)
+               else
+                 ::Pagy.new(vars)
+               end
+
         [pagy, results]
       end
     end
