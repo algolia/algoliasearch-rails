@@ -33,7 +33,7 @@ aliases:
 
 references:
   default_docker_ruby_executor: &default_docker_ruby_executor
-    image: circleci/ruby:<< parameters.version >>
+    image: cimg/ruby:<< parameters.version >>
     environment:
       BUNDLE_JOBS: 3
       BUNDLE_RETRY: 3
