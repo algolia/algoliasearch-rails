@@ -179,11 +179,9 @@ module AlgoliaSearch
 
       if @options[:sanitize]
         sanitizer = begin
-          ::Rails::Html::Sanitizer.new
+          ::Rails::HTML5::FullSanitizer.new
         rescue NameError
           ::Rails::HTML::FullSanitizer.new
-        rescue NameError
-          ::HTML::FullSanitizer.new
         end
         attributes = sanitize_attributes(attributes, sanitizer)
       end
