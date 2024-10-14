@@ -8,7 +8,7 @@ aliases:
 
   - &install_sqlite
     name: Install SQLite
-    command: apt-get install libsqlite3-dev
+    command: sudo apt-get update && sudo apt-get install -y sqlite3 libsqlite3-dev
 
   - &check_bundler
     name: Which bundler?
