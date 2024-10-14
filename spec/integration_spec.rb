@@ -1434,24 +1434,11 @@ describe 'Book' do
   it "should sanitize attributes" do
     @hack = Book.create! :name => "\"><img src=x onerror=alert(1)> hack0r", :author => "<script type=\"text/javascript\">alert(1)</script>", :premium => true, :released => true
     b = Book.raw_search('hack')
+
     expect(b[:hits].length).to eq(1)
-    begin
-      expect(b[:hits][0][:name]).to eq('"> hack0r')
-      expect(b[:hits][0][:author]).to eq('alert(1)')
-      expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
-    rescue
-      # rails 4.2's sanitizer
-      begin
-        expect(b[:hits][0][:name]).to eq('&quot;&gt; hack0r')
-        expect(b[:hits][0][:author]).to eq('')
-        expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
-      rescue
-        # jruby
-        expect(b[:hits][0][:name]).to eq('"&gt; hack0r')
-        expect(b[:hits][0][:author]).to eq('')
-        expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"&gt; <em>hack</em>0r')
-      end
-    end
+    expect(b[:hits][0][:name]).to eq('"&gt; hack0r')
+    expect(b[:hits][0][:author]).to eq('alert(1)')
+    expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
   end
 
   it "should handle removal in an extra index" do
