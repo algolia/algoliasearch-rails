@@ -176,16 +176,7 @@ module AlgoliaSearch
       end
 
       attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
-
-      if @options[:sanitize]
-        sanitizer = if Rails::VERSION::MAJOR >= 7
-          Rails::Html::Sanitizer.new
-        else
-          Rails::Html::FullSanitizer.new
-        end
-
-        attributes = sanitize_attributes(attributes, sanitizer)
-      end
+      attributes = sanitize_attributes(attributes, Rails::Html::FullSanitizer.new) if @options[:sanitize]
 
       if @options[:force_utf8_encoding] && Object.const_defined?(:RUBY_VERSION) && RUBY_VERSION.to_f > 1.8
         attributes = encode_attributes(attributes)
