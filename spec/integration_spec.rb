@@ -1437,8 +1437,8 @@ describe 'Book' do
 
     expect(b[:hits].length).to eq(1)
     expect(b[:hits][0][:name]).to eq('"&gt; hack0r')
-    expect(b[:hits][0][:author]).to eq('alert(1)')
-    expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"> <em>hack</em>0r')
+    expect(b[:hits][0][:author]).to eq('')
+    expect(b[:hits][0][:_highlightResult][:name][:value]).to eq('"&gt; <em>hack</em>0r')
   end
 
   it "should handle removal in an extra index" do
