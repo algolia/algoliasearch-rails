@@ -6,6 +6,10 @@ aliases:
         curl -s https://algoliasearch-client-keygen.herokuapp.com | sh >> $BASH_ENV
       fi
 
+  - &install_sqlite
+    name: Install SQLite
+    command: apt-get install libsqlite3-dev
+
   - &check_bundler
     name: Which bundler?
     command: bundle -v
@@ -57,6 +61,7 @@ jobs:
       - *default_docker_ruby_executor
     steps:
       - checkout
+      - run: *install_sqlite
       - run: *check_bundler
       - restore_cache: *restore_cache
       - run: *install_bundler
