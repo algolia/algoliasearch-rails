@@ -366,7 +366,7 @@ end
 describe 'DisabledIndexing' do
   it 'should not call get_settings' do
     expect_any_instance_of(Algolia::SearchClient).not_to receive(:get_settings)
-    DisabledIndexing.send(:ensure_init_new)
+    DisabledIndexing.send(:algolia_ensure_init)
   end
 end
 
@@ -392,7 +392,7 @@ describe 'EnableCheckSettingsSynchronously' do
     it 'should call set_setting with wait_task(sync)' do
       expect_any_instance_of(Algolia::SearchClient).to receive(:set_settings).and_call_original # wait_task use this return val
       expect_any_instance_of(Algolia::SearchClient).to receive(:wait_for_task)
-      EnableCheckSettingsSynchronously.send(:ensure_init_new)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
   end
 
@@ -403,7 +403,7 @@ describe 'EnableCheckSettingsSynchronously' do
 
     it 'should not call set_setting' do
       expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
-      EnableCheckSettingsSynchronously.send(:ensure_init_new)
+      EnableCheckSettingsSynchronously.send(:algolia_ensure_init)
     end
   end
 end
@@ -430,7 +430,7 @@ describe 'EnableCheckSettingsAsynchronously' do
     it 'should call set_setting without wait_task(sync)' do
       expect_any_instance_of(Algolia::SearchClient).to receive(:set_settings)
       expect_any_instance_of(Algolia::SearchClient).not_to receive(:wait_for_task)
-      EnableCheckSettingsAsynchronously.send(:ensure_init_new)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
   end
 
@@ -441,7 +441,7 @@ describe 'EnableCheckSettingsAsynchronously' do
 
     it 'should not call set_setting' do
       expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
-      EnableCheckSettingsAsynchronously.send(:ensure_init_new)
+      EnableCheckSettingsAsynchronously.send(:algolia_ensure_init)
     end
   end
 end
@@ -453,7 +453,7 @@ describe 'SequelBook' do
 
   it 'should call get_settings' do
     expect_any_instance_of(Algolia::SearchClient).to receive(:get_settings)
-    SequelBook.send(:ensure_init_new)
+    SequelBook.send(:algolia_ensure_init)
   end
 
   it "should index the book" do
@@ -1254,7 +1254,7 @@ describe "FowardToReplicas" do
   end
 
   it 'shouldn\'t have inherited from the primary' do
-    ForwardToReplicas.send :ensure_init_new
+    ForwardToReplicas.send :algolia_ensure_init
 
     # Hacky way to have a wait on set_settings
     ForwardToReplicas.create(:name => 'val')
@@ -1292,9 +1292,9 @@ describe "FowardToReplicas" do
       end
     end
 
-    ForwardToReplicas.send :ensure_init_new
+    ForwardToReplicas.send :algolia_ensure_init
 
-    ForwardToReplicasTwo.send :ensure_init_new
+    ForwardToReplicasTwo.send :algolia_ensure_init
 
     # Hacky way to have a wait on set_settings
     ForwardToReplicasTwo.create(:name => 'val')
@@ -1332,7 +1332,7 @@ describe "FowardToReplicas" do
       end
     end
 
-    ForwardToReplicas.send :ensure_init_new
+    ForwardToReplicas.send :algolia_ensure_init
 
     # Hacky way to hook replica settings update
     ForwardToReplicas.create(:name => 'val')
@@ -1340,7 +1340,7 @@ describe "FowardToReplicas" do
 
     expect_any_instance_of(Algolia::SearchClient).not_to receive(:set_settings)
 
-    ForwardToReplicasTwo.send :ensure_init_new
+    ForwardToReplicasTwo.send :algolia_ensure_init
 
     # Hacky way to hook replica settings update
     ForwardToReplicasTwo.create(:name => 'val2')
@@ -1543,9 +1543,9 @@ end
 
 describe 'Disabled' do
   before(:all) do
-    DisabledBoolean.send(:ensure_init_new)
-    DisabledProc.send(:ensure_init_new)
-    DisabledSymbol.send(:ensure_init_new)
+    DisabledBoolean.send(:algolia_ensure_init)
+    DisabledProc.send(:algolia_ensure_init)
+    DisabledSymbol.send(:algolia_ensure_init)
   end
 
   it "should disable the indexing using a boolean" do
