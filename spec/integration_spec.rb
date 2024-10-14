@@ -1558,24 +1558,24 @@ end
 
 describe 'Disabled' do
   before(:all) do
-    DisabledBoolean.index.clear_objects!
-    DisabledProc.index.clear_objects!
-    DisabledSymbol.index.clear_objects!
+    DisabledBoolean.send(:ensure_init_new)
+    DisabledProc.send(:ensure_init_new)
+    DisabledSymbol.send(:ensure_init_new)
   end
 
   it "should disable the indexing using a boolean" do
     DisabledBoolean.create :name => 'foo'
-    expect(DisabledBoolean.search('').size).to eq(0)
+    expect { DisabledBoolean.search('') }.to raise_error Algolia::AlgoliaHttpError # index doesn't exist
   end
 
   it "should disable the indexing using a proc" do
     DisabledProc.create :name => 'foo'
-    expect(DisabledProc.search('').size).to eq(0)
+    expect { DisabledProc.search('') }.to raise_error Algolia::AlgoliaHttpError # index doesn't exist
   end
 
   it "should disable the indexing using a symbol" do
     DisabledSymbol.create :name => 'foo'
-    expect(DisabledSymbol.search('').size).to eq(0)
+    expect { DisabledSymbol.search('') }.to raise_error Algolia::AlgoliaHttpError # index doesn't exist
   end
 end
 
