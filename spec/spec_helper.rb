@@ -32,8 +32,12 @@ RSpec.configure do |c|
   # Remove all indexes setup in this run in local or CI
   c.after(:suite) do
     safe_index_list.each do |i|
-      res = AlgoliaSearch.client.delete_index(i.name)
-      AlgoliaSearch.client.wait_for_task(i.name, res.task_id)
+      begin
+        res = AlgoliaSearch.client.delete_index(i.name)
+        AlgoliaSearch.client.wait_for_task(i.name, res.task_id)
+      rescue
+        # fail gracefully
+      end
     end
   end
 end
