@@ -1387,10 +1387,10 @@ describe "VirtualReplicas" do
       if v[0][:replica]
         expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_replica"))
         expect(v[0][:virtual]).to eq(true)
-        expect(v[1].to_settings[:replicas]).to be_nil
+        expect(v[1].to_settings.replicas).to be_nil
       else
         expect(v[0][:index_name]).to eq(safe_index_name("VirtualReplica_primary"))
-        expect(v[1].to_settings[:replicas]).to match_array(["virtual(#{safe_index_name("VirtualReplica_replica")})"])
+        expect(v[1].to_settings.replicas).to match_array(["virtual(#{safe_index_name("VirtualReplica_replica")})"])
       end
     end
   end
