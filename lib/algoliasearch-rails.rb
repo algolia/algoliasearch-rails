@@ -496,7 +496,7 @@ module AlgoliaSearch
         if options[:check_settings] == false && master_exists
           task_id = AlgoliaSearch.client.operation_index(
             index_name,
-            Algolia::Search::OperationIndexParams.new(operation: "copy", destination: tmp_index_name, scope: %w[settings synonyms rules])
+            Algolia::Search::OperationIndexParams.new(operation: Algolia::Search::OperationType::COPY, destination: tmp_index_name, scope: %w[settings synonyms rules])
           ).task_id
           AlgoliaSearch.client.wait_for_task(index_name, task_id)
         end
@@ -538,11 +538,11 @@ module AlgoliaSearch
         synonyms = s.delete("synonyms") || s.delete(:synonyms)
         unless synonyms.nil? || synonyms.empty?
           resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
-          AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if synchronous
+          AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if synchronous || options[:synchronous]
         end
 
         resp = AlgoliaSearch.client.set_settings(index_name, Algolia::Search::IndexSettings.new(s))
-        AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if synchronous
+        AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if synchronous || options[:synchronous]
       end
     end
 
