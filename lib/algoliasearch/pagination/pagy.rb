@@ -5,7 +5,6 @@ end
 module AlgoliaSearch
   module Pagination
     class Pagy
-      include Pagy::Backend if defined? Pagy::Backend
 
       def self.create(results, total_hits, options = {})
         vars = {
@@ -14,7 +13,8 @@ module AlgoliaSearch
           items: options[:per_page]
         }
 
-        pagy(results, vars)
+        pagy = ::Pagy.new(vars)
+        [pagy, results]
       end
     end
 
