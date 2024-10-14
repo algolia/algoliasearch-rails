@@ -1406,6 +1406,8 @@ describe 'MongoObject' do
 end
 
 describe 'Book' do
+  require 'rails-html-sanitizer'
+
   before(:all) do
     Book.clear_index!(true)
     index_name_author =  Book.index_name(nil, safe_index_name('BookAuthor'))
