@@ -14,7 +14,7 @@ module AlgoliaSearch
         }
 
         pagy_version = Gem::Version.new(::Pagy::VERSION)
-        pagy = if pagy_version >= 9
+        pagy = if pagy_version >= Gem::Version.new('9.0')
                  ::Pagy.new(**vars)
                else
                  ::Pagy.new(vars)
