@@ -178,11 +178,12 @@ module AlgoliaSearch
       attributes.merge!(attributes_to_hash(@additional_attributes, object)) if @additional_attributes
 
       if @options[:sanitize]
-        sanitizer = begin
-          ::Rails::Html::FullSanitizer.new
-        rescue NameError
-          ::HTML::FullSanitizer.new
+        sanitizer = if Rails::VERSION::MAJOR >= 7
+          Rails::Html::Sanitizer.new
+        else
+          Rails::Html::FullSanitizer.new
         end
+
         attributes = sanitize_attributes(attributes, sanitizer)
       end
 
