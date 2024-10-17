@@ -79,7 +79,7 @@ Gem::Specification.new do |s|
 
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_runtime_dependency(%q<json>, [">= 1.5.1"])
-      s.add_runtime_dependency(%q<algolia>, [">= 3.5.0"])
+      s.add_runtime_dependency(%q<algolia>, [">= 3.5.2"])
       s.add_development_dependency(%q<will_paginate>, [">= 2.3.15"])
       s.add_development_dependency(%q<kaminari>, [">= 0"])
       s.add_development_dependency(%q<pagy>, [">= 0"])
@@ -87,7 +87,7 @@ Gem::Specification.new do |s|
       s.add_development_dependency "rdoc"
     else
       s.add_dependency(%q<json>, [">= 1.5.1"])
-      s.add_dependency(%q<algolia>, [">= 3.5.0"])
+      s.add_dependency(%q<algolia>, [">= 3.5.2"])
     end
   else
     s.add_dependency(%q<json>, [">= 1.5.1"])
