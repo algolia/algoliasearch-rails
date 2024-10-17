@@ -91,7 +91,7 @@ Gem::Specification.new do |s|
     end
   else
     s.add_dependency(%q<json>, [">= 1.5.1"])
-    s.add_dependency(%q<algolia>, ["< 3.0.0"])
+    s.add_dependency(%q<algolia>, [">= 3.5.2"])
   end
 end
 
