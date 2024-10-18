@@ -1,7 +1,7 @@
 source "http://rubygems.org"
 
 gem 'json', '>= 1.5.1'
-gem 'algolia', '< 3.0.0'
+gem 'algolia', '>= 3.5.2'
 
 if defined?(RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
   gem 'rubysl', '~> 2.0', :platform => :rbx
@@ -16,7 +16,7 @@ group :test do
   else
     gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
   end
-  gem 'rspec', '>= 2.5.0', '< 3.0'
+  gem 'rspec', '~> 3.0'
   gem 'jdbc-sqlite3', :platform => :jruby
   gem 'activerecord-jdbc-adapter', :platform => :jruby
   gem 'activerecord-jdbcsqlite3-adapter', :platform => :jruby
@@ -27,7 +27,7 @@ group :test do
 end
 
 group :development do
-  gem 'rake', '~> 10.1.0'
+  gem 'rake', '>= 10.1.0'
   gem 'rdoc'
 end
 

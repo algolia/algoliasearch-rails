@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/2.2.1...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.0...master)
+
+## [3.0.0](https://github.com/algolia/algoliasearch-rails/compare/2.3.2...3.0.0)
+This new major version leverages the latest version of the Ruby Algolia API client. It also drops (official) support for Rails 5.x and Ruby versions older than 2.5
+For a list of known breaking changes, please refer to [the upgrade guide](./UPGRADING_TO_V3.MD)
 
 ## [2.3.2](https://github.com/algolia/algoliasearch-rails/compare/2.3.1...2.3.2)
 ### Added

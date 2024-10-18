@@ -5,6 +5,7 @@ end
 module AlgoliaSearch
   module Pagination
     class Pagy
+
       def self.create(results, total_hits, options = {})
         vars = {
           count: total_hits,
@@ -12,7 +13,13 @@ module AlgoliaSearch
           items: options[:per_page]
         }
 
-        pagy = ::Pagy.new(vars)
+        pagy_version = Gem::Version.new(::Pagy::VERSION)
+        pagy = if pagy_version >= Gem::Version.new('9.0')
+                 ::Pagy.new(**vars)
+               else
+                 ::Pagy.new(vars)
+               end
+
         [pagy, results]
       end
     end
