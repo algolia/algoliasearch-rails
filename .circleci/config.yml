@@ -74,12 +74,14 @@ workflows:
   ci:
     jobs:
       - test:
+          name: "Ruby << matrix.version >> - Rails << matrix.rails-version >>"
           matrix:
             parameters:
               version: [ '2.5', '2.6', '2.7', '3.0', '3.1' ]
               rails-version: [ '6.0', '6.1' ]
               sequel-version: [ '5.0' ]
       - test:
+          name: "Ruby << matrix.version >> - Rails << matrix.rails-version >>"
           matrix:
             parameters:
               version: ['3.0', '3.1']
