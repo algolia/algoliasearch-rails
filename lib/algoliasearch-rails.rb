@@ -461,7 +461,8 @@ module AlgoliaSearch
             end
             attributes.merge 'objectID' => algolia_object_id_of(o, options)
           end
-          last_task = AlgoliaSearch.client.save_objects(index_name, objects).last&.task_id
+          save_tasks = AlgoliaSearch.client.save_objects(index_name, objects)
+          last_task = save_tasks.present? ? save_tasks.last.task_id : nil
         end
         AlgoliaSearch.client.wait_for_task(index_name, last_task) if last_task and (synchronous || options[:synchronous])
       end
