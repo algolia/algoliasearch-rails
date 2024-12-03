@@ -2,6 +2,11 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.0...master)
 
+## [3.0.1](https://github.com/algolia/algoliasearch-rails/compare/3.0.0...3.0.1)
+### Fixed
+* Ensure init when `check_settings=true` for atomic reindexes [`#453`](https://github.com/algolia/algoliasearch-rails/pull/453)
+* Fix last task_id when no tasks to save [`#452`](https://github.com/algolia/algoliasearch-rails/pull/452)
+
 ## [3.0.0](https://github.com/algolia/algoliasearch-rails/compare/2.3.2...3.0.0)
 This new major version leverages the latest version of the Ruby Algolia API client. It also drops (official) support for Rails 5.x and Ruby versions older than 2.5
 For a list of known breaking changes, please refer to [the upgrade guide](./UPGRADING_TO_V3.MD)
