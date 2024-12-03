@@ -500,6 +500,8 @@ module AlgoliaSearch
             Algolia::Search::OperationIndexParams.new(operation: Algolia::Search::OperationType::COPY, destination: tmp_index_name, scope: %w[settings synonyms rules])
           ).task_id
           AlgoliaSearch.client.wait_for_task(index_name, task_id)
+        else
+          algolia_ensure_init(tmp_options, tmp_settings, master_settings)
         end
 
         algolia_find_in_batches(batch_size) do |group|
