@@ -517,6 +517,8 @@ class Ebook < ActiveRecord::Base
     searchableAttributes ['name']
   end
 
+  private
+
   def algolia_dirty?
     return true if self.published_at.nil? || self.current_time.nil?
     # Consider dirty if published date is in the past
