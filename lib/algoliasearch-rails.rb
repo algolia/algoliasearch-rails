@@ -769,10 +769,11 @@ module AlgoliaSearch
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
 
-      return if @algolia_indexes_init[settings]
-
       index_name = algolia_index_name(options)
 
+      return if @algolia_indexes_init[index_name]
+      
+      @algolia_indexes_init[index_name] = settings
 
       index_settings_hash ||= settings.to_settings.to_hash
       index_settings_hash = options[:primary_settings].to_settings.to_hash.merge(index_settings_hash) if options[:inherit]
