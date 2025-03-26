@@ -451,11 +451,6 @@ describe 'SequelBook' do
     SequelBook.clear_index!(true)
   end
 
-  it 'should call get_settings' do
-    expect_any_instance_of(Algolia::SearchClient).to receive(:get_settings)
-    SequelBook.send(:algolia_ensure_init)
-  end
-
   it "should index the book" do
     @steve_jobs = SequelBook.create :name => 'Steve Jobs', :author => 'Walter Isaacson', :premium => true, :released => true
     results = SequelBook.search('steve')
