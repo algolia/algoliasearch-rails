@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.0...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.2...master)
+
+## [3.0.2](https://github.com/algolia/algoliasearch-rails/compare/3.0.1...3.0.2)
+### Fixed
+* Avoid re-initializing index [`#457`](https://github.com/algolia/algoliasearch-rails/pull/457)
 
 ## [3.0.1](https://github.com/algolia/algoliasearch-rails/compare/3.0.0...3.0.1)
 ### Fixed
