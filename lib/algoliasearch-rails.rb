@@ -540,7 +540,7 @@ module AlgoliaSearch
 
         synonyms = s.delete("synonyms") || s.delete(:synonyms)
         unless synonyms.nil? || synonyms.empty?
-          resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
+          resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({algolia_object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
           AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if synchronous || options[:synchronous]
         end
 
@@ -769,10 +769,11 @@ module AlgoliaSearch
       options ||= algoliasearch_options
       settings ||= algoliasearch_settings
 
-      return if @algolia_indexes_init[settings]
-
       index_name = algolia_index_name(options)
 
+      return if @algolia_indexes_init[index_name]
+      
+      @algolia_indexes_init[index_name] = settings
 
       index_settings_hash ||= settings.to_settings.to_hash
       index_settings_hash = options[:primary_settings].to_settings.to_hash.merge(index_settings_hash) if options[:inherit]
@@ -792,7 +793,7 @@ module AlgoliaSearch
 
         synonyms = s.delete("synonyms") || s.delete(:synonyms)
         unless synonyms.nil? || synonyms.empty?
-          resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
+          resp = AlgoliaSearch.client.save_synonyms(index_name,synonyms.map {|s| Algolia::Search::SynonymHit.new({algolia_object_id: s.join("-"), synonyms: s, type: "synonym"}) } )
           AlgoliaSearch.client.wait_for_task(index_name, resp.task_id) if options[:synchronous]
         end
 
