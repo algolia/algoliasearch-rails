@@ -274,7 +274,7 @@ module AlgoliaSearch
       raise ArgumentError.new('Options auto_index and auto_remove cannot be set on nested indexes') if options[:auto_index] || options[:auto_remove]
       @additional_indexes ||= {}
       options[:index_name] = index_name
-      @additional_indexes[options] = IndexSettings.new(options, &block)
+      @additional_indexes[options] = AlgoliaSearch::IndexSettings.new(options, &block)
     end
 
     def add_replica(index_name, options = {}, &block)
@@ -320,7 +320,7 @@ module AlgoliaSearch
     end
 
     def algoliasearch(options = {}, &block)
-      self.algoliasearch_settings = IndexSettings.new(options, &block)
+      self.algoliasearch_settings = AlgoliaSearch::IndexSettings.new(options, &block)
       self.algoliasearch_options = { :type => algolia_full_const_get(model_name.to_s), :per_page => algoliasearch_settings.get_setting(:hitsPerPage) || 10, :page => 1 }.merge(options)
 
       attr_accessor :highlight_result, :snippet_result
