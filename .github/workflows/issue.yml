@@ -36,10 +36,10 @@ jobs:
                     id: '10001'
                   },
                   parent: {
-                    key: 'DI-1911'
+                    key: 'API-1'
                   },
                   project: {
-                    id: '10118'
+                    id: '11316'
                   },
                   summary: `[GH-ISSUE] ${title}`
                 },
