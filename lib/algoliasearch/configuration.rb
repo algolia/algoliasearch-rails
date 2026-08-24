@@ -21,6 +21,10 @@ module AlgoliaSearch
       @client
     end
 
+    def client=(client)
+      @client = client
+    end
+
     def setup_client
       @client = Algolia::SearchClient.create(
         @@configuration[:application_id],
@@ -31,7 +35,7 @@ module AlgoliaSearch
             "Rails (#{defined?(::Rails::VERSION::STRING) ? ::Rails::VERSION::STRING : 'unknown'})",
             @@configuration[:append_to_user_agent]
           ].compact
-        })
+        }.merge(@@configuration.slice(:connect_timeout, :read_timeout, :write_timeout)))
     end
 
     def default_configuration
