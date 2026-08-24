@@ -33,8 +33,9 @@ RSpec.configure do |c|
   c.after(:suite) do
     begin
       indexes = safe_index_list
-    rescue
+    rescue => e
       # no reachable app (e.g. running unit specs without real credentials), nothing to clean up
+      warn "skipping index cleanup: #{e.message}"
       next
     end
     indexes.each do |i|

@@ -11,7 +11,14 @@ describe AlgoliaSearch::Configuration do
 
   after(:each) do
     AlgoliaSearch.instance_variable_set :@client, @previous_client
-    AlgoliaSearch.configuration = @previous_configuration unless @previous_configuration.nil?
+    if @previous_configuration.nil?
+      # the configuration was not set before this example, leave none behind
+      if AlgoliaSearch::Configuration.class_variable_defined?(:@@configuration)
+        AlgoliaSearch::Configuration.remove_class_variable(:@@configuration)
+      end
+    else
+      AlgoliaSearch.configuration = @previous_configuration
+    end
   end
 
   it "should expose the client writer documented in the Rails setup guide" do
