@@ -31,7 +31,14 @@ RSpec.configure do |c|
 
   # Remove all indexes setup in this run in local or CI
   c.after(:suite) do
-    safe_index_list.each do |i|
+    begin
+      indexes = safe_index_list
+    rescue => e
+      # no reachable app (e.g. running unit specs without real credentials), nothing to clean up
+      warn "skipping index cleanup: #{e.message}"
+      next
+    end
+    indexes.each do |i|
       begin
         res = AlgoliaSearch.client.delete_index(i.name)
         AlgoliaSearch.client.wait_for_task(i.name, res.task_id)
