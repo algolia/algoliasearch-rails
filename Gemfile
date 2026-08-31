@@ -10,6 +10,8 @@ end
 group :test do
   rails_version = ENV["RAILS_VERSION"] || '6.1'
   gem 'rails', "~> #{rails_version}"
+  # strscan 3.1.6+ references rb_deprecate_constant, which the CI ruby 2.5 build does not export
+  gem 'strscan', '< 3.1.6' if RUBY_VERSION < '2.6'
   gem 'active_model_serializers'
   if Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
     gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
