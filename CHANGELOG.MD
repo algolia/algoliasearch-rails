@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.2...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.3...master)
+
+## [3.0.3](https://github.com/algolia/algoliasearch-rails/compare/3.0.2...3.0.3)
+### Fixed
+* Add the documented `AlgoliaSearch.client=` writer and forward timeout configuration to the client [`#462`](https://github.com/algolia/algoliasearch-rails/pull/462)
 
 ## [3.0.2](https://github.com/algolia/algoliasearch-rails/compare/3.0.1...3.0.2)
 ### Fixed
