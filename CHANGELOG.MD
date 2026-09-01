@@ -1,6 +1,10 @@
 # CHANGELOG
 
-## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.3...master)
+## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.4...master)
+
+## [3.0.4](https://github.com/algolia/algoliasearch-rails/compare/3.0.3...3.0.4)
+### Fixed
+* Make the gemspec buildable with modern RubyGems by removing `Gemfile.lock` and bare directory entries from `s.files` and dropping the stale hardcoded `s.rubygems_version` [`#464`](https://github.com/algolia/algoliasearch-rails/pull/464)
 
 ## [3.0.3](https://github.com/algolia/algoliasearch-rails/compare/3.0.2...3.0.3)
 ### Fixed
