@@ -23,7 +23,6 @@ Gem::Specification.new do |s|
     ".rspec",
     "CHANGELOG.MD",
     "Gemfile",
-    "Gemfile.lock",
     "LICENSE",
     "README.md",
     "Rakefile",
@@ -53,14 +52,12 @@ Gem::Specification.new do |s|
     "vendor/assets/javascripts/algolia/typeahead.bundle.min.js",
     "vendor/assets/javascripts/algolia/typeahead.jquery.js",
     "vendor/assets/javascripts/algolia/typeahead.jquery.min.js",
-    "vendor/assets/javascripts/algolia/v2",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.angular.js",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.angular.min.js",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.jquery.js",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.jquery.min.js",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.js",
     "vendor/assets/javascripts/algolia/v2/algoliasearch.min.js",
-    "vendor/assets/javascripts/algolia/v3",
     "vendor/assets/javascripts/algolia/v3/algoliasearch.angular.js",
     "vendor/assets/javascripts/algolia/v3/algoliasearch.angular.min.js",
     "vendor/assets/javascripts/algolia/v3/algoliasearch.jquery.js",
@@ -71,7 +68,6 @@ Gem::Specification.new do |s|
   s.homepage = "http://github.com/algolia/algoliasearch-rails"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
-  s.rubygems_version = "2.1.11"
   s.summary = "AlgoliaSearch integration to your favorite ORM"
 
   if s.respond_to? :specification_version then
