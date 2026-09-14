@@ -14,7 +14,7 @@ group :test do
   gem 'strscan', '< 3.1.6' if RUBY_VERSION < '2.6'
   gem 'active_model_serializers'
   if Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
-    gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
+    gem 'sqlite3', '~> 1.5.0', :platform => [:rbx, :ruby]
   else
     gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
   end
