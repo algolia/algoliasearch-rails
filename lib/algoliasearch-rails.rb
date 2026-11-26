@@ -966,7 +966,9 @@ module AlgoliaSearch
 
     def automatic_changed_method?(object, method_name)
       raise ArgumentError.new("Method #{method_name} doesn't exist on #{object.class.name}") unless object.respond_to?(method_name)
-      file = object.method(method_name).source_location[0]
+      location = object.method(method_name).source_location
+      return false if location.nil?
+      file = location[0]
       file.end_with?("active_model/attribute_methods.rb")
     end
 

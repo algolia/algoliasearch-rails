@@ -13,7 +13,11 @@ group :test do
   # strscan 3.1.6+ references rb_deprecate_constant, which the CI ruby 2.5 build does not export
   gem 'strscan', '< 3.1.6' if RUBY_VERSION < '2.6'
   gem 'active_model_serializers'
-  if Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
+  if Gem::Version.new(rails_version) >= Gem::Version.new('8.0')
+    gem 'sqlite3', '>= 2.1', :platform => [:rbx, :ruby]
+  elsif Gem::Version.new(rails_version) >= Gem::Version.new('7.1')
+    gem 'sqlite3', '>= 1.4', :platform => [:rbx, :ruby]
+  elsif Gem::Version.new(rails_version) >= Gem::Version.new('6.0')
     gem 'sqlite3', '~> 1.4.0', :platform => [:rbx, :ruby]
   else
     gem 'sqlite3', '< 1.4.0', :platform => [:rbx, :ruby]
@@ -35,7 +39,11 @@ end
 
 group :test, :development do
   gem 'will_paginate', '>= 2.3.15'
-  gem 'kaminari', '< 1'
+  if Gem::Version.new(ENV["RAILS_VERSION"] || '6.1') >= Gem::Version.new('7.0')
+    gem 'kaminari'
+  else
+    gem 'kaminari', '< 1'
+  end
   gem 'pagy'
 end
 
