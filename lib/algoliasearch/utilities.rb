@@ -2,10 +2,14 @@ module AlgoliaSearch
   module Utilities
     class << self
       def get_model_classes
-        if Rails.application && defined?(Rails.autoloaders) && Rails.autoloaders.zeitwerk_enabled?
-          Zeitwerk::Loader.eager_load_all
-        elsif Rails.application
-          Rails.application.eager_load!
+        if Rails.application
+          # `Rails.autoloaders.zeitwerk_enabled?` was removed in Rails 7.0 (zeitwerk is the only autoloader).
+          if defined?(Rails.autoloaders) && Rails.autoloaders.respond_to?(:zeitwerk_enabled?) &&
+             Rails.autoloaders.zeitwerk_enabled?
+            Zeitwerk::Loader.eager_load_all
+          else
+            Rails.application.eager_load!
+          end
         end
         AlgoliaSearch.instance_variable_get :@included_in
       end

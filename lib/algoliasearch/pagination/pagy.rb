@@ -7,17 +7,14 @@ module AlgoliaSearch
     class Pagy
 
       def self.create(results, total_hits, options = {})
-        vars = {
-          count: total_hits,
-          page: options[:page],
-          items: options[:per_page]
-        }
-
         pagy_version = Gem::Version.new(::Pagy::VERSION)
-        pagy = if pagy_version >= Gem::Version.new('9.0')
-                 ::Pagy.new(**vars)
+        pagy = if pagy_version >= Gem::Version.new('43.0')
+                 # Pagy 43 moved offset pagination to Pagy::Offset and renamed `items` to `limit`
+                 ::Pagy::Offset.new(count: total_hits, page: options[:page], limit: options[:per_page])
+               elsif pagy_version >= Gem::Version.new('9.0')
+                 ::Pagy.new(count: total_hits, page: options[:page], limit: options[:per_page])
                else
-                 ::Pagy.new(vars)
+                 ::Pagy.new(count: total_hits, page: options[:page], items: options[:per_page])
                end
 
         [pagy, results]
