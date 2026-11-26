@@ -105,6 +105,6 @@ workflows:
           name: "Ruby << matrix.version >> - Rails << matrix.rails-version >>"
           matrix:
             parameters:
-              version: ['3.2', '3.3', '3.4']
+              version: ['3.2', '3.3', '3.4', '4.0']
               rails-version: ['8.0', '8.1']
               sequel-version: ['5.0']

@@ -2,7 +2,7 @@
 
 ## [Unreleased](https://github.com/algolia/algoliasearch-rails/compare/3.0.3...master)
 ### Added
-* Test matrix and Gemfile support for Rails 7.1, 7.2, 8.0 and 8.1, and Ruby 3.2 to 3.4
+* Test matrix and Gemfile support for Rails 7.1, 7.2, 8.0 and 8.1, and Ruby 3.2 to 4.0
 
 ### Fixed
 * `Utilities.get_model_classes` (used by the rake tasks) no longer calls `Rails.autoloaders.zeitwerk_enabled?`, which was removed in Rails 7.0
